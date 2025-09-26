@@ -1,0 +1,175 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  TEACHER
+  STUDENT
+}
+
+enum PaymentStatus {
+  PAID      // تم السداد
+  UNPAID    // لم يتم السداد
+  PARTIAL   // سداد جزئي
+}
+
+enum RequestStatus {
+  PENDING   // في الانتظار
+  ACCEPTED  // مقبول
+  REJECTED  // مرفوض
+}
+
+enum AttendanceStatus {
+  PRESENT    // ح - حاضر
+  ABSENT     // ن - نائم
+  LATE       // ث - تأخير
+  EXCUSED    // ر - رخصة
+  LEFT_EARLY // خ - خروج مبكر
+}
+
+model User {
+  id           String   @id @default(cuid())
+  userName     String
+  userEmail    String   @unique
+  passwordHash String
+  userRole     UserRole
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // العلاقات
+  courses      Course[] @relation("TeacherCourses")
+
+  @@map("users")
+}
+
+model Program {
+  id             String   @id @default(cuid())
+  programName    String   // متسق مع userName
+  programDescription String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // العلاقات
+  courses        Course[]
+
+  @@map("programs")
+}
+
+model Course {
+  id              String   @id @default(cuid())
+  courseName      String
+  courseDescription String?
+  syllabus        String?  // نصاب الحلقة (المنهج)
+  level           Int      @default(1) // المستوى (1، 2، 3، إلخ)
+  maxStudents     Int      @default(20)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // العلاقات
+  programId    String
+  program      Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  teacherId    String?
+  teacher      User?    @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: SetNull)
+
+  enrollmentRequests EnrollmentRequest[]
+  enrollments        Enrollment[]
+  attendances        Attendance[]
+
+  @@map("courses")
+}
+
+model Student {
+  id               String        @id @default(cuid())
+  studentNumber    Int           @unique // الرقم التسلسلي للطالبة (م)
+  studentName      String        // اسم الطالبة الثلاثي
+  qualification    String        // المؤهل الدراسي
+  nationality      String        // الجنسية
+  studentPhone     String        // رقم التواصل
+  memorizedAmount  String        // مقدار الحفظ (مثل: جزء عم، 5 أجزاء، إلخ)
+  paymentStatus    PaymentStatus @default(UNPAID) // حالة سداد الرسوم
+  memorizationPlan String?       // خطة الحفظ
+  notes            String?       // ملاحظات إضافية
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // العلاقات
+  enrollmentRequests EnrollmentRequest[]
+  enrollments        Enrollment[]
+  attendances        Attendance[]
+
+  @@map("students")
+}
+
+model EnrollmentRequest {
+  id        String        @id @default(cuid())
+  status    RequestStatus @default(PENDING)
+  message   String?       // رسالة اختيارية من الطالبة
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // العلاقات
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId]) // طالبة واحدة لا يمكن أن تطلب نفس الحلقة مرتين
+  @@map("enrollment_requests")
+}
+
+model Enrollment {
+  id          String   @id @default(cuid())
+  enrolledAt  DateTime @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // العلاقات
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId]) // طالبة واحدة لا يمكن أن تسجل في نفس الحلقة مرتين
+  @@map("enrollments")
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  date      DateTime         @default(now())         // تاريخ الحضور (اليوم)
+  status    AttendanceStatus @default(PRESENT)       // حالة الحضور
+  notes     String?                                   // ملاحظات إضافية
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  // العلاقات
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // طالبة واحدة في حلقة واحدة في يوم واحد (تسجيل واحد فقط)
+  @@unique([studentId, courseId, date])
+  @@map("attendance")
+}
