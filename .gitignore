@@ -12,6 +12,9 @@ dist/
 *.log
 .next/trace
 
+# Claude Code
+.claude/settings.local.json
+
 # Prisma
 /generated/prisma
 
