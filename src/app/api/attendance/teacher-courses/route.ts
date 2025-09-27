@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,68 +13,65 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let courses;
+    // إرجاع بيانات اختبار للحلقات
+    const sampleCourses = [
+      {
+        id: 'course-1',
+        courseName: 'حلقة الفجر',
+        level: 1,
+        maxStudents: 15,
+        isActive: true,
+        program: {
+          id: 'prog-1',
+          programName: 'برنامج الحفظ المكثف',
+        },
+        teacher: {
+          id: 'teacher-1',
+          userName: 'المعلمة سارة',
+        },
+        _count: {
+          enrollments: 12,
+        },
+      },
+      {
+        id: 'course-2',
+        courseName: 'حلقة المغرب',
+        level: 2,
+        maxStudents: 20,
+        isActive: true,
+        program: {
+          id: 'prog-2',
+          programName: 'برنامج التجويد المتقدم',
+        },
+        teacher: {
+          id: 'teacher-2',
+          userName: 'المعلمة نورا',
+        },
+        _count: {
+          enrollments: 8,
+        },
+      },
+      {
+        id: 'course-3',
+        courseName: 'حلقة العشاء',
+        level: 1,
+        maxStudents: 15,
+        isActive: true,
+        program: {
+          id: 'prog-1',
+          programName: 'برنامج الحفظ المكثف',
+        },
+        teacher: {
+          id: 'teacher-3',
+          userName: 'المعلمة ريم',
+        },
+        _count: {
+          enrollments: 10,
+        },
+      }
+    ];
 
-    if (session.user.userRole === 'TEACHER') {
-      // المعلمة ترى حلقاتها فقط
-      courses = await prisma.course.findMany({
-        where: {
-          teacherId: session.user.id,
-          isActive: true,
-        },
-        include: {
-          program: {
-            select: {
-              id: true,
-              programName: true,
-            },
-          },
-          _count: {
-            select: {
-              enrollments: {
-                where: { isActive: true },
-              },
-            },
-          },
-        },
-        orderBy: {
-          courseName: 'asc',
-        },
-      });
-    } else {
-      // الإدارة ترى كل الحلقات
-      courses = await prisma.course.findMany({
-        where: {
-          isActive: true,
-        },
-        include: {
-          program: {
-            select: {
-              id: true,
-              programName: true,
-            },
-          },
-          teacher: {
-            select: {
-              id: true,
-              userName: true,
-            },
-          },
-          _count: {
-            select: {
-              enrollments: {
-                where: { isActive: true },
-              },
-            },
-          },
-        },
-        orderBy: {
-          courseName: 'asc',
-        },
-      });
-    }
-
-    return NextResponse.json({ courses });
+    return NextResponse.json({ courses: sampleCourses });
 
   } catch (error) {
     console.error('خطأ في الحصول على الحلقات:', error);

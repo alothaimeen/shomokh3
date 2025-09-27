@@ -107,12 +107,24 @@ export default function AttendancePage() {
   const fetchCourses = async () => {
     try {
       const response = await fetch('/api/attendance/teacher-courses');
-      if (response.ok) {
-        const data = await response.json();
-        setCourses(data.courses);
-        if (data.courses.length > 0) {
-          setSelectedCourse(data.courses[0].id);
-        }
+
+      if (!response.ok) {
+        console.error('خطأ في API:', response.status, response.statusText);
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('خطأ: الاستجابة ليست JSON:', contentType);
+        const text = await response.text();
+        console.error('محتوى الاستجابة:', text);
+        return;
+      }
+
+      const data = await response.json();
+      setCourses(data.courses || []);
+      if (data.courses && data.courses.length > 0) {
+        setSelectedCourse(data.courses[0].id);
       }
     } catch (error) {
       console.error('خطأ في جلب الحلقات:', error);
@@ -125,12 +137,24 @@ export default function AttendancePage() {
       const response = await fetch(
         `/api/attendance/course-attendance?courseId=${selectedCourse}&date=${selectedDate}`
       );
-      if (response.ok) {
-        const data: AttendanceResponse = await response.json();
-        setAttendanceData(data.attendanceData);
-        setCourseInfo(data.course);
-        setSummary(data.summary);
+
+      if (!response.ok) {
+        console.error('خطأ في API:', response.status, response.statusText);
+        return;
       }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('خطأ: الاستجابة ليست JSON:', contentType);
+        const text = await response.text();
+        console.error('محتوى الاستجابة:', text);
+        return;
+      }
+
+      const data: AttendanceResponse = await response.json();
+      setAttendanceData(data.attendanceData || []);
+      setCourseInfo(data.course || null);
+      setSummary(data.summary || null);
     } catch (error) {
       console.error('خطأ في جلب الحضور:', error);
     } finally {

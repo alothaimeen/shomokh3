@@ -81,10 +81,22 @@ export default function AttendanceReportPage() {
     setLoading(true);
     try {
       const response = await fetch('/api/attendance/teacher-courses');
-      if (response.ok) {
-        const data = await response.json();
-        setCourses(data.courses);
+
+      if (!response.ok) {
+        console.error('خطأ في API:', response.status, response.statusText);
+        return;
       }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('خطأ: الاستجابة ليست JSON:', contentType);
+        const text = await response.text();
+        console.error('محتوى الاستجابة:', text);
+        return;
+      }
+
+      const data = await response.json();
+      setCourses(data.courses || []);
     } catch (error) {
       console.error('خطأ في جلب الحلقات:', error);
     } finally {

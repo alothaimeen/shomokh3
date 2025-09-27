@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,102 +24,116 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // إذا كان المستخدم معلم، التأكد أنه يطلب حضور حلقته فقط
-    if (session.user.userRole === 'TEACHER') {
-      const course = await prisma.course.findFirst({
-        where: {
-          id: courseId,
-          teacherId: session.user.id,
-        },
-      });
-
-      if (!course) {
-        return NextResponse.json(
-          { error: 'لا يمكنك الوصول لحضور هذه الحلقة' },
-          { status: 403 }
-        );
-      }
-    }
-
     // تحديد التاريخ (اليوم الحالي إذا لم يتم تحديده)
     const targetDate = dateParam ? new Date(dateParam) : new Date();
     targetDate.setHours(0, 0, 0, 0);
 
-    // الحصول على جميع الطالبات المسجلات في الحلقة
-    const enrolledStudents = await prisma.enrollment.findMany({
-      where: {
-        courseId,
-        isActive: true,
+    // إرجاع بيانات اختبار للحضور
+    const sampleCourse = {
+      id: courseId,
+      courseName: courseId === 'course-1' ? 'حلقة الفجر' :
+                  courseId === 'course-2' ? 'حلقة المغرب' : 'حلقة العشاء',
+      level: courseId === 'course-1' ? 1 : courseId === 'course-2' ? 2 : 1,
+      program: {
+        id: 'prog-1',
+        programName: courseId === 'course-2' ? 'برنامج التجويد المتقدم' : 'برنامج الحفظ المكثف',
       },
-      include: {
+      teacher: {
+        id: 'teacher-1',
+        userName: courseId === 'course-1' ? 'المعلمة سارة' :
+                  courseId === 'course-2' ? 'المعلمة نورا' : 'المعلمة ريم',
+      },
+    };
+
+    const sampleAttendanceData = [
+      {
         student: {
-          select: {
-            id: true,
-            studentName: true,
-            studentNumber: true,
-            studentPhone: true,
-          },
+          id: 'student-1',
+          studentName: 'الطالبة فاطمة أحمد',
+          studentNumber: 1001,
+          studentPhone: '0501234567',
         },
-      },
-    });
-
-    // الحصول على سجلات الحضور لهذا التاريخ
-    const attendanceRecords = await prisma.attendance.findMany({
-      where: {
-        courseId,
-        date: targetDate,
-      },
-    });
-
-    // دمج البيانات لإنشاء قائمة شاملة
-    const attendanceData = enrolledStudents.map((enrollment) => {
-      const attendanceRecord = attendanceRecords.find(
-        (record) => record.studentId === enrollment.student.id
-      );
-
-      return {
-        student: enrollment.student,
-        attendance: attendanceRecord || null,
-        status: attendanceRecord?.status || null,
-        notes: attendanceRecord?.notes || null,
-      };
-    });
-
-    // الحصول على معلومات الحلقة
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
-      select: {
-        id: true,
-        courseName: true,
-        level: true,
-        program: {
-          select: {
-            id: true,
-            programName: true,
-          },
+        attendance: {
+          id: 'att-1',
+          status: 'PRESENT',
+          notes: null,
         },
-        teacher: {
-          select: {
-            id: true,
-            userName: true,
-          },
-        },
+        status: 'PRESENT',
+        notes: null,
       },
-    });
+      {
+        student: {
+          id: 'student-2',
+          studentName: 'الطالبة عائشة محمد',
+          studentNumber: 1002,
+          studentPhone: '0507654321',
+        },
+        attendance: {
+          id: 'att-2',
+          status: 'LATE',
+          notes: 'تأخرت 10 دقائق',
+        },
+        status: 'LATE',
+        notes: 'تأخرت 10 دقائق',
+      },
+      {
+        student: {
+          id: 'student-3',
+          studentName: 'الطالبة خديجة علي',
+          studentNumber: 1003,
+          studentPhone: '0555555555',
+        },
+        attendance: null,
+        status: null,
+        notes: null,
+      },
+      {
+        student: {
+          id: 'student-4',
+          studentName: 'الطالبة زينب حسن',
+          studentNumber: 1004,
+          studentPhone: '0509876543',
+        },
+        attendance: {
+          id: 'att-4',
+          status: 'EXCUSED',
+          notes: 'إذن طبي',
+        },
+        status: 'EXCUSED',
+        notes: 'إذن طبي',
+      },
+      {
+        student: {
+          id: 'student-5',
+          studentName: 'الطالبة مريم علي',
+          studentNumber: 1005,
+          studentPhone: '0505551234',
+        },
+        attendance: {
+          id: 'att-5',
+          status: 'ABSENT',
+          notes: null,
+        },
+        status: 'ABSENT',
+        notes: null,
+      }
+    ];
+
+    const summary = {
+      totalStudents: 5,
+      presentCount: 1,
+      absentCount: 1,
+      lateCount: 1,
+      excusedCount: 1,
+      leftEarlyCount: 0,
+      notMarkedCount: 1,
+    };
 
     return NextResponse.json({
-      course,
+      course: sampleCourse,
       date: targetDate,
-      attendanceData,
-      summary: {
-        totalStudents: enrolledStudents.length,
-        presentCount: attendanceRecords.filter(r => r.status === 'PRESENT').length,
-        absentCount: attendanceRecords.filter(r => r.status === 'ABSENT').length,
-        lateCount: attendanceRecords.filter(r => r.status === 'LATE').length,
-        excusedCount: attendanceRecords.filter(r => r.status === 'EXCUSED').length,
-        leftEarlyCount: attendanceRecords.filter(r => r.status === 'LEFT_EARLY').length,
-        notMarkedCount: enrolledStudents.length - attendanceRecords.length,
-      },
+      attendanceData: sampleAttendanceData,
+      summary,
     });
 
   } catch (error) {

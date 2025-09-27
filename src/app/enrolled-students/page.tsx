@@ -74,18 +74,41 @@ export default function EnrolledStudentsPage() {
   const fetchEnrolledStudents = async () => {
     try {
       const response = await fetch('/api/enrollment/enrolled-students');
-      const data = await response.json();
 
-      if (response.ok) {
-        setEnrollmentData(data);
-        setSelectedEnrollments([]);
-      } else {
+      if (!response.ok) {
+        console.error('خطأ في API:', response.status, response.statusText);
         setNotification({
           type: 'error',
-          message: data.error || 'خطأ في جلب البيانات'
+          message: `خطأ في الخادم: ${response.status}`
+        });
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('خطأ: الاستجابة ليست JSON:', contentType);
+        const text = await response.text();
+        console.error('محتوى الاستجابة:', text);
+        setNotification({
+          type: 'error',
+          message: 'خطأ في تنسيق الاستجابة'
+        });
+        return;
+      }
+
+      const data = await response.json();
+      setEnrollmentData(data);
+      setSelectedEnrollments([]);
+
+      // إذا كانت القوائم فارغة، اعرض رسالة مناسبة
+      if (data.enrollments && data.enrollments.length === 0) {
+        setNotification({
+          type: 'error',
+          message: 'لا توجد طالبات مسجلات حالياً'
         });
       }
     } catch (error) {
+      console.error('خطأ في جلب البيانات:', error);
       setNotification({
         type: 'error',
         message: 'خطأ في الاتصال بالخادم'

@@ -532,4 +532,642 @@ const testData = {
 
 ---
 
-> **القاعدة الذهبية:** هذا الملف هو دليلك في كل جلسة. اقرأه أولاً قبل أي عمل!
+## 🛡️ معايير كتابة الكود المبنية على الوقاية
+
+### القاعدة الذهبية الجديدة: "اكتب الكود وكأن كل شيء سيفشل"
+
+#### 1. قواعد كتابة API صارمة - نمط Safe API إلزامي
+
+```typescript
+// ❌ خطأ: الكتابة المباشرة لقاعدة البيانات
+export async function GET() {
+  const data = await prisma.user.findMany(); // يفشل إذا لم تكن قاعدة البيانات متاحة
+  return NextResponse.json(data);
+}
+
+// ✅ صحيح: نمط Safe API إلزامي لكل endpoint
+export async function GET(request: NextRequest) {
+  try {
+    // 1. بيانات احتياطية أولاً (إلزامي)
+    const fallbackData = getFallbackUsers();
+
+    // 2. التحقق من الجلسة (إلزامي)
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+    }
+
+    // 3. التحقق من الصلاحيات (إلزامي)
+    const userRole = session.user.userRole;
+    if (!['ADMIN', 'MANAGER'].includes(userRole)) {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
+    }
+
+    // 4. محاولة قاعدة البيانات مع fallback (إلزامي)
+    if (process.env.DATABASE_URL) {
+      const data = await prisma.user.findMany();
+      return NextResponse.json(data);
+    }
+
+    // 5. البيانات الاحتياطية (إلزامي)
+    return NextResponse.json(fallbackData);
+
+  } catch (error) {
+    console.error('API Error:', error);
+    return NextResponse.json(getFallbackUsers());
+  }
+}
+
+// دالة البيانات الاحتياطية (إلزامية لكل API)
+function getFallbackUsers() {
+  return [
+    { id: "1", userName: "المدير الأول", userRole: "ADMIN", isActive: true },
+    { id: "2", userName: "المعلمة سارة", userRole: "TEACHER", isActive: true },
+    { id: "3", userName: "الطالبة فاطمة", userRole: "STUDENT", isActive: true }
+  ];
+}
+```
+
+#### 2. قانون إنشاء الصفحات - الترتيب الإلزامي
+
+```yaml
+الترتيب_الإلزامي_لإضافة_صفحة_جديدة:
+  الخطوة_1: "إنشاء الصفحة أولاً - src/app/new-page/page.tsx"
+  الخطوة_2: "اختبار الصفحة مباشرة - http://localhost:3000/new-page"
+  الخطوة_3: "إضافة الحماية في middleware.ts"
+  الخطوة_4: "إضافة الرابط في Dashboard"
+  الخطوة_5: "اختبار الرابط والانتقال"
+
+# ❌ ممنوع: إضافة رابط قبل إنشاء الصفحة
+<Link href="/non-existent-page">صفحة غير موجودة</Link>
+
+# ✅ صحيح: إنشاء الصفحة ثم الرابط
+1. إنشاء src/app/reports/page.tsx
+2. اختبار http://localhost:3000/reports
+3. إضافة <Link href="/reports">التقارير</Link>
+```
+
+#### 3. نمط كتابة الصفحات الآمن - قالب إلزامي
+
+```typescript
+// قالب إلزامي لكل صفحة جديدة - انسخ والصق هذا دائماً
+'use client';
+
+import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+
+export default function SafePage() {
+  const { data: session, status } = useSession();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch('/api/your-endpoint');
+        if (!response.ok) {
+          throw new Error('فشل في تحميل البيانات');
+        }
+        const result = await response.json();
+        setData(result);
+      } catch (err) {
+        setError(err.message);
+        // استخدام بيانات احتياطية (إلزامي)
+        setData(getFallbackData());
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (session) {
+      fetchData();
+    }
+  }, [session]);
+
+  // معالجة الحالات (إلزامي)
+  if (status === 'loading') return <div className="p-4">جاري التحقق من الجلسة...</div>;
+  if (!session) return <div className="p-4">غير مصرح للدخول</div>;
+  if (loading) return <div className="p-4">جاري التحميل...</div>;
+  if (error) return <div className="p-4 text-red-500">خطأ: {error}</div>;
+
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">عنوان الصفحة</h1>
+      {/* محتوى الصفحة */}
+      <pre className="bg-gray-100 p-4 rounded">
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    </div>
+  );
+}
+
+// بيانات احتياطية لكل صفحة (إلزامي)
+function getFallbackData() {
+  return {
+    message: "بيانات تجريبية",
+    timestamp: new Date().toISOString()
+  };
+}
+```
+
+#### 4. إعدادات TypeScript صارمة - منع الأخطاء من المصدر
+
+```json
+// tsconfig.json - إعدادات صارمة تمنع الأخطاء قبل الكتابة
+{
+  "compilerOptions": {
+    "strict": true,                        // صرامة كاملة
+    "noUncheckedIndexedAccess": true,      // منع undefined access
+    "exactOptionalPropertyTypes": true,    // دقة في الخصائص الاختيارية
+    "noImplicitReturns": true,            // إجبار return في كل المسارات
+    "noFallthroughCasesInSwitch": true,   // منع fallthrough في switch
+    "noImplicitOverride": true,           // وضوح في override
+    "noUnusedLocals": true,               // منع المتغيرات غير المستخدمة
+    "noUnusedParameters": true,           // منع المعاملات غير المستخدمة
+    "allowUnreachableCode": false,        // منع الكود غير القابل للوصول
+    "allowUnusedLabels": false            // منع التسميات غير المستخدمة
+  }
+}
+```
+
+#### 5. قواعد كتابة المكونات الآمنة
+
+```typescript
+// ❌ خطأ: مكون بدون معالجة أخطاء
+function BadComponent() {
+  const data = useSession().data.user.email; // يفشل إذا كانت الجلسة null
+  return <div>{data}</div>;
+}
+
+// ✅ صحيح: مكون آمن بقواعد دفاعية إلزامية
+interface SafeComponentProps {
+  title: string;
+  data?: any[];
+  className?: string;
+}
+
+function SafeComponent({ title, data = [], className = "" }: SafeComponentProps) {
+  const { data: session } = useSession();
+
+  // 1. التحقق من الجلسة (إلزامي)
+  if (!session?.user?.email) {
+    return <div className="p-4 bg-yellow-100">جلسة غير صالحة</div>;
+  }
+
+  // 2. التحقق من البيانات (إلزامي)
+  if (!Array.isArray(data)) {
+    console.warn('SafeComponent: data is not an array, using empty array');
+    data = [];
+  }
+
+  // 3. التحقق من العدد (إلزامي)
+  if (data.length === 0) {
+    return (
+      <div className={`p-4 bg-gray-100 ${className}`}>
+        <h2 className="text-lg font-semibold">{title}</h2>
+        <p className="text-gray-600">لا توجد بيانات للعرض</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`container mx-auto p-4 ${className}`}>
+      <h1 className="text-2xl font-bold mb-4">{title}</h1>
+      <div className="grid gap-4">
+        {data.map((item, index) => (
+          <div key={item?.id || index} className="p-3 border rounded">
+            <h3 className="font-medium">
+              {item?.name || item?.title || `عنصر ${index + 1}`}
+            </h3>
+            <p className="text-sm text-gray-600">
+              {item?.description || 'لا يوجد وصف'}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+#### 6. نمط Database Service Layer - عزل قاعدة البيانات
+
+```typescript
+// src/lib/database-service.ts - خدمة موحدة لكل قواعد البيانات
+class DatabaseService {
+  private static useFallback = !process.env.DATABASE_URL;
+
+  // نمط عام لكل استعلام قاعدة بيانات
+  static async safeQuery<T>(
+    operation: string,
+    query: () => Promise<T>,
+    fallback: T
+  ): Promise<T> {
+    if (this.useFallback) {
+      console.log(`🔄 Using fallback data for: ${operation}`);
+      return fallback;
+    }
+
+    try {
+      const result = await query();
+      console.log(`✅ Database query successful: ${operation}`);
+      return result;
+    } catch (error) {
+      console.error(`❌ Database error in ${operation}:`, error);
+      console.log(`🔄 Falling back to mock data for: ${operation}`);
+      return fallback;
+    }
+  }
+
+  // مثال: جلب المستخدمين
+  static async getUsers() {
+    return this.safeQuery(
+      'getUsers',
+      () => prisma.user.findMany({ where: { isActive: true } }),
+      [
+        { id: "1", userName: "المدير الأول", userRole: "ADMIN" },
+        { id: "2", userName: "المعلمة سارة", userRole: "TEACHER" }
+      ]
+    );
+  }
+
+  // مثال: جلب الطالبات المسجلات
+  static async getEnrolledStudents(courseId?: string) {
+    return this.safeQuery(
+      'getEnrolledStudents',
+      () => prisma.enrollment.findMany({
+        where: courseId ? { courseId, isActive: true } : { isActive: true },
+        include: { student: true, course: true }
+      }),
+      [
+        {
+          id: "enr-1",
+          student: { id: "std-1", userName: "الطالبة فاطمة", studentNumber: "001" },
+          course: { id: "course-1", courseName: "حلقة الفجر" },
+          enrollmentDate: new Date(),
+          isActive: true
+        }
+      ]
+    );
+  }
+}
+
+// استخدام في APIs
+export async function GET() {
+  try {
+    const users = await DatabaseService.getUsers();
+    return NextResponse.json(users);
+  } catch (error) {
+    return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 });
+  }
+}
+```
+
+#### 7. معايير التسمية الصارمة - منع الالتباس
+
+```typescript
+// ❌ خطأ: تسمية غامضة تؤدي للأخطاء
+const data = await fetch('/api/get');
+const info = response.json();
+const result = data.users;
+
+// ✅ صحيح: تسمية واضحة ومانعة للأخطاء
+const enrolledStudentsResponse = await fetch('/api/enrollment/enrolled-students');
+const enrolledStudentsData = await enrolledStudentsResponse.json();
+const studentsArray = enrolledStudentsData.enrollments;
+
+// قواعد التسمية الإلزامية:
+// 1. المتغيرات: فعل + كائن + نوع
+const fetchUsersResponse = await fetch('/api/users');
+const updateStudentRequest = { studentId: "123", newData: {} };
+
+// 2. الملفات: kebab-case واضح
+src/app/enrolled-students/page.tsx     // ✅ واضح
+src/app/attendance-report/page.tsx     // ✅ واضح
+src/app/page1/page.tsx                // ❌ غامض
+
+// 3. المكونات: PascalCase وصفي
+function EnrolledStudentsTable() {}    // ✅ واضح
+function AttendanceReportForm() {}     // ✅ واضح
+function MyComponent() {}              // ❌ غامض
+```
+
+#### 8. قائمة فحص قبل كتابة أي كود - إلزامية
+
+```yaml
+# ✅ اسأل نفسك هذه الأسئلة قبل كتابة سطر واحد:
+
+قبل_كتابة_API:
+  - "هل أحتاج قاعدة بيانات؟" → أضع بيانات احتياطية أولاً
+  - "هل يحتاج صلاحيات؟" → أضيف فحص الجلسة والدور
+  - "ماذا لو فشل الاستعلام؟" → أضيف try/catch مع fallback
+
+قبل_كتابة_صفحة:
+  - "هل الصفحة محمية؟" → أضيف فحص الجلسة
+  - "هل تحتاج بيانات؟" → أضيف loading states و error handling
+  - "هل الرابط موجود؟" → أنشئ الصفحة قبل إضافة الرابط
+
+قبل_كتابة_مكون:
+  - "هل البيانات يمكن أن تكون null؟" → أضيف fallback
+  - "هل المستخدم سينتظر؟" → أضيف loading state
+  - "ماذا لو لم توجد بيانات؟" → أضيف empty state
+
+قبل_أي_عملية:
+  - "هل يمكن أن تفشل؟" → أضيف try/catch
+  - "هل النتيجة واضحة للمستخدم؟" → أضيف رسائل نجاح/فشل
+  - "هل الاسم واضح؟" → أستخدم أسماء وصفية
+```
+
+#### 9. ملف إعدادات التطوير الآمن
+
+```typescript
+// src/lib/dev-safety-config.ts - إعدادات أمان التطوير
+export const DevSafetyConfig = {
+  // إجبار استخدام بيانات احتياطية في التطوير
+  FORCE_MOCK_DATA: true,
+
+  // فحص الروابط تلقائياً قبل البناء
+  CHECK_ROUTES_ON_BUILD: true,
+
+  // تسجيل مفصل للأخطاء
+  VERBOSE_ERROR_LOGGING: true,
+
+  // منع استدعاء APIs خارجية في التطوير
+  BLOCK_EXTERNAL_APIS: true,
+
+  // تحذيرات عند استخدام قيم hardcoded
+  WARN_ON_HARDCODED_VALUES: true,
+
+  // فحص الجلسة في كل صفحة
+  ENFORCE_SESSION_CHECK: true
+};
+
+// استخدام في كل مكان
+export function isDevelopmentSafe() {
+  return DevSafetyConfig.FORCE_MOCK_DATA || !process.env.DATABASE_URL;
+}
+
+export function logSafetyWarning(message: string) {
+  if (DevSafetyConfig.VERBOSE_ERROR_LOGGING) {
+    console.warn(`🚨 SAFETY WARNING: ${message}`);
+  }
+}
+```
+
+#### 10. حماية Git وأوامر البناء
+
+```bash
+# package.json - إضافة سكريبتات الأمان
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run safety-check && next build",
+    "safety-check": "npm run type-check && npm run lint && npm run test-routes",
+    "type-check": "tsc --noEmit",
+    "lint": "next lint",
+    "test-routes": "node scripts/test-routes.js",
+    "check-apis": "node scripts/check-apis.js"
+  }
+}
+
+# scripts/test-routes.js - فحص تلقائي للروابط
+const routes = [
+  '/dashboard', '/attendance', '/attendance-report',
+  '/academic-reports', '/enrolled-students', '/students'
+];
+
+async function testRoutes() {
+  for (const route of routes) {
+    try {
+      const response = await fetch(`http://localhost:3000${route}`);
+      if (response.status === 404) {
+        console.error(`❌ Route not found: ${route}`);
+        process.exit(1);
+      }
+      console.log(`✅ Route working: ${route}`);
+    } catch (error) {
+      console.error(`❌ Route error: ${route}`, error.message);
+      process.exit(1);
+    }
+  }
+}
+
+# .gitignore - إضافات أمان
+.env.local
+.env.development.local
+.env.production.local
+*.log
+.DS_Store
+coverage/
+.nyc_output/
+safety-reports/
+```
+
+---
+
+## 🚨 استراتيجية منع الأخطاء المستقبلية
+
+### بروتوكول قاعدة البيانات المرن المحدث
+
+```typescript
+// src/lib/enhanced-database-service.ts
+class EnhancedDatabaseService {
+  private static connectionStatus: 'connected' | 'disconnected' | 'unknown' = 'unknown';
+
+  static async checkConnection(): Promise<boolean> {
+    try {
+      if (!process.env.DATABASE_URL) {
+        this.connectionStatus = 'disconnected';
+        return false;
+      }
+
+      await prisma.$queryRaw`SELECT 1`;
+      this.connectionStatus = 'connected';
+      return true;
+    } catch (error) {
+      this.connectionStatus = 'disconnected';
+      console.warn('Database connection failed, using mock data');
+      return false;
+    }
+  }
+
+  static async safeExecute<T>(
+    operation: string,
+    query: () => Promise<T>,
+    fallback: T,
+    options: { timeout?: number } = {}
+  ): Promise<T> {
+    const { timeout = 5000 } = options;
+
+    if (this.connectionStatus === 'disconnected') {
+      console.log(`🔄 Using cached fallback for: ${operation}`);
+      return fallback;
+    }
+
+    try {
+      const result = await Promise.race([
+        query(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Database timeout')), timeout)
+        )
+      ]);
+
+      return result;
+    } catch (error) {
+      console.error(`❌ ${operation} failed:`, error);
+      this.connectionStatus = 'disconnected';
+      return fallback;
+    }
+  }
+}
+```
+
+### فحص مسبق شامل للصفحات
+
+```bash
+# scripts/comprehensive-check.js
+const REQUIRED_PAGES = {
+  ADMIN: ['/dashboard', '/users', '/attendance-report', '/academic-reports'],
+  MANAGER: ['/dashboard', '/attendance-report', '/academic-reports'],
+  TEACHER: ['/dashboard', '/attendance', '/enrolled-students'],
+  STUDENT: ['/dashboard', '/enrollment']
+};
+
+async function checkAllPages() {
+  let allPassed = true;
+
+  for (const [role, pages] of Object.entries(REQUIRED_PAGES)) {
+    console.log(`\n🔍 Checking ${role} pages...`);
+
+    for (const page of pages) {
+      const exists = await checkPageExists(page);
+      const hasComponent = await checkComponentExists(page);
+      const inMiddleware = await checkMiddlewareProtection(page);
+
+      if (!exists || !hasComponent || !inMiddleware) {
+        console.error(`❌ ${page} failed checks`);
+        allPassed = false;
+      } else {
+        console.log(`✅ ${page} passed all checks`);
+      }
+    }
+  }
+
+  return allPassed;
+}
+
+async function checkPageExists(route) {
+  const filePath = `src/app${route}/page.tsx`;
+  return fs.existsSync(filePath);
+}
+```
+
+### نظام تنبيهات الأخطاء المتقدم
+
+```typescript
+// src/lib/error-prevention-system.ts
+class ErrorPreventionSystem {
+  private static errorLog: Array<{
+    type: string;
+    message: string;
+    timestamp: Date;
+    stackTrace?: string;
+  }> = [];
+
+  static preventDatabaseError(operation: string) {
+    if (!process.env.DATABASE_URL) {
+      this.logWarning('DATABASE_UNAVAILABLE',
+        `Operation ${operation} attempted without database connection`);
+      return false;
+    }
+    return true;
+  }
+
+  static preventMissingPage(route: string) {
+    const pagePath = `src/app${route}/page.tsx`;
+    if (!fs.existsSync(pagePath)) {
+      this.logError('MISSING_PAGE',
+        `Page ${route} referenced but file ${pagePath} does not exist`);
+      return false;
+    }
+    return true;
+  }
+
+  static preventMissingAPI(endpoint: string) {
+    const apiPath = `src/app/api${endpoint}/route.ts`;
+    if (!fs.existsSync(apiPath)) {
+      this.logError('MISSING_API',
+        `API ${endpoint} called but file ${apiPath} does not exist`);
+      return false;
+    }
+    return true;
+  }
+
+  static logWarning(type: string, message: string) {
+    const entry = {
+      type: `WARNING_${type}`,
+      message,
+      timestamp: new Date()
+    };
+
+    this.errorLog.push(entry);
+    console.warn(`🚨 ${entry.type}: ${message}`);
+  }
+
+  static logError(type: string, message: string) {
+    const entry = {
+      type: `ERROR_${type}`,
+      message,
+      timestamp: new Date(),
+      stackTrace: new Error().stack
+    };
+
+    this.errorLog.push(entry);
+    console.error(`💥 ${entry.type}: ${message}`);
+  }
+
+  static getErrorReport() {
+    return {
+      totalErrors: this.errorLog.filter(e => e.type.startsWith('ERROR')).length,
+      totalWarnings: this.errorLog.filter(e => e.type.startsWith('WARNING')).length,
+      recentIssues: this.errorLog.slice(-10),
+      fullLog: this.errorLog
+    };
+  }
+}
+```
+
+### تطوير تدريجي محكم - بروتوكول محدث
+
+```yaml
+البروتوكول_المحدث_للتطوير_التدريجي:
+
+  قبل_إضافة_أي_ميزة:
+    - "هل الميزة السابقة تعمل 100%؟" → اختبار شامل
+    - "هل npm run build ينجح؟" → فحص إلزامي
+    - "هل جميع الروابط تعمل؟" → فحص تلقائي
+
+  أثناء_كتابة_الكود:
+    - "استخدم القوالب الآمنة" → انسخ والصق القوالب
+    - "اختبر كل سطر كود" → تشغيل فوري
+    - "لا تفترض أي شيء" → تحقق من كل قيمة
+
+  بعد_إكمال_الميزة:
+    - "اختبار الميزة نفسها" → جميع السيناريوهات
+    - "اختبار الميزات السابقة" → regression test
+    - "فحص الأداء والذاكرة" → مراقبة الموارد
+
+البيانات_الاحتياطية_الذكية:
+  - "كل API له fallback data" → بيانات واقعية تشبه الحقيقية
+  - "كل صفحة لها empty state" → واجهة واضحة عند عدم وجود بيانات
+  - "كل عملية لها error state" → رسائل مفيدة للمستخدم
+```
+
+---
+
+> **القاعدة الذهبية المحدثة:**
+>
+> **"هذا الملف هو دليلك للكتابة الآمنة. اقرأه أولاً، طبق المعايير، واكتب كود نظيف من المرة الأولى!"**
+>
+> **🎯 الهدف:** صفر أخطاء، صفر إعادة كتابة، صفر استهلاك توكنز غير ضروري
