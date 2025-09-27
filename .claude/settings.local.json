@@ -9,7 +9,19 @@
       "Bash(npx prisma:*)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(cmd /c:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(echo $TERM)",
+      "Bash(powershell:*)",
+      "Bash(psql:*)",
+      "Bash(pg_config:*)",
+      "Bash(where postgres)"
     ],
     "deny": [],
     "ask": []
