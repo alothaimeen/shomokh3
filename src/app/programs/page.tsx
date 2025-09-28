@@ -28,36 +28,39 @@ export default function ProgramsPage() {
     }
   }, [session, status, router]);
 
-  // بيانات تجريبية للبرامج
+  // جلب البرامج من قاعدة البيانات
   useEffect(() => {
-    const mockPrograms: Program[] = [
-      {
-        id: '1',
-        programName: 'برنامج حفظ القرآن الكريم',
-        programDescription: 'برنامج متكامل لحفظ القرآن الكريم مع التجويد',
-        isActive: true,
-        createdAt: '2025-01-01',
-        coursesCount: 3
-      },
-      {
-        id: '2',
-        programName: 'برنامج التجويد المتقدم',
-        programDescription: 'برنامج تخصصي في علم التجويد وأحكام التلاوة',
-        isActive: true,
-        createdAt: '2025-01-15',
-        coursesCount: 2
-      },
-      {
-        id: '3',
-        programName: 'برنامج الدراسات القرآنية',
-        programDescription: 'برنامج شامل للدراسات القرآنية والتفسير',
-        isActive: false,
-        createdAt: '2025-02-01',
-        coursesCount: 1
+    if (session) {
+      fetchPrograms();
+    }
+  }, [session]);
+
+  const fetchPrograms = async () => {
+    try {
+      const response = await fetch('/api/programs');
+      if (response.ok) {
+        const data = await response.json();
+        setPrograms(data);
+      } else {
+        console.error('فشل في جلب البرامج');
+        // بيانات احتياطية في حالة فشل API
+        setPrograms([
+          {
+            id: '1',
+            programName: 'برنامج حفظ القرآن الكريم',
+            programDescription: 'برنامج متكامل لحفظ القرآن الكريم مع التجويد',
+            isActive: true,
+            createdAt: '2025-01-01',
+            coursesCount: 3
+          }
+        ]);
       }
-    ];
-    setPrograms(mockPrograms);
-  }, []);
+    } catch (error) {
+      console.error('خطأ في الاتصال:', error);
+      // بيانات احتياطية في حالة خطأ الاتصال
+      setPrograms([]);
+    }
+  };
 
   if (status === "loading") {
     return (
@@ -72,31 +75,69 @@ export default function ProgramsPage() {
 
   if (!session) return null;
 
-  const userRole = session.user?.role;
+  const userRole = session.user?.userRole;
   const canManagePrograms = userRole === 'ADMIN' || userRole === 'MANAGER';
 
-  const handleAddProgram = () => {
-    if (newProgram.programName.trim()) {
-      const program: Program = {
-        id: Date.now().toString(),
-        programName: newProgram.programName,
-        programDescription: newProgram.programDescription,
-        isActive: true,
-        createdAt: new Date().toISOString().split('T')[0],
-        coursesCount: 0
-      };
-      setPrograms([...programs, program]);
-      setNewProgram({ programName: '', programDescription: '' });
-      setShowAddForm(false);
+  const handleAddProgram = async () => {
+    if (!newProgram.programName.trim()) return;
+
+    try {
+      const response = await fetch('/api/programs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          programName: newProgram.programName,
+          programDescription: newProgram.programDescription
+        })
+      });
+
+      if (response.ok) {
+        const newProgramData = await response.json();
+        setPrograms([newProgramData, ...programs]);
+        setNewProgram({ programName: '', programDescription: '' });
+        setShowAddForm(false);
+      } else {
+        console.error('فشل في إضافة البرنامج');
+        alert('فشل في إضافة البرنامج');
+      }
+    } catch (error) {
+      console.error('خطأ في إضافة البرنامج:', error);
+      alert('خطأ في الاتصال');
     }
   };
 
-  const toggleProgramStatus = (programId: string) => {
-    setPrograms(programs.map(program =>
-      program.id === programId
-        ? { ...program, isActive: !program.isActive }
-        : program
-    ));
+  const toggleProgramStatus = async (programId: string) => {
+    const program = programs.find(p => p.id === programId);
+    if (!program) return;
+
+    try {
+      const response = await fetch('/api/programs', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          programId,
+          isActive: !program.isActive
+        })
+      });
+
+      if (response.ok) {
+        setPrograms(programs.map(p =>
+          p.id === programId
+            ? { ...p, isActive: !p.isActive }
+            : p
+        ));
+      } else {
+        console.error('فشل في تحديث البرنامج');
+        alert('فشل في تحديث البرنامج');
+      }
+    } catch (error) {
+      console.error('خطأ في تحديث البرنامج:', error);
+      alert('خطأ في الاتصال');
+    }
   };
 
   return (

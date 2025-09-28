@@ -47,8 +47,42 @@ export default function StudentsPage() {
     }
   }, [session, status, router]);
 
-  // بيانات تجريبية للطالبات
+  // جلب الطالبات من قاعدة البيانات
   useEffect(() => {
+    if (session) {
+      fetchStudents();
+    }
+  }, [session]);
+
+  // جلب الطالبات مع البحث والفلترة
+  useEffect(() => {
+    if (session) {
+      fetchStudents();
+    }
+  }, [session, searchTerm, paymentFilter]);
+
+  const fetchStudents = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (paymentFilter !== 'ALL') params.append('payment', paymentFilter);
+
+      const response = await fetch(`/api/students?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setStudents(data);
+      } else {
+        console.error('فشل في جلب الطالبات');
+        // بيانات احتياطية في حالة فشل API
+        setFallbackStudents();
+      }
+    } catch (error) {
+      console.error('خطأ في الاتصال:', error);
+      setFallbackStudents();
+    }
+  };
+
+  const setFallbackStudents = () => {
     const mockStudents: Student[] = [
       {
         id: '1',
@@ -108,7 +142,7 @@ export default function StudentsPage() {
       }
     ];
     setStudents(mockStudents);
-  }, []);
+  };
 
   if (status === "loading") {
     return (
@@ -123,56 +157,108 @@ export default function StudentsPage() {
 
   if (!session) return null;
 
-  const userRole = session.user?.role;
+  const userRole = session.user?.userRole;
   const canManageStudents = userRole === 'ADMIN' || userRole === 'MANAGER' || userRole === 'TEACHER';
 
-  const handleAddStudent = () => {
-    if (newStudent.studentName.trim()) {
-      const maxStudentNumber = Math.max(...students.map(s => s.studentNumber), 0);
-      const student: Student = {
-        id: Date.now().toString(),
-        studentNumber: maxStudentNumber + 1,
-        studentName: newStudent.studentName,
-        qualification: newStudent.qualification,
-        nationality: newStudent.nationality,
-        studentPhone: newStudent.studentPhone,
-        memorizedAmount: newStudent.memorizedAmount,
-        paymentStatus: newStudent.paymentStatus,
-        memorizationPlan: newStudent.memorizationPlan || undefined,
-        notes: newStudent.notes || undefined,
-        isActive: true,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setStudents([...students, student]);
-      setNewStudent({
-        studentName: '',
-        qualification: '',
-        nationality: '',
-        studentPhone: '',
-        memorizedAmount: '',
-        paymentStatus: 'UNPAID',
-        memorizationPlan: '',
-        notes: ''
+  const handleAddStudent = async () => {
+    if (!newStudent.studentName.trim()) return;
+
+    try {
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newStudent)
       });
-      setShowAddForm(false);
+
+      if (response.ok) {
+        const newStudentData = await response.json();
+        setStudents([...students, newStudentData]);
+        setNewStudent({
+          studentName: '',
+          qualification: '',
+          nationality: '',
+          studentPhone: '',
+          memorizedAmount: '',
+          paymentStatus: 'UNPAID',
+          memorizationPlan: '',
+          notes: ''
+        });
+        setShowAddForm(false);
+      } else {
+        console.error('فشل في إضافة الطالبة');
+        alert('فشل في إضافة الطالبة');
+      }
+    } catch (error) {
+      console.error('خطأ في إضافة الطالبة:', error);
+      alert('خطأ في الاتصال');
     }
   };
 
-  const handleUpdateStudent = () => {
-    if (editingStudent && editingStudent.studentName.trim()) {
-      setStudents(students.map(student =>
-        student.id === editingStudent.id ? editingStudent : student
-      ));
-      setEditingStudent(null);
+  const handleUpdateStudent = async () => {
+    if (!editingStudent || !editingStudent.studentName.trim()) return;
+
+    try {
+      const response = await fetch('/api/students', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: editingStudent.id,
+          updateData: {
+            studentName: editingStudent.studentName,
+            qualification: editingStudent.qualification,
+            nationality: editingStudent.nationality,
+            studentPhone: editingStudent.studentPhone,
+            memorizedAmount: editingStudent.memorizedAmount,
+            paymentStatus: editingStudent.paymentStatus,
+            memorizationPlan: editingStudent.memorizationPlan,
+            notes: editingStudent.notes
+          }
+        })
+      });
+
+      if (response.ok) {
+        const updatedStudentData = await response.json();
+        setStudents(students.map(student =>
+          student.id === editingStudent.id ? updatedStudentData : student
+        ));
+        setEditingStudent(null);
+      } else {
+        console.error('فشل في تحديث الطالبة');
+        alert('فشل في تحديث الطالبة');
+      }
+    } catch (error) {
+      console.error('خطأ في تحديث الطالبة:', error);
+      alert('خطأ في الاتصال');
     }
   };
 
-  const toggleStudentStatus = (studentId: string) => {
-    setStudents(students.map(student =>
-      student.id === studentId
-        ? { ...student, isActive: !student.isActive }
-        : student
-    ));
+  const toggleStudentStatus = async (studentId: string) => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    try {
+      const response = await fetch(`/api/students?id=${studentId}&isActive=${!student.isActive}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setStudents(students.map(s =>
+          s.id === studentId
+            ? { ...s, isActive: !s.isActive }
+            : s
+        ));
+      } else {
+        console.error('فشل في تحديث حالة الطالبة');
+        alert('فشل في تحديث حالة الطالبة');
+      }
+    } catch (error) {
+      console.error('خطأ في تحديث حالة الطالبة:', error);
+      alert('خطأ في الاتصال');
+    }
   };
 
   const getPaymentStatusLabel = (status: string) => {

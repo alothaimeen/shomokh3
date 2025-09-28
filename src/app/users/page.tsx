@@ -38,48 +38,59 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // بيانات تجريبية للمستخدمين الثابتة + بعض البيانات التجريبية
-      const testUsers: User[] = [
-        {
-          id: 'admin-1',
-          userName: 'المدير الأول',
-          userEmail: 'admin@shamokh.edu',
-          userRole: 'ADMIN',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'manager-1',
-          userName: 'المدير الأكاديمي',
-          userEmail: 'manager1@shamokh.edu',
-          userRole: 'MANAGER',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'teacher-1',
-          userName: 'المعلمة سارة',
-          userEmail: 'teacher1@shamokh.edu',
-          userRole: 'TEACHER',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'student-1',
-          userName: 'الطالبة فاطمة',
-          userEmail: 'student1@shamokh.edu',
-          userRole: 'STUDENT',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        }
-      ];
-
-      setUsers(testUsers);
+      const response = await fetch('/api/users');
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      } else {
+        console.error('فشل في جلب المستخدمين');
+        // بيانات احتياطية في حالة فشل API
+        setFallbackUsers();
+      }
     } catch (error) {
       console.error('خطأ في جلب المستخدمين:', error);
+      setFallbackUsers();
     } finally {
       setLoading(false);
     }
+  };
+
+  const setFallbackUsers = () => {
+    const fallbackUsers: User[] = [
+      {
+        id: 'admin-1',
+        userName: 'المدير الأول',
+        userEmail: 'admin@shamokh.edu',
+        userRole: 'ADMIN',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'manager-1',
+        userName: 'المدير الأكاديمي',
+        userEmail: 'manager1@shamokh.edu',
+        userRole: 'MANAGER',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'teacher-1',
+        userName: 'المعلمة سارة',
+        userEmail: 'teacher1@shamokh.edu',
+        userRole: 'TEACHER',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'student-1',
+        userName: 'الطالبة فاطمة',
+        userEmail: 'student1@shamokh.edu',
+        userRole: 'STUDENT',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      }
+    ];
+    setUsers(fallbackUsers);
   };
 
   if (!session) {

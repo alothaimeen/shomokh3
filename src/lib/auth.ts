@@ -1,7 +1,9 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { prisma } from "@/lib/db";
+import bcrypt from "bcryptjs";
 
-// البيانات الثابتة للاختبار
+// البيانات الثابتة للاختبار (احتياطية)
 const testUsers = [
   {
     id: "admin-1",
@@ -46,21 +48,63 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // البحث عن المستخدم في البيانات الثابتة
-        const user = testUsers.find(
+        try {
+          // محاولة الاتصال بقاعدة البيانات Supabase أولاً
+          if (process.env.DATABASE_URL) {
+            console.log('🔍 Searching for user in Supabase:', credentials.userEmail);
+
+            const user = await prisma.user.findUnique({
+              where: {
+                userEmail: credentials.userEmail.toLowerCase(),
+                isActive: true
+              }
+            });
+
+            if (user) {
+              console.log('✅ User found in database:', user.userEmail);
+
+              // التحقق من كلمة المرور المشفرة
+              const isPasswordValid = await bcrypt.compare(credentials.password, user.passwordHash);
+
+              if (isPasswordValid) {
+                console.log('✅ Password verified for user:', user.userEmail);
+                return {
+                  id: user.id,
+                  name: user.userName,
+                  email: user.userEmail,
+                  role: user.userRole,
+                  userRole: user.userRole,
+                };
+              } else {
+                console.log('❌ Invalid password for user:', user.userEmail);
+              }
+            } else {
+              console.log('❌ User not found in database:', credentials.userEmail);
+            }
+          }
+        } catch (error) {
+          console.error('🚨 Database error during login:', error);
+          // في حالة فشل قاعدة البيانات، استخدم البيانات الاحتياطية
+        }
+
+        // البحث في البيانات الثابتة كـ fallback
+        console.log('🔄 Falling back to test users for:', credentials.userEmail);
+        const testUser = testUsers.find(
           (u) => u.userEmail === credentials.userEmail && u.password === credentials.password
         );
 
-        if (user) {
+        if (testUser) {
+          console.log('✅ Test user found:', testUser.userEmail);
           return {
-            id: user.id,
-            name: user.userName,
-            email: user.userEmail,
-            role: user.userRole,
-            userRole: user.userRole, // alias for consistency
+            id: testUser.id,
+            name: testUser.userName,
+            email: testUser.userEmail,
+            role: testUser.userRole,
+            userRole: testUser.userRole,
           };
         }
 
+        console.log('❌ Authentication failed for:', credentials.userEmail);
         return null;
       }
     })

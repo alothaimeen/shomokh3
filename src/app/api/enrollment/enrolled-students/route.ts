@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { db } from '@/lib/db';
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,186 +17,127 @@ export async function GET(request: NextRequest) {
 
     console.log('الصلاحية صحيحة - الدور:', session.user.userRole);
 
-    // إرجاع بيانات اختبار مباشرة
-    console.log('عرض بيانات اختبار للطالبات المسجلات');
+    // استخراج courseId من query parameters
+    const { searchParams } = new URL(request.url);
+    const courseId = searchParams.get('courseId');
 
-    const sampleData = {
-      enrollments: [
-        {
-          id: 'sample-1',
-          enrolledAt: new Date().toISOString(),
-          student: {
-            id: 'student-1',
-            studentNumber: 1001,
-            studentName: 'الطالبة فاطمة أحمد',
-            studentPhone: '0501234567',
-            qualification: 'ثانوية عامة',
-            nationality: 'سعودية',
-            memorizedAmount: '5 أجزاء',
-            paymentStatus: 'PAID',
-            memorizationPlan: 'خطة المراجعة السريعة',
-          },
-          course: {
-            id: 'course-1',
-            courseName: 'حلقة الفجر',
-            level: 1,
-            maxStudents: 15,
-            programName: 'برنامج الحفظ المكثف',
-            teacherName: 'المعلمة سارة',
-          }
-        },
-        {
-          id: 'sample-2',
-          enrolledAt: new Date().toISOString(),
-          student: {
-            id: 'student-2',
-            studentNumber: 1002,
-            studentName: 'الطالبة عائشة محمد',
-            studentPhone: '0507654321',
-            qualification: 'بكالوريوس',
-            nationality: 'مصرية',
-            memorizedAmount: '10 أجزاء',
-            paymentStatus: 'PARTIAL',
-            memorizationPlan: 'خطة التحفيظ المتدرج',
-          },
-          course: {
-            id: 'course-1',
-            courseName: 'حلقة الفجر',
-            level: 1,
-            maxStudents: 15,
-            programName: 'برنامج الحفظ المكثف',
-            teacherName: 'المعلمة سارة',
-          }
-        },
-        {
-          id: 'sample-3',
-          enrolledAt: new Date().toISOString(),
-          student: {
-            id: 'student-3',
-            studentNumber: 1003,
-            studentName: 'الطالبة خديجة علي',
-            studentPhone: '0555555555',
-            qualification: 'ماجستير',
-            nationality: 'سعودية',
-            memorizedAmount: '30 جزء',
-            paymentStatus: 'UNPAID',
-            memorizationPlan: 'خطة المراجعة المكثفة',
-          },
-          course: {
-            id: 'course-2',
-            courseName: 'حلقة المغرب',
-            level: 2,
-            maxStudents: 20,
-            programName: 'برنامج التجويد المتقدم',
-            teacherName: 'المعلمة نورا',
+    console.log('جلب البيانات من قاعدة البيانات');
+
+    // بناء شرط WHERE حسب دور المستخدم
+    let whereCondition: any = {};
+    if (session.user.userRole === 'TEACHER') {
+      whereCondition = {
+        course: {
+          teacher: {
+            userEmail: session.user.email,
           }
         }
-      ],
-      enrollmentsByCourse: [
-        {
-          course: {
-            id: 'course-1',
-            courseName: 'حلقة الفجر',
-            level: 1,
-            maxStudents: 15,
-            programName: 'برنامج الحفظ المكثف',
-            teacherName: 'المعلمة سارة',
-          },
-          students: [
-            {
-              id: 'sample-1',
-              enrolledAt: new Date().toISOString(),
-              student: {
-                id: 'student-1',
-                studentNumber: 1001,
-                studentName: 'الطالبة فاطمة أحمد',
-                studentPhone: '0501234567',
-                qualification: 'ثانوية عامة',
-                nationality: 'سعودية',
-                memorizedAmount: '5 أجزاء',
-                paymentStatus: 'PAID',
-                memorizationPlan: 'خطة المراجعة السريعة',
-              },
-              course: {
-                id: 'course-1',
-                courseName: 'حلقة الفجر',
-                level: 1,
-                maxStudents: 15,
-                programName: 'برنامج الحفظ المكثف',
-                teacherName: 'المعلمة سارة',
+      };
+    }
+    // للـ ADMIN والـ MANAGER، جلب جميع التسجيلات (بدون شرط)
+
+    // إضافة فلتر الحلقة إذا تم تحديدها
+    if (courseId) {
+      whereCondition.courseId = courseId;
+    }
+
+    const enrollments = await db.enrollment.findMany({
+      where: {
+        isActive: true,
+        ...whereCondition
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            studentNumber: true,
+            studentName: true,
+            studentPhone: true,
+            qualification: true,
+            nationality: true,
+            memorizedAmount: true,
+            paymentStatus: true,
+            memorizationPlan: true,
+          }
+        },
+        course: {
+          select: {
+            id: true,
+            courseName: true,
+            level: true,
+            maxStudents: true,
+            program: {
+              select: {
+                programName: true,
               }
             },
-            {
-              id: 'sample-2',
-              enrolledAt: new Date().toISOString(),
-              student: {
-                id: 'student-2',
-                studentNumber: 1002,
-                studentName: 'الطالبة عائشة محمد',
-                studentPhone: '0507654321',
-                qualification: 'بكالوريوس',
-                nationality: 'مصرية',
-                memorizedAmount: '10 أجزاء',
-                paymentStatus: 'PARTIAL',
-                memorizationPlan: 'خطة التحفيظ المتدرج',
-              },
-              course: {
-                id: 'course-1',
-                courseName: 'حلقة الفجر',
-                level: 1,
-                maxStudents: 15,
-                programName: 'برنامج الحفظ المكثف',
-                teacherName: 'المعلمة سارة',
+            teacher: {
+              select: {
+                userName: true,
               }
             }
-          ],
-          studentsCount: 2
-        },
-        {
-          course: {
-            id: 'course-2',
-            courseName: 'حلقة المغرب',
-            level: 2,
-            maxStudents: 20,
-            programName: 'برنامج التجويد المتقدم',
-            teacherName: 'المعلمة نورا',
-          },
-          students: [
-            {
-              id: 'sample-3',
-              enrolledAt: new Date().toISOString(),
-              student: {
-                id: 'student-3',
-                studentNumber: 1003,
-                studentName: 'الطالبة خديجة علي',
-                studentPhone: '0555555555',
-                qualification: 'ماجستير',
-                nationality: 'سعودية',
-                memorizedAmount: '30 جزء',
-                paymentStatus: 'UNPAID',
-                memorizationPlan: 'خطة المراجعة المكثفة',
-              },
-              course: {
-                id: 'course-2',
-                courseName: 'حلقة المغرب',
-                level: 2,
-                maxStudents: 20,
-                programName: 'برنامج التجويد المتقدم',
-                teacherName: 'المعلمة نورا',
-              }
-            }
-          ],
-          studentsCount: 1
+          }
         }
-      ],
-      summary: {
-        totalEnrollments: 3,
-        totalCourses: 2,
-        averageStudentsPerCourse: 2,
+      },
+      orderBy: {
+        enrolledAt: 'desc'
       }
+    });
+
+    console.log(`تم جلب ${enrollments.length} تسجيل من قاعدة البيانات`);
+
+    // تجميع التسجيلات حسب الحلقة
+    const enrollmentsByCourse = enrollments.reduce((acc: any[], enrollment: any) => {
+      const courseId = enrollment.course.id;
+      let courseGroup = acc.find(group => group.course.id === courseId);
+
+      if (!courseGroup) {
+        courseGroup = {
+          course: {
+            id: enrollment.course.id,
+            courseName: enrollment.course.courseName,
+            level: enrollment.course.level,
+            maxStudents: enrollment.course.maxStudents,
+            programName: enrollment.course.program.programName,
+            teacherName: enrollment.course.teacher?.userName || 'غير محدد',
+          },
+          students: [],
+          studentsCount: 0
+        };
+        acc.push(courseGroup);
+      }
+
+      courseGroup.students.push({
+        id: enrollment.id,
+        enrolledAt: enrollment.enrolledAt,
+        student: enrollment.student,
+        course: {
+          id: enrollment.course.id,
+          courseName: enrollment.course.courseName,
+          level: enrollment.course.level,
+          maxStudents: enrollment.course.maxStudents,
+          programName: enrollment.course.program.programName,
+          teacherName: enrollment.course.teacher?.userName || 'غير محدد',
+        }
+      });
+      courseGroup.studentsCount = courseGroup.students.length;
+
+      return acc;
+    }, []);
+
+    const summary = {
+      totalEnrollments: enrollments.length,
+      totalCourses: enrollmentsByCourse.length,
+      averageStudentsPerCourse: enrollmentsByCourse.length > 0
+        ? Math.round(enrollments.length / enrollmentsByCourse.length * 100) / 100
+        : 0,
     };
 
-    return NextResponse.json(sampleData);
+    return NextResponse.json({
+      enrollments,
+      enrollmentsByCourse,
+      summary
+    });
 
   } catch (error) {
     console.error('خطأ في جلب الطالبات المسجلات:', error);

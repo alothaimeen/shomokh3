@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface Student {
   id: string;
@@ -52,6 +53,7 @@ export default function EnrolledStudentsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [enrollmentData, setEnrollmentData] = useState<EnrollmentData | null>(null);
+  const [preSelectedCourse, setPreSelectedCourse] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [viewMode, setViewMode] = useState<'byCourse' | 'list'>('byCourse');
@@ -59,6 +61,15 @@ export default function EnrolledStudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEnrollments, setSelectedEnrollments] = useState<string[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
+
+  // التحقق من وجود courseId في URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseIdFromUrl = urlParams.get('courseId');
+    if (courseIdFromUrl) {
+      setPreSelectedCourse(courseIdFromUrl);
+    }
+  }, []);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -71,9 +82,19 @@ export default function EnrolledStudentsPage() {
     fetchEnrolledStudents();
   }, [session, status, router]);
 
+  // إعادة جلب البيانات عند تغيير الحلقة المختارة
+  useEffect(() => {
+    if (session && status === 'authenticated') {
+      fetchEnrolledStudents();
+    }
+  }, [preSelectedCourse]);
+
   const fetchEnrolledStudents = async () => {
     try {
-      const response = await fetch('/api/enrollment/enrolled-students');
+      const url = preSelectedCourse
+        ? `/api/enrollment/enrolled-students?courseId=${preSelectedCourse}`
+        : '/api/enrollment/enrolled-students';
+      const response = await fetch(url);
 
       if (!response.ok) {
         console.error('خطأ في API:', response.status, response.statusText);
@@ -288,7 +309,17 @@ export default function EnrolledStudentsPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">الطالبات المسجلات</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold text-gray-800">الطالبات المسجلات</h1>
+            {preSelectedCourse && session?.user?.userRole === 'TEACHER' && (
+              <Link
+                href="/teacher"
+                className="text-blue-600 hover:text-blue-800 flex items-center gap-2"
+              >
+                ← العودة لاختيار الحلقة
+              </Link>
+            )}
+          </div>
           <p className="text-gray-600">إدارة ومتابعة الطالبات المسجلات في الحلقات</p>
         </div>
 

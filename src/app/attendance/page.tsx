@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 // أنواع البيانات
 type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'LEFT_EARLY';
@@ -94,6 +95,7 @@ export default function AttendancePage() {
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
+  const [preSelectedCourse, setPreSelectedCourse] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -102,6 +104,8 @@ export default function AttendancePage() {
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<Map<string, { status: AttendanceStatus; notes?: string }>>(new Map());
+  const [hasChanges, setHasChanges] = useState(false);
 
   // تعريف الدوال أولاً
   const fetchCourses = async () => {
@@ -123,7 +127,7 @@ export default function AttendancePage() {
 
       const data = await response.json();
       setCourses(data.courses || []);
-      if (data.courses && data.courses.length > 0) {
+      if (data.courses && data.courses.length > 0 && !preSelectedCourse) {
         setSelectedCourse(data.courses[0].id);
       }
     } catch (error) {
@@ -169,6 +173,16 @@ export default function AttendancePage() {
     }
   }, [session, router]);
 
+  // التحقق من وجود courseId في URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseIdFromUrl = urlParams.get('courseId');
+    if (courseIdFromUrl) {
+      setPreSelectedCourse(courseIdFromUrl);
+      setSelectedCourse(courseIdFromUrl);
+    }
+  }, []);
+
   // جلب الحلقات
   useEffect(() => {
     if (session) {
@@ -183,36 +197,68 @@ export default function AttendancePage() {
     }
   }, [selectedCourse, selectedDate, fetchAttendance]);
 
-  const markAttendance = async (studentId: string, status: AttendanceStatus, notes?: string) => {
+  // تسجيل تغيير مؤقت (بدون حفظ فوري)
+  const markAttendanceLocal = (studentId: string, status: AttendanceStatus, notes?: string) => {
+    const newChanges = new Map(pendingChanges);
+    newChanges.set(studentId, { status, notes });
+    setPendingChanges(newChanges);
+    setHasChanges(true);
+
+    // تحديث العرض المحلي
+    setAttendanceData(prev => prev.map(item =>
+      item.student.id === studentId
+        ? { ...item, status, notes: notes || null }
+        : item
+    ));
+  };
+
+  // حفظ جميع التغييرات دفعة واحدة
+  const saveAllChanges = async () => {
+    if (pendingChanges.size === 0) return;
+
     setSaving(true);
     try {
-      const response = await fetch('/api/attendance/mark', {
+      const attendanceRecords = Array.from(pendingChanges.entries()).map(([studentId, change]) => ({
+        studentId,
+        courseId: selectedCourse,
+        status: change.status,
+        notes: change.notes || '',
+        date: selectedDate,
+      }));
+
+      const response = await fetch('/api/attendance/bulk-mark', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          studentId,
-          courseId: selectedCourse,
-          status,
-          notes: notes || '',
-          date: selectedDate,
-        }),
+        body: JSON.stringify({ attendanceRecords }),
       });
 
       if (response.ok) {
-        // إعادة جلب البيانات
+        const result = await response.json();
+        alert(result.message);
+        setPendingChanges(new Map());
+        setHasChanges(false);
+        // إعادة جلب البيانات لضمان التحديث
         await fetchAttendance();
       } else {
         const errorData = await response.json();
-        alert(errorData.error || 'حدث خطأ في تسجيل الحضور');
+        alert(errorData.error || 'حدث خطأ في حفظ الحضور');
       }
     } catch (error) {
-      console.error('خطأ في تسجيل الحضور:', error);
-      alert('حدث خطأ في تسجيل الحضور');
+      console.error('خطأ في حفظ الحضور:', error);
+      alert('حدث خطأ في حفظ الحضور');
     } finally {
       setSaving(false);
     }
+  };
+
+  // إلغاء التغييرات
+  const cancelChanges = () => {
+    setPendingChanges(new Map());
+    setHasChanges(false);
+    // إعادة جلب البيانات لاستعادة الحالة الأصلية
+    fetchAttendance();
   };
 
   if (!session) {
@@ -221,7 +267,17 @@ export default function AttendancePage() {
 
   return (
     <div className="container mx-auto p-6" dir="rtl">
-      <h1 className="text-3xl font-bold mb-6">تسجيل الحضور والغياب</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">تسجيل الحضور والغياب</h1>
+        {preSelectedCourse && session?.user?.userRole === 'TEACHER' && (
+          <Link
+            href="/teacher"
+            className="text-blue-600 hover:text-blue-800 flex items-center gap-2"
+          >
+            ← العودة لاختيار الحلقة
+          </Link>
+        )}
+      </div>
 
       {/* اختيار الحلقة والتاريخ */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -254,6 +310,45 @@ export default function AttendancePage() {
           </div>
         </div>
       </div>
+
+      {/* أزرار الحفظ والإلغاء */}
+      {hasChanges && (
+        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+              <span className="text-yellow-800 font-medium">
+                يوجد {pendingChanges.size} تغيير غير محفوظ
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={cancelChanges}
+                disabled={saving}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white rounded transition-colors"
+              >
+                إلغاء التغييرات
+              </button>
+              <button
+                onClick={saveAllChanges}
+                disabled={saving}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded transition-colors flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    جاري الحفظ...
+                  </>
+                ) : (
+                  <>
+                    💾 حفظ جميع التغييرات
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* معلومات الحلقة والملخص */}
       {courseInfo && summary && (
@@ -345,17 +440,26 @@ export default function AttendancePage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex justify-center gap-2">
-                        {Object.entries(statusConfig).map(([status, config]) => (
-                          <button
-                            key={status}
-                            onClick={() => markAttendance(item.student.id, status as AttendanceStatus)}
-                            disabled={saving}
-                            className={`px-3 py-2 text-sm font-medium rounded border transition-colors hover:opacity-80 disabled:opacity-50 ${config.color}`}
-                            title={config.label}
-                          >
-                            {config.symbol}
-                          </button>
-                        ))}
+                        {Object.entries(statusConfig).map(([status, config]) => {
+                          const isSelected = item.status === status;
+                          const isPending = pendingChanges.has(item.student.id) && pendingChanges.get(item.student.id)?.status === status;
+                          return (
+                            <button
+                              key={status}
+                              onClick={() => markAttendanceLocal(item.student.id, status as AttendanceStatus)}
+                              disabled={saving}
+                              className={`px-3 py-2 text-sm font-medium rounded border transition-colors hover:opacity-80 disabled:opacity-50 ${
+                                isSelected || isPending
+                                  ? `${config.color} ring-2 ring-blue-500`
+                                  : `${config.color} opacity-60`
+                              } ${isPending ? 'animate-pulse' : ''}`}
+                              title={`${config.label}${isPending ? ' (مؤقت)' : ''}`}
+                            >
+                              {config.symbol}
+                              {isPending && <span className="text-xs ml-1">*</span>}
+                            </button>
+                          );
+                        })}
                       </div>
                     </td>
                   </tr>

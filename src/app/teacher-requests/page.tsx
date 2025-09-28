@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface Student {
   id: string;
@@ -48,6 +49,7 @@ interface RequestsData {
 export default function TeacherRequestsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [preSelectedCourse, setPreSelectedCourse] = useState<string>('');
   const [requestsData, setRequestsData] = useState<RequestsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -55,6 +57,15 @@ export default function TeacherRequestsPage() {
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
+
+  // التحقق من وجود courseId في URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseIdFromUrl = urlParams.get('courseId');
+    if (courseIdFromUrl) {
+      setPreSelectedCourse(courseIdFromUrl);
+    }
+  }, []);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -67,9 +78,19 @@ export default function TeacherRequestsPage() {
     fetchTeacherRequests();
   }, [session, status, router]);
 
+  // إعادة جلب البيانات عند تغيير الحلقة المختارة
+  useEffect(() => {
+    if (session && status === 'authenticated') {
+      fetchTeacherRequests();
+    }
+  }, [preSelectedCourse]);
+
   const fetchTeacherRequests = async () => {
     try {
-      const response = await fetch('/api/enrollment/teacher-requests');
+      const url = preSelectedCourse
+        ? `/api/enrollment/teacher-requests?courseId=${preSelectedCourse}`
+        : '/api/enrollment/teacher-requests';
+      const response = await fetch(url);
       const data = await response.json();
 
       if (response.ok) {
@@ -279,7 +300,17 @@ export default function TeacherRequestsPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">طلبات الانضمام للحلقات</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold text-gray-800">طلبات الانضمام للحلقات</h1>
+            {preSelectedCourse && (
+              <Link
+                href="/teacher"
+                className="text-blue-600 hover:text-blue-800 flex items-center gap-2"
+              >
+                ← العودة لاختيار الحلقة
+              </Link>
+            )}
+          </div>
           <p className="text-gray-600">إدارة طلبات الطالبات للانضمام لحلقاتك</p>
         </div>
 

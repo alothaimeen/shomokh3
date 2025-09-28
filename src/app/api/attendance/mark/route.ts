@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,30 +28,76 @@ export async function POST(request: NextRequest) {
     const attendanceDate = date ? new Date(date) : new Date();
     attendanceDate.setHours(0, 0, 0, 0);
 
-    // إرجاع استجابة نجاح مع بيانات اختبار
-    const sampleAttendance = {
-      id: `att-${Date.now()}`,
-      studentId,
-      courseId,
-      status,
-      notes,
-      date: attendanceDate,
-      student: {
-        id: studentId,
-        studentName: studentId === 'student-1' ? 'الطالبة فاطمة أحمد' :
-                     studentId === 'student-2' ? 'الطالبة عائشة محمد' :
-                     studentId === 'student-3' ? 'الطالبة خديجة علي' : 'طالبة اختبار',
-        studentNumber: parseInt(studentId.replace('student-', '')) + 1000,
+    // التحقق من وجود الطالبة والحلقة
+    const enrollment = await db.enrollment.findFirst({
+      where: {
+        studentId: studentId,
+        courseId: courseId,
+        isActive: true
       },
-      course: {
-        id: courseId,
-        courseName: courseId === 'course-1' ? 'حلقة الفجر' :
-                    courseId === 'course-2' ? 'حلقة المغرب' : 'حلقة العشاء',
+      include: {
+        student: {
+          select: {
+            id: true,
+            studentName: true,
+            studentNumber: true,
+          }
+        },
+        course: {
+          select: {
+            id: true,
+            courseName: true,
+          }
+        }
+      }
+    });
+
+    if (!enrollment) {
+      return NextResponse.json(
+        { error: 'الطالبة غير مسجلة في هذه الحلقة' },
+        { status: 400 }
+      );
+    }
+
+    // إنشاء أو تحديث سجل الحضور
+    const attendance = await db.attendance.upsert({
+      where: {
+        studentId_courseId_date: {
+          studentId: studentId,
+          courseId: courseId,
+          date: attendanceDate
+        }
       },
-    };
+      update: {
+        status: status,
+        notes: notes || null,
+      },
+      create: {
+        studentId: studentId,
+        courseId: courseId,
+        status: status,
+        notes: notes || null,
+        date: attendanceDate,
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            studentName: true,
+            studentNumber: true,
+          }
+        },
+        course: {
+          select: {
+            id: true,
+            courseName: true,
+          }
+        }
+      }
+    });
 
     return NextResponse.json({
-      attendance: sampleAttendance,
+      attendance: attendance,
       message: 'تم تسجيل الحضور بنجاح',
     });
 

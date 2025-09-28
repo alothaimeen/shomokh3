@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,111 +29,112 @@ export async function GET(request: NextRequest) {
     const targetDate = dateParam ? new Date(dateParam) : new Date();
     targetDate.setHours(0, 0, 0, 0);
 
-    // إرجاع بيانات اختبار للحضور
-    const sampleCourse = {
-      id: courseId,
-      courseName: courseId === 'course-1' ? 'حلقة الفجر' :
-                  courseId === 'course-2' ? 'حلقة المغرب' : 'حلقة العشاء',
-      level: courseId === 'course-1' ? 1 : courseId === 'course-2' ? 2 : 1,
-      program: {
-        id: 'prog-1',
-        programName: courseId === 'course-2' ? 'برنامج التجويد المتقدم' : 'برنامج الحفظ المكثف',
-      },
-      teacher: {
-        id: 'teacher-1',
-        userName: courseId === 'course-1' ? 'المعلمة سارة' :
-                  courseId === 'course-2' ? 'المعلمة نورا' : 'المعلمة ريم',
-      },
-    };
-
-    const sampleAttendanceData = [
-      {
-        student: {
-          id: 'student-1',
-          studentName: 'الطالبة فاطمة أحمد',
-          studentNumber: 1001,
-          studentPhone: '0501234567',
+    // جلب معلومات الحلقة
+    const course = await db.course.findUnique({
+      where: { id: courseId },
+      include: {
+        program: {
+          select: {
+            id: true,
+            programName: true,
+          }
         },
-        attendance: {
-          id: 'att-1',
-          status: 'PRESENT',
-          notes: null,
-        },
-        status: 'PRESENT',
-        notes: null,
-      },
-      {
-        student: {
-          id: 'student-2',
-          studentName: 'الطالبة عائشة محمد',
-          studentNumber: 1002,
-          studentPhone: '0507654321',
-        },
-        attendance: {
-          id: 'att-2',
-          status: 'LATE',
-          notes: 'تأخرت 10 دقائق',
-        },
-        status: 'LATE',
-        notes: 'تأخرت 10 دقائق',
-      },
-      {
-        student: {
-          id: 'student-3',
-          studentName: 'الطالبة خديجة علي',
-          studentNumber: 1003,
-          studentPhone: '0555555555',
-        },
-        attendance: null,
-        status: null,
-        notes: null,
-      },
-      {
-        student: {
-          id: 'student-4',
-          studentName: 'الطالبة زينب حسن',
-          studentNumber: 1004,
-          studentPhone: '0509876543',
-        },
-        attendance: {
-          id: 'att-4',
-          status: 'EXCUSED',
-          notes: 'إذن طبي',
-        },
-        status: 'EXCUSED',
-        notes: 'إذن طبي',
-      },
-      {
-        student: {
-          id: 'student-5',
-          studentName: 'الطالبة مريم علي',
-          studentNumber: 1005,
-          studentPhone: '0505551234',
-        },
-        attendance: {
-          id: 'att-5',
-          status: 'ABSENT',
-          notes: null,
-        },
-        status: 'ABSENT',
-        notes: null,
+        teacher: {
+          select: {
+            id: true,
+            userName: true,
+          }
+        }
       }
-    ];
+    });
 
+    if (!course) {
+      return NextResponse.json(
+        { error: 'الحلقة غير موجودة' },
+        { status: 404 }
+      );
+    }
+
+    // جلب جميع الطالبات المسجلات في الحلقة
+    const enrollments = await db.enrollment.findMany({
+      where: {
+        courseId: courseId,
+        isActive: true
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            studentName: true,
+            studentNumber: true,
+            studentPhone: true,
+          }
+        }
+      }
+    });
+
+    // جلب سجلات الحضور لليوم المحدد
+    const attendanceRecords = await db.attendance.findMany({
+      where: {
+        courseId: courseId,
+        date: targetDate
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            studentName: true,
+            studentNumber: true,
+            studentPhone: true,
+          }
+        }
+      }
+    });
+
+    // ربط البيانات: كل طالبة مع سجل حضورها (إن وُجد)
+    const attendanceData = enrollments.map(enrollment => {
+      const attendanceRecord = attendanceRecords.find(
+        record => record.studentId === enrollment.student.id
+      );
+
+      return {
+        student: {
+          id: enrollment.student.id,
+          studentName: enrollment.student.studentName,
+          studentNumber: enrollment.student.studentNumber,
+          studentPhone: enrollment.student.studentPhone,
+        },
+        attendance: attendanceRecord ? {
+          id: attendanceRecord.id,
+          status: attendanceRecord.status,
+          notes: attendanceRecord.notes,
+        } : null,
+        status: attendanceRecord?.status || null,
+        notes: attendanceRecord?.notes || null,
+      };
+    });
+
+    // حساب الملخص
     const summary = {
-      totalStudents: 5,
-      presentCount: 1,
-      absentCount: 1,
-      lateCount: 1,
-      excusedCount: 1,
-      leftEarlyCount: 0,
-      notMarkedCount: 1,
+      totalStudents: attendanceData.length,
+      presentCount: attendanceData.filter(item => item.status === 'PRESENT').length,
+      absentCount: attendanceData.filter(item => item.status === 'ABSENT').length,
+      lateCount: attendanceData.filter(item => item.status === 'LATE').length,
+      excusedCount: attendanceData.filter(item => item.status === 'EXCUSED').length,
+      leftEarlyCount: attendanceData.filter(item => item.status === 'LEFT_EARLY').length,
+      notMarkedCount: attendanceData.filter(item => item.status === null).length,
     };
 
     return NextResponse.json({
-      course: sampleCourse,
+      course: {
+        id: course.id,
+        courseName: course.courseName,
+        level: course.level,
+        program: course.program,
+        teacher: course.teacher,
+      },
       date: targetDate,
-      attendanceData: sampleAttendanceData,
+      attendanceData,
       summary,
     });
 

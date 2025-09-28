@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [stats, setStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
     if (status === "loading") return; // لا تفعل شيء أثناء التحميل
@@ -15,6 +17,26 @@ export default function DashboardPage() {
       router.push('/login');
     }
   }, [session, status, router]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!session) return;
+
+      try {
+        const response = await fetch('/api/dashboard/stats');
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error('خطأ في جلب الإحصائيات:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, [session]);
 
   if (status === "loading") {
     return (
@@ -37,11 +59,12 @@ export default function DashboardPage() {
     userRole: session.user?.role || "STUDENT"
   };
 
-  const testStats = {
-    totalUsers: 25,
-    totalPrograms: 3,
-    totalCourses: 8,
-    totalStudents: 18
+  // استخدام الإحصائيات الحقيقية أو القيم الافتراضية
+  const currentStats = stats || {
+    totalUsers: 0,
+    totalPrograms: 0,
+    totalCourses: 0,
+    totalStudents: 0
   };
 
   // محتوى مختلف حسب الدور
@@ -78,11 +101,8 @@ export default function DashboardPage() {
         return {
           title: 'لوحة تحكم المعلمة',
           actions: [
-            { title: 'الحضور والغياب', color: 'bg-red-600 hover:bg-red-700', icon: '✅', link: '/attendance' },
-            { title: 'طلبات الانضمام', color: 'bg-blue-600 hover:bg-blue-700', icon: '📋', link: '/teacher-requests' },
-            { title: 'الطالبات المسجلات', color: 'bg-teal-600 hover:bg-teal-700', icon: '📝', link: '/enrolled-students' },
+            { title: 'اختيار الحلقة', color: 'bg-purple-600 hover:bg-purple-700', icon: '🎯', link: '/teacher' },
             { title: 'البرامج والحلقات', color: 'bg-green-600 hover:bg-green-700', icon: '📚', link: '/programs' },
-            { title: 'بيانات الطالبات', color: 'bg-indigo-600 hover:bg-indigo-700', icon: '👩‍🎓', link: '/students' },
           ],
           stats: ['totalCourses', 'totalStudents']
         };
@@ -146,12 +166,13 @@ export default function DashboardPage() {
           {roleContent.stats.length > 0 && (
             <div className={`grid grid-cols-1 md:grid-cols-2 ${roleContent.stats.length > 2 ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-6 mb-8`}>
               {roleContent.stats.map((statKey) => {
-                const statConfig = {
+                const statConfigMap = {
                   totalUsers: { label: 'إجمالي المستخدمين', icon: '👥', color: 'bg-blue-500' },
                   totalPrograms: { label: 'البرامج التعليمية', icon: '📚', color: 'bg-green-500' },
                   totalCourses: { label: 'الحلقات', icon: '🎓', color: 'bg-purple-500' },
                   totalStudents: { label: 'الطالبات', icon: '👩‍🎓', color: 'bg-orange-500' },
-                }[statKey as keyof typeof testStats];
+                };
+                const statConfig = statConfigMap[statKey as keyof typeof statConfigMap];
 
                 if (!statConfig) return null;
 
@@ -170,7 +191,7 @@ export default function DashboardPage() {
                               {statConfig.label}
                             </dt>
                             <dd className="text-lg font-medium text-gray-900">
-                              {testStats[statKey as keyof typeof testStats]}
+                              {loadingStats ? '...' : currentStats[statKey as keyof typeof currentStats]}
                             </dd>
                           </dl>
                         </div>

@@ -24,7 +24,7 @@ export default withAuth(
     const rolePermissions = {
       ADMIN: ['/dashboard', '/users', '/programs', '/students', '/attendance', '/attendance-report', '/academic-reports', '/reports', '/enrolled-students', '/teacher-requests', '/enrollment', '/my-attendance', '/my-grades', '/daily-tasks', '/profile'], // يمكنه الوصول لكل شيء
       MANAGER: ['/dashboard', '/programs', '/students', '/attendance', '/attendance-report', '/academic-reports', '/enrolled-students', '/teacher-requests', '/profile'], // لا يمكنه الوصول لإدارة المستخدمين
-      TEACHER: ['/dashboard', '/programs', '/students', '/attendance', '/teacher-requests', '/enrolled-students', '/profile'], // يمكنه إدارة حلقاته وطالباته
+      TEACHER: ['/dashboard', '/teacher', '/programs', '/students', '/attendance', '/teacher-requests', '/enrolled-students', '/profile'], // يمكنه إدارة حلقاته وطالباته
       STUDENT: ['/dashboard', '/enrollment', '/programs', '/my-attendance', '/my-grades', '/daily-tasks', '/profile'], // يمكنه طلب الانضمام ومشاهدة حضوره ودرجاته ومهامه
     };
 
@@ -33,7 +33,7 @@ export default withAuth(
 
     // التحقق إذا كان المسار مسموح للدور الحالي
     const hasAccess = allowedPaths.some(allowedPath =>
-      path.startsWith(allowedPath) || path === '/' || path === '/api/auth' || path.startsWith('/api/attendance') || path.startsWith('/api/enrollment') || path.startsWith('/api/grades') || path.startsWith('/api/tasks')
+      path.startsWith(allowedPath) || path === '/' || path === '/api/auth' || path.startsWith('/api/attendance') || path.startsWith('/api/enrollment') || path.startsWith('/api/grades') || path.startsWith('/api/tasks') || path.startsWith('/api/dashboard') || path.startsWith('/api/programs') || path.startsWith('/api/students') || path.startsWith('/api/users')
     );
 
     if (!hasAccess) {
@@ -59,7 +59,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // حماية جميع المسارات عدا الصفحة الرئيسية، تسجيل الدخول، والملفات الثابتة
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|login|$).*)',
+    // حماية جميع المسارات عدا الصفحة الرئيسية، تسجيل الدخول، التسجيل، والملفات الثابتة
+    '/((?!api/auth|api/students/register|_next/static|_next/image|favicon.ico|login|register|$).*)',
   ],
 };
