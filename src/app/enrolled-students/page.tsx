@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -71,25 +71,7 @@ export default function EnrolledStudentsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (status === 'loading') return;
-
-    if (!session || !['TEACHER', 'ADMIN', 'MANAGER'].includes(session.user.userRole)) {
-      router.push('/dashboard');
-      return;
-    }
-
-    fetchEnrolledStudents();
-  }, [session, status, router]);
-
-  // إعادة جلب البيانات عند تغيير الحلقة المختارة
-  useEffect(() => {
-    if (session && status === 'authenticated') {
-      fetchEnrolledStudents();
-    }
-  }, [preSelectedCourse]);
-
-  const fetchEnrolledStudents = async () => {
+  const fetchEnrolledStudents = useCallback(async () => {
     try {
       const url = preSelectedCourse
         ? `/api/enrollment/enrolled-students?courseId=${preSelectedCourse}`
@@ -137,7 +119,25 @@ export default function EnrolledStudentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [preSelectedCourse]);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (!session || !['TEACHER', 'ADMIN', 'MANAGER'].includes(session.user.userRole)) {
+      router.push('/dashboard');
+      return;
+    }
+
+    fetchEnrolledStudents();
+  }, [session, status, router, fetchEnrolledStudents]);
+
+  // إعادة جلب البيانات عند تغيير الحلقة المختارة
+  useEffect(() => {
+    if (session && status === 'authenticated') {
+      fetchEnrolledStudents();
+    }
+  }, [preSelectedCourse, session, status, fetchEnrolledStudents]);
 
   const handleCancelEnrollment = async (enrollmentId: string) => {
     if (processing) return;

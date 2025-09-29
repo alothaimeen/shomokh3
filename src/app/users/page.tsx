@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 
 // أنواع البيانات
@@ -28,14 +28,7 @@ export default function UsersPage() {
     }
   }, [session, router]);
 
-  // جلب المستخدمين
-  useEffect(() => {
-    if (session && session.user.userRole === 'ADMIN') {
-      fetchUsers();
-    }
-  }, [session]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/users');
@@ -53,7 +46,14 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // جلب المستخدمين
+  useEffect(() => {
+    if (session && session.user.userRole === 'ADMIN') {
+      fetchUsers();
+    }
+  }, [session, fetchUsers]);
 
   const setFallbackUsers = () => {
     const fallbackUsers: User[] = [

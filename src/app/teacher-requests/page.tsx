@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -67,25 +67,7 @@ export default function TeacherRequestsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (status === 'loading') return;
-
-    if (!session || session.user.userRole !== 'TEACHER') {
-      router.push('/dashboard');
-      return;
-    }
-
-    fetchTeacherRequests();
-  }, [session, status, router]);
-
-  // إعادة جلب البيانات عند تغيير الحلقة المختارة
-  useEffect(() => {
-    if (session && status === 'authenticated') {
-      fetchTeacherRequests();
-    }
-  }, [preSelectedCourse]);
-
-  const fetchTeacherRequests = async () => {
+  const fetchTeacherRequests = useCallback(async () => {
     try {
       const url = preSelectedCourse
         ? `/api/enrollment/teacher-requests?courseId=${preSelectedCourse}`
@@ -110,7 +92,25 @@ export default function TeacherRequestsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [preSelectedCourse]);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (!session || session.user.userRole !== 'TEACHER') {
+      router.push('/dashboard');
+      return;
+    }
+
+    fetchTeacherRequests();
+  }, [session, status, router, fetchTeacherRequests]);
+
+  // إعادة جلب البيانات عند تغيير الحلقة المختارة
+  useEffect(() => {
+    if (session && status === 'authenticated') {
+      fetchTeacherRequests();
+    }
+  }, [preSelectedCourse, session, status, fetchTeacherRequests]);
 
   const handleSingleAction = async (requestId: string, action: 'accept' | 'reject') => {
     if (processing) return;

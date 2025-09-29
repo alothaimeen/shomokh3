@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -33,18 +33,7 @@ export default function DailyTasksPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === 'loading') return;
-
-    if (!session || session.user.userRole !== 'STUDENT') {
-      router.push('/dashboard');
-      return;
-    }
-
-    fetchDailyTasks();
-  }, [session, status, router]);
-
-  const fetchDailyTasks = async () => {
+  const fetchDailyTasks = useCallback(async () => {
     try {
       const response = await fetch('/api/tasks/daily-tasks');
       if (!response.ok) {
@@ -61,7 +50,18 @@ export default function DailyTasksPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (!session || session.user.userRole !== 'STUDENT') {
+      router.push('/dashboard');
+      return;
+    }
+
+    fetchDailyTasks();
+  }, [session, status, router, fetchDailyTasks]);
 
   const getFallbackTasks = (): DailyTask[] => {
     const today = new Date().toISOString().split('T')[0];

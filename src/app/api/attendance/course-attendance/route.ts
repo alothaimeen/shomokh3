@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     // تحديد التاريخ (اليوم الحالي إذا لم يتم تحديده)
     const targetDate = dateParam ? new Date(dateParam) : new Date();
     targetDate.setHours(0, 0, 0, 0);
+    console.log(`Fetching attendance for date: ${targetDate.toISOString()}`);
 
     // جلب معلومات الحلقة
     const course = await db.course.findUnique({
@@ -89,6 +90,11 @@ export async function GET(request: NextRequest) {
           }
         }
       }
+    });
+
+    console.log(`Found ${attendanceRecords.length} attendance records`);
+    attendanceRecords.forEach(record => {
+      console.log(`Student ${record.student.studentName}: ${record.status} on ${record.date.toISOString()}`);
     });
 
     // ربط البيانات: كل طالبة مع سجل حضورها (إن وُجد)

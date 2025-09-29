@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { attendanceRecords } = await request.json();
+    console.log('Received attendance records for bulk save:', attendanceRecords);
 
     if (!Array.isArray(attendanceRecords) || attendanceRecords.length === 0) {
       return NextResponse.json({ error: 'لا توجد سجلات حضور للحفظ' }, { status: 400 });
@@ -48,13 +49,22 @@ export async function POST(request: NextRequest) {
         }
 
         // البحث عن سجل حضور موجود
+        const searchDate = new Date(date);
+        searchDate.setHours(0, 0, 0, 0); // ضبط التاريخ بدون وقت
+        console.log(`Searching for attendance on date: ${searchDate.toISOString()}`);
+
         const existingAttendance = await prisma.attendance.findFirst({
           where: {
             studentId,
             courseId,
-            date: new Date(date),
+            date: searchDate,
           },
         });
+
+        console.log(`Found existing attendance: ${existingAttendance ? 'yes' : 'no'}`);
+        if (existingAttendance) {
+          console.log(`Existing attendance date: ${existingAttendance.date.toISOString()}`);
+        }
 
         let attendanceRecord;
 
@@ -70,13 +80,16 @@ export async function POST(request: NextRequest) {
           });
         } else {
           // إنشاء سجل جديد
+          const attendanceDate = new Date(date);
+          attendanceDate.setHours(0, 0, 0, 0); // ضبط التاريخ بدون وقت
+
           attendanceRecord = await prisma.attendance.create({
             data: {
               studentId,
               courseId,
               status,
               notes: notes || '',
-              date: new Date(date),
+              date: attendanceDate,
             },
           });
         }

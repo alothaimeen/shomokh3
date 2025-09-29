@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -35,18 +35,7 @@ export default function MyGradesPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'summary' | 'daily' | 'weekly' | 'monthly' | 'final' | 'behavior'>('summary');
 
-  useEffect(() => {
-    if (status === 'loading') return;
-
-    if (!session || session.user.userRole !== 'STUDENT') {
-      router.push('/dashboard');
-      return;
-    }
-
-    fetchMyGrades();
-  }, [session, status, router]);
-
-  const fetchMyGrades = async () => {
+  const fetchMyGrades = useCallback(async () => {
     try {
       const response = await fetch('/api/grades/my-grades');
       if (!response.ok) {
@@ -63,7 +52,18 @@ export default function MyGradesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (!session || session.user.userRole !== 'STUDENT') {
+      router.push('/dashboard');
+      return;
+    }
+
+    fetchMyGrades();
+  }, [session, status, router, fetchMyGrades]);
 
   const getFallbackGrades = (): Grade[] => {
     return [

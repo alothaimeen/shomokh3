@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 
 interface Student {
@@ -47,21 +47,7 @@ export default function StudentsPage() {
     }
   }, [session, status, router]);
 
-  // جلب الطالبات من قاعدة البيانات
-  useEffect(() => {
-    if (session) {
-      fetchStudents();
-    }
-  }, [session]);
-
-  // جلب الطالبات مع البحث والفلترة
-  useEffect(() => {
-    if (session) {
-      fetchStudents();
-    }
-  }, [session, searchTerm, paymentFilter]);
-
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
@@ -80,7 +66,14 @@ export default function StudentsPage() {
       console.error('خطأ في الاتصال:', error);
       setFallbackStudents();
     }
-  };
+  }, [searchTerm, paymentFilter]);
+
+  // جلب الطالبات مع البحث والفلترة (useEffect موحد)
+  useEffect(() => {
+    if (session) {
+      fetchStudents();
+    }
+  }, [session, fetchStudents]);
 
   const setFallbackStudents = () => {
     const mockStudents: Student[] = [

@@ -108,7 +108,7 @@ export default function AttendancePage() {
   const [hasChanges, setHasChanges] = useState(false);
 
   // تعريف الدوال أولاً
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     try {
       const response = await fetch('/api/attendance/teacher-courses');
 
@@ -133,7 +133,7 @@ export default function AttendancePage() {
     } catch (error) {
       console.error('خطأ في جلب الحلقات:', error);
     }
-  };
+  }, [preSelectedCourse]);
 
   const fetchAttendance = useCallback(async () => {
     setLoading(true);
@@ -188,7 +188,7 @@ export default function AttendancePage() {
     if (session) {
       fetchCourses();
     }
-  }, [session]);
+  }, [session, fetchCourses]);
 
   // جلب الحضور عند تغيير الحلقة أو التاريخ
   useEffect(() => {
@@ -197,24 +197,51 @@ export default function AttendancePage() {
     }
   }, [selectedCourse, selectedDate, fetchAttendance]);
 
+  // تحديث الملخص الإحصائي
+  const updateSummary = (updatedData: AttendanceData[]) => {
+    const newSummary = {
+      totalStudents: updatedData.length,
+      presentCount: updatedData.filter(item => item.status === 'PRESENT').length,
+      absentCount: updatedData.filter(item => item.status === 'ABSENT').length,
+      lateCount: updatedData.filter(item => item.status === 'LATE').length,
+      excusedCount: updatedData.filter(item => item.status === 'EXCUSED').length,
+      leftEarlyCount: updatedData.filter(item => item.status === 'LEFT_EARLY').length,
+      notMarkedCount: updatedData.filter(item => !item.status).length,
+    };
+    setSummary(newSummary);
+  };
+
   // تسجيل تغيير مؤقت (بدون حفظ فوري)
   const markAttendanceLocal = (studentId: string, status: AttendanceStatus, notes?: string) => {
+    console.log('markAttendanceLocal called:', { studentId, status, notes });
+
     const newChanges = new Map(pendingChanges);
     newChanges.set(studentId, { status, notes });
     setPendingChanges(newChanges);
     setHasChanges(true);
 
+    console.log('Updated pendingChanges:', newChanges);
+
     // تحديث العرض المحلي
-    setAttendanceData(prev => prev.map(item =>
+    const updatedData = attendanceData.map(item =>
       item.student.id === studentId
         ? { ...item, status, notes: notes || null }
         : item
-    ));
+    );
+    setAttendanceData(updatedData);
+
+    // تحديث الملخص الإحصائي
+    updateSummary(updatedData);
   };
 
   // حفظ جميع التغييرات دفعة واحدة
   const saveAllChanges = async () => {
-    if (pendingChanges.size === 0) return;
+    console.log('saveAllChanges called, pendingChanges:', pendingChanges);
+
+    if (pendingChanges.size === 0) {
+      console.log('No pending changes to save');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -226,6 +253,8 @@ export default function AttendancePage() {
         date: selectedDate,
       }));
 
+      console.log('Sending attendance records:', attendanceRecords);
+
       const response = await fetch('/api/attendance/bulk-mark', {
         method: 'POST',
         headers: {
@@ -234,8 +263,11 @@ export default function AttendancePage() {
         body: JSON.stringify({ attendanceRecords }),
       });
 
+      console.log('Response status:', response.status);
+
       if (response.ok) {
         const result = await response.json();
+        console.log('Save successful:', result);
         alert(result.message);
         setPendingChanges(new Map());
         setHasChanges(false);
@@ -243,6 +275,7 @@ export default function AttendancePage() {
         await fetchAttendance();
       } else {
         const errorData = await response.json();
+        console.error('Save failed:', errorData);
         alert(errorData.error || 'حدث خطأ في حفظ الحضور');
       }
     } catch (error) {
