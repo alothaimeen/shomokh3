@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || !session.user.email || !['TEACHER', 'ADMIN', 'MANAGER'].includes(session.user.userRole)) {
+    if (!session || !session.user.email || !['TEACHER', 'ADMIN'].includes(session.user.userRole)) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
 

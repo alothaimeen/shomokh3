@@ -65,7 +65,7 @@ export default function AttendanceReportPage() {
 
   // التحقق من الصلاحيات
   useEffect(() => {
-    if (session && !['ADMIN', 'MANAGER'].includes(session.user.userRole)) {
+    if (session && session.user.userRole !== 'ADMIN') {
       router.push('/dashboard');
     }
   }, [session, router]);

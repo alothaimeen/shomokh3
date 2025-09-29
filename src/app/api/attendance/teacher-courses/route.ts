@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || !['ADMIN', 'MANAGER', 'TEACHER'].includes(session.user.userRole)) {
+    if (!session || !['ADMIN', 'TEACHER'].includes(session.user.userRole)) {
       return NextResponse.json(
         { error: 'غير مصرح لك بالوصول' },
         { status: 403 }
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         }
       };
     }
-    // للـ ADMIN والـ MANAGER، جلب جميع الحلقات النشطة
+    // للـ ADMIN، جلب جميع الحلقات النشطة
 
     const courses = await db.course.findMany({
       where: whereCondition,

@@ -134,27 +134,16 @@ export default function LoginPage() {
             دخول سريع تجريبي
           </h3>
 
-          <div className="grid grid-cols-2 gap-3">
-            {/* زر ادمن */}
+          <div className="grid grid-cols-3 gap-3">
+            {/* زر المدير */}
             <button
               onClick={() => quickLogin('admin@shamokh.edu', 'admin123')}
               disabled={isLoading}
               className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="text-lg mb-1">👑</span>
-              <span className="text-sm font-medium">ادمن</span>
-              <span className="text-xs text-gray-500">المدير الأعلى</span>
-            </button>
-
-            {/* زر مدير أكاديمي */}
-            <button
-              onClick={() => quickLogin('manager1@shamokh.edu', 'manager123')}
-              disabled={isLoading}
-              className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span className="text-lg mb-1">👨‍💼</span>
-              <span className="text-sm font-medium">مدير أكاديمي</span>
-              <span className="text-xs text-gray-500">الإدارة التعليمية</span>
+              <span className="text-sm font-medium">المدير</span>
+              <span className="text-xs text-gray-500">صلاحيات كاملة</span>
             </button>
 
             {/* زر معلمة */}
@@ -184,8 +173,7 @@ export default function LoginPage() {
           <div className="mt-4 p-3 bg-gray-50 rounded-md">
             <h4 className="text-xs font-medium text-gray-700 mb-2">معلومات الحسابات التجريبية:</h4>
             <div className="space-y-1 text-xs text-gray-600">
-              <div><strong>ادمن:</strong> admin@shamokh.edu / admin123</div>
-              <div><strong>مدير:</strong> manager1@shamokh.edu / manager123</div>
+              <div><strong>المدير:</strong> admin@shamokh.edu / admin123</div>
               <div><strong>معلمة:</strong> teacher1@shamokh.edu / teacher123</div>
               <div><strong>طالبة:</strong> student1@shamokh.edu / student123</div>
             </div>

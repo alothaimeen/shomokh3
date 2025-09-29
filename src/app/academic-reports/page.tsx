@@ -12,7 +12,7 @@ export default function AcademicReportsPage() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (!session || !['ADMIN', 'MANAGER'].includes(session.user.userRole)) {
+    if (!session || session.user.userRole !== 'ADMIN') {
       router.push('/dashboard');
       return;
     }

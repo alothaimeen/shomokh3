@@ -135,7 +135,7 @@ export default function CoursesPage() {
   if (!session) return null;
 
   const userRole = session.user?.role;
-  const canManageCourses = userRole === 'ADMIN' || userRole === 'MANAGER';
+  const canManageCourses = userRole === 'ADMIN';
 
   const handleAddCourse = () => {
     if (newCourse.courseName.trim()) {

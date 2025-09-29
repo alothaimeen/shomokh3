@@ -72,7 +72,7 @@ export default function DashboardPage() {
     switch (currentUser.userRole) {
       case 'ADMIN':
         return {
-          title: 'لوحة تحكم المدير الأعلى',
+          title: 'لوحة تحكم المدير',
           actions: [
             { title: 'إدارة المستخدمين', color: 'bg-blue-600 hover:bg-blue-700', icon: '👥', link: '/users' },
             { title: 'إدارة البرامج', color: 'bg-green-600 hover:bg-green-700', icon: '📚', link: '/programs' },
