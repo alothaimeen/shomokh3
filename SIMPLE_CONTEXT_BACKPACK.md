@@ -534,11 +534,13 @@ const testData = {
 ```yaml
 التقنيات الإلزامية:
   - Next.js 15 + TypeScript strict
-  - PostgreSQL مرن (محلي للتطوير) + Prisma + RLS
-  - NextAuth مع 4 أدوار (ADMIN, MANAGER, TEACHER, STUDENT)
-  - shadcn/ui للمكونات
+  - Supabase (PostgreSQL) + Prisma
+  - NextAuth مع 3 أدوار (ADMIN, TEACHER, STUDENT) - محدث في 29 سبتمبر 2025
+  - Tailwind CSS للتصميم
   - Environment Variables للمرونة
   - Docker support للنشر السهل
+
+ملاحظة: تم حذف دور MANAGER للتبسيط - صلاحياته ضُمّت إلى ADMIN
 ```
 
 ### معايير النجاح للجلسة الحالية
@@ -613,7 +615,7 @@ export async function GET(request: NextRequest) {
 
     // 3. التحقق من الصلاحيات (إلزامي)
     const userRole = session.user.userRole;
-    if (!['ADMIN', 'MANAGER'].includes(userRole)) {
+    if (userRole !== 'ADMIN') {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     }
 
@@ -1084,10 +1086,9 @@ class EnhancedDatabaseService {
 ```bash
 # scripts/comprehensive-check.js
 const REQUIRED_PAGES = {
-  ADMIN: ['/dashboard', '/users', '/attendance-report', '/academic-reports'],
-  MANAGER: ['/dashboard', '/attendance-report', '/academic-reports'],
-  TEACHER: ['/dashboard', '/attendance', '/enrolled-students'],
-  STUDENT: ['/dashboard', '/enrollment']
+  ADMIN: ['/dashboard', '/users', '/attendance-report', '/academic-reports', '/programs', '/students'],
+  TEACHER: ['/dashboard', '/attendance', '/enrolled-students', '/teacher'],
+  STUDENT: ['/dashboard', '/enrollment', '/my-grades', '/daily-tasks']
 };
 
 async function checkAllPages() {

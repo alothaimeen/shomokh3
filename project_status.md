@@ -548,3 +548,60 @@ npx prisma migrate dev # تطبيق migrations
 ✅ **مشكلة الحفظ محلولة** - التغييرات تظهر بعد الحفظ وإعادة التحميل
 ✅ **تحسين تجربة المستخدم** - تحديث فوري للإحصائيات عند تغيير الحالة
 ✅ **نظام تشخيص متقدم** - console.log لتتبع العمليات
+
+---
+
+## 🔧 إصلاح شامل: حذف دور المدير الأكاديمي (MANAGER) - 29 سبتمبر 2025
+
+### السبب والاستراتيجية:
+- **القرار:** حذف دور MANAGER بالكامل من النظام للتبسيط
+- **الهدف:** POC مبسط مع 3 أدوار فقط (ADMIN, TEACHER, STUDENT)
+- **المستقبل:** سيتم إضافة نظام الصلاحيات المتقدم في الجلسة 29
+
+### التغييرات المنفذة:
+
+#### 1. Schema & Database (1 ملف):
+- ✅ **prisma/schema.prisma:** حذف MANAGER من UserRole enum
+- ✅ **تشغيل prisma generate:** تم بنجاح بدون أخطاء
+
+#### 2. Authentication & Authorization (2 ملف):
+- ✅ **src/lib/auth.ts:** حذف مستخدم MANAGER التجريبي من testUsers
+- ✅ **src/middleware.ts:** حذف MANAGER من rolePermissions
+
+#### 3. Dashboard (1 ملف):
+- ✅ **src/app/dashboard/page.tsx:** حذف case MANAGER بالكامل (87-99)
+
+#### 4. API Routes (5 ملفات):
+- ✅ **src/app/api/users/route.ts:** تحديث validRoles + حذف من fallbackUsers
+- ✅ **src/app/api/programs/route.ts:** تغيير من array check إلى ADMIN مباشر
+- ✅ **src/app/api/students/route.ts:** حذف من 4 permission checks
+- ✅ **src/app/api/attendance/bulk-mark/route.ts:** حذف من permission array
+- ✅ **src/app/api/enrollment/enrolled-students/route.ts:** حذف من checks والتعليقات
+
+#### 5. Frontend Pages (5 ملفات):
+- ✅ **src/app/users/page.tsx:** حذف من fallbackUsers, roleColors, roleLabels, statistics grid
+- ✅ **src/app/programs/page.tsx:** canManagePrograms الآن ADMIN فقط
+- ✅ **src/app/students/page.tsx:** canManageStudents الآن ADMIN/TEACHER فقط
+- ✅ **src/app/attendance/page.tsx:** حذف من permission check
+- ✅ **src/app/enrolled-students/page.tsx:** حذف من permission check
+
+#### 6. Scripts (1 ملف):
+- ✅ **scripts/setup-database.js:** حذف مستخدم MANAGER التجريبي
+
+### الاختبارات:
+- ✅ **npx prisma generate:** نجح بدون أخطاء
+- ✅ **npm run build:** نجح بدون أخطاء (42 route)
+- ✅ **جميع TypeScript checks:** نجحت
+
+### Git Commits:
+- ✅ **Commit 21223c8:** "قبل حذف دور المدير" (safety backup)
+- ✅ **Commit c1c6de9:** "feat: حذف دور المدير الأكاديمي (MANAGER) من النظام"
+
+### النتيجة النهائية:
+- **الأدوار المدعومة الآن:** ADMIN, TEACHER, STUDENT (3 أدوار فقط)
+- **صلاحيات ADMIN:** كل صلاحيات MANAGER السابقة + صلاحيات النظام
+- **الاستقرار:** النظام يعمل بشكل كامل بدون أخطاء
+- **الملفات المعدلة:** 15 ملف (Schema, Auth, APIs, Pages, Scripts)
+
+### الخطوة التالية:
+📝 تحديث ملفات الوثائق (الخطة البسيطة والكاملة + SIMPLE_CONTEXT_BACKPACK) لتعكس التغييرات
