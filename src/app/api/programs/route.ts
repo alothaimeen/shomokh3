@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // التحقق من الصلاحيات
     const userRole = session.user.userRole;
-    if (!['ADMIN', 'MANAGER'].includes(userRole)) {
+    if (userRole !== 'ADMIN') {
       return NextResponse.json({ error: 'لا تملك صلاحية إضافة البرامج' }, { status: 403 });
     }
 
@@ -97,7 +97,7 @@ export async function PUT(request: NextRequest) {
 
     // التحقق من الصلاحيات
     const userRole = session.user.userRole;
-    if (!['ADMIN', 'MANAGER'].includes(userRole)) {
+    if (userRole !== 'ADMIN') {
       return NextResponse.json({ error: 'لا تملك صلاحية تعديل البرامج' }, { status: 403 });
     }
 

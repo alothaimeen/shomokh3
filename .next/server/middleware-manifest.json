@@ -10,15 +10,18 @@
       "page": "/",
       "matchers": [
         {
-          "regexp": "^/.*$",
-          "originalSource": "/:path*"
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!api\\/auth|api\\/students\\/register|_next\\/static|_next\\/image|favicon.ico|login|register|$).*))(.json)?[\\/#\\?]?$",
+          "originalSource": "/((?!api/auth|api/students/register|_next/static|_next/image|favicon.ico|login|register|$).*)"
         }
       ],
       "wasm": [],
       "assets": [],
       "env": {
-        "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "KU+UWJST68FBEXv0Hhq3To0iY2t+BbkBx3gC4inivQc="
+        "__NEXT_BUILD_ID": "iblmXJcL9NNied7jwI7Zx",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "KU+UWJST68FBEXv0Hhq3To0iY2t+BbkBx3gC4inivQc=",
+        "__NEXT_PREVIEW_MODE_ID": "7f1e4ee4fae3c79a3f74b662e8e99f8d",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "5361faa2310b9b8ced3f066be3d3a5c241ec27b56816eebaffea532dfb98ece2",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "e1a74b4ab243f131c055914fb7c36ee3140255320dbd7d7b3691514f05fa9bf2"
       }
     }
   },

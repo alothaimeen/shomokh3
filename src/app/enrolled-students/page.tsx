@@ -124,7 +124,7 @@ export default function EnrolledStudentsPage() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (!session || !['TEACHER', 'ADMIN', 'MANAGER'].includes(session.user.userRole)) {
+    if (!session || !['TEACHER', 'ADMIN'].includes(session.user.userRole)) {
       router.push('/dashboard');
       return;
     }

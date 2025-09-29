@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     // التحقق من الصلاحيات
     const userRole = session.user.userRole;
-    if (!['ADMIN', 'MANAGER', 'TEACHER'].includes(userRole)) {
+    if (!['ADMIN', 'TEACHER'].includes(userRole)) {
       return NextResponse.json({ error: 'لا تملك صلاحية عرض بيانات الطالبات' }, { status: 403 });
     }
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     // التحقق من الصلاحيات
     const userRole = session.user.userRole;
-    if (!['ADMIN', 'MANAGER', 'TEACHER'].includes(userRole)) {
+    if (!['ADMIN', 'TEACHER'].includes(userRole)) {
       return NextResponse.json({ error: 'لا تملك صلاحية إضافة الطالبات' }, { status: 403 });
     }
 
@@ -125,7 +125,7 @@ export async function PUT(request: NextRequest) {
 
     // التحقق من الصلاحيات
     const userRole = session.user.userRole;
-    if (!['ADMIN', 'MANAGER', 'TEACHER'].includes(userRole)) {
+    if (!['ADMIN', 'TEACHER'].includes(userRole)) {
       return NextResponse.json({ error: 'لا تملك صلاحية تعديل الطالبات' }, { status: 403 });
     }
 
@@ -170,7 +170,7 @@ export async function DELETE(request: NextRequest) {
 
     // التحقق من الصلاحيات
     const userRole = session.user.userRole;
-    if (!['ADMIN', 'MANAGER'].includes(userRole)) {
+    if (userRole !== 'ADMIN') {
       return NextResponse.json({ error: 'لا تملك صلاحية إيقاف الطالبات' }, { status: 403 });
     }
 

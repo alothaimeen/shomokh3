@@ -13,13 +13,6 @@ const testUsers = [
     userRole: "ADMIN"
   },
   {
-    id: "manager-1",
-    userName: "المدير الأكاديمي",
-    userEmail: "manager1@shamokh.edu",
-    password: "manager123",
-    userRole: "MANAGER"
-  },
-  {
     id: "teacher-1",
     userName: "المعلمة سارة",
     userEmail: "teacher1@shamokh.edu",

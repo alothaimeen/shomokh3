@@ -47,14 +47,6 @@ export async function GET(request: NextRequest) {
           createdAt: new Date().toISOString()
         },
         {
-          id: 'manager-1',
-          userName: 'المدير الأكاديمي',
-          userEmail: 'manager1@shamokh.edu',
-          userRole: 'MANAGER',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
           id: 'teacher-1',
           userName: 'المعلمة سارة',
           userEmail: 'teacher1@shamokh.edu',
@@ -110,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     // التحقق من الدور
-    const validRoles = ['ADMIN', 'MANAGER', 'TEACHER', 'STUDENT'];
+    const validRoles = ['ADMIN', 'TEACHER', 'STUDENT'];
     if (!validRoles.includes(newUserRole)) {
       return NextResponse.json({ error: 'دور المستخدم غير صالح' }, { status: 400 });
     }

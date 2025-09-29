@@ -21,7 +21,10 @@
       "Bash(powershell:*)",
       "Bash(psql:*)",
       "Bash(pg_config:*)",
-      "Bash(where postgres)"
+      "Bash(where postgres)",
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

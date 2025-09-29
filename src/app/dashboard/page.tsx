@@ -84,19 +84,6 @@ export default function DashboardPage() {
           ],
           stats: ['totalUsers', 'totalPrograms', 'totalCourses', 'totalStudents']
         };
-      case 'MANAGER':
-        return {
-          title: 'لوحة تحكم المدير الأكاديمي',
-          actions: [
-            { title: 'إدارة البرامج', color: 'bg-green-600 hover:bg-green-700', icon: '📚', link: '/programs' },
-            { title: 'بيانات الطالبات', color: 'bg-indigo-600 hover:bg-indigo-700', icon: '👩‍🎓', link: '/students' },
-            { title: 'الطالبات المسجلات', color: 'bg-teal-600 hover:bg-teal-700', icon: '📝', link: '/enrolled-students' },
-            { title: 'الحضور والغياب', color: 'bg-red-600 hover:bg-red-700', icon: '✅', link: '/attendance' },
-            { title: 'تقرير الحضور', color: 'bg-orange-600 hover:bg-orange-700', icon: '📋', link: '/attendance-report' },
-            { title: 'التقارير الأكاديمية', color: 'bg-purple-600 hover:bg-purple-700', icon: '📈', link: '/academic-reports' },
-          ],
-          stats: ['totalPrograms', 'totalCourses', 'totalStudents']
-        };
       case 'TEACHER':
         return {
           title: 'لوحة تحكم المعلمة',

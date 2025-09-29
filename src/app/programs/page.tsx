@@ -76,7 +76,7 @@ export default function ProgramsPage() {
   if (!session) return null;
 
   const userRole = session.user?.userRole;
-  const canManagePrograms = userRole === 'ADMIN' || userRole === 'MANAGER';
+  const canManagePrograms = userRole === 'ADMIN';
 
   const handleAddProgram = async () => {
     if (!newProgram.programName.trim()) return;

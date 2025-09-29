@@ -151,7 +151,7 @@ export default function StudentsPage() {
   if (!session) return null;
 
   const userRole = session.user?.userRole;
-  const canManageStudents = userRole === 'ADMIN' || userRole === 'MANAGER' || userRole === 'TEACHER';
+  const canManageStudents = userRole === 'ADMIN' || userRole === 'TEACHER';
 
   const handleAddStudent = async () => {
     if (!newStudent.studentName.trim()) return;

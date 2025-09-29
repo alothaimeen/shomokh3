@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
     console.log('الجلسة:', session ? 'موجودة' : 'غير موجودة');
 
-    if (!session || !['TEACHER', 'ADMIN', 'MANAGER'].includes(session.user.userRole)) {
+    if (!session || !['TEACHER', 'ADMIN'].includes(session.user.userRole)) {
       console.log('خطأ في الصلاحية - الدور:', session?.user?.userRole);
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         }
       };
     }
-    // للـ ADMIN والـ MANAGER، جلب جميع التسجيلات (بدون شرط)
+    // للـ ADMIN، جلب جميع التسجيلات (بدون شرط)
 
     // إضافة فلتر الحلقة إذا تم تحديدها
     if (courseId) {

@@ -66,14 +66,6 @@ export default function UsersPage() {
         createdAt: new Date().toISOString()
       },
       {
-        id: 'manager-1',
-        userName: 'المدير الأكاديمي',
-        userEmail: 'manager1@shamokh.edu',
-        userRole: 'MANAGER',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
         id: 'teacher-1',
         userName: 'المعلمة سارة',
         userEmail: 'teacher1@shamokh.edu',
@@ -99,14 +91,12 @@ export default function UsersPage() {
 
   const roleColors = {
     ADMIN: 'bg-red-100 text-red-800 border-red-300',
-    MANAGER: 'bg-blue-100 text-blue-800 border-blue-300',
     TEACHER: 'bg-green-100 text-green-800 border-green-300',
     STUDENT: 'bg-purple-100 text-purple-800 border-purple-300'
   };
 
   const roleLabels = {
     ADMIN: 'مدير أعلى',
-    MANAGER: 'مدير أكاديمي',
     TEACHER: 'معلمة',
     STUDENT: 'طالبة'
   };
@@ -119,18 +109,12 @@ export default function UsersPage() {
       </div>
 
       {/* إحصائيات سريعة */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-red-50 p-4 rounded-lg border border-red-200">
           <div className="text-2xl font-bold text-red-600">
             {users.filter(u => u.userRole === 'ADMIN').length}
           </div>
           <div className="text-sm text-red-700">مدراء</div>
-        </div>
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div className="text-2xl font-bold text-blue-600">
-            {users.filter(u => u.userRole === 'MANAGER').length}
-          </div>
-          <div className="text-sm text-blue-700">مدراء أكاديميين</div>
         </div>
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <div className="text-2xl font-bold text-green-600">
