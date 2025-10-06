@@ -187,19 +187,24 @@ export default function CoursesPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* زر الرجوع */}
+          <Link
+            href="/programs"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4 font-medium"
+          >
+            ← رجوع للبرامج
+          </Link>
+
+          <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                حلقات {programName}
+                📚 حلقات {programName}
               </h1>
-              <p className="text-gray-600 mt-1">إدارة وتنظيم الحلقات التعليمية</p>
+              <p className="text-gray-600 mt-1">إدارة وتنظيم الحلقات التعليمية ({courses.length} حلقة)</p>
             </div>
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <Link href="/programs" className="text-blue-600 hover:text-blue-800">
-                البرامج
-              </Link>
-              <Link href="/dashboard" className="text-blue-600 hover:text-blue-800">
+            <div className="flex items-center">
+              <Link href="/dashboard" className="text-blue-600 hover:text-blue-800 font-medium">
                 لوحة التحكم
               </Link>
             </div>

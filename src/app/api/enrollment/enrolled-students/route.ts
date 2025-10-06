@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { checkCourseOwnership } from '@/lib/course-ownership';
 
 
 export async function GET(request: NextRequest) {
@@ -22,6 +23,22 @@ export async function GET(request: NextRequest) {
     const courseId = searchParams.get('courseId');
 
     console.log('جلب البيانات من قاعدة البيانات');
+
+    // ✅ فحص ملكية الحلقة إذا تم تحديدها
+    if (courseId) {
+      const hasAccess = await checkCourseOwnership(
+        session.user.id,
+        courseId,
+        session.user.userRole
+      );
+
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'غير مصرح بالوصول لهذه الحلقة' },
+          { status: 403 }
+        );
+      }
+    }
 
     // بناء شرط WHERE حسب دور المستخدم
     let whereCondition: any = {};

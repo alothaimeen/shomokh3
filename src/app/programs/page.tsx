@@ -252,11 +252,17 @@ export default function ProgramsPage() {
                           </div>
                         </div>
 
-                        {canManagePrograms && (
-                          <div className="flex gap-2">
+                        <div className="flex gap-2 flex-col sm:flex-row">
+                          <Link
+                            href={`/programs/${program.id}/courses`}
+                            className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-center"
+                          >
+                            📚 عرض الحلقات ({program.coursesCount})
+                          </Link>
+                          {canManagePrograms && (
                             <button
                               onClick={() => toggleProgramStatus(program.id)}
-                              className={`px-3 py-1 rounded text-sm ${
+                              className={`px-4 py-2 rounded-lg text-sm font-medium ${
                                 program.isActive
                                   ? 'bg-red-100 text-red-700 hover:bg-red-200'
                                   : 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -264,14 +270,8 @@ export default function ProgramsPage() {
                             >
                               {program.isActive ? 'إيقاف' : 'تفعيل'}
                             </button>
-                            <Link
-                              href={`/programs/${program.id}/courses`}
-                              className="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1 rounded text-sm transition-colors"
-                            >
-                              الحلقات
-                            </Link>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

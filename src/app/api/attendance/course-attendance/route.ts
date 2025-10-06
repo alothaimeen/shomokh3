@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { checkCourseOwnership } from '@/lib/course-ownership';
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,6 +23,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'معرف الحلقة مطلوب' },
         { status: 400 }
+      );
+    }
+
+    // ✅ فحص ملكية الحلقة
+    const hasAccess = await checkCourseOwnership(
+      session.user.id,
+      courseId,
+      session.user.userRole
+    );
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'غير مصرح بالوصول لهذه الحلقة' },
+        { status: 403 }
       );
     }
 

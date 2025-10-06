@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { checkCourseOwnership } from '@/lib/course-ownership';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,28 +26,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ✅ فحص ملكية الحلقات قبل بدء المعاملة
+    const uniqueCourseIds = [...new Set(attendanceRecords.map((r: any) => r.courseId))];
+    for (const courseId of uniqueCourseIds) {
+      const hasAccess = await checkCourseOwnership(
+        session.user.id,
+        courseId,
+        session.user.userRole
+      );
+
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: `غير مصرح بالوصول لحلقة: ${courseId}` },
+          { status: 403 }
+        );
+      }
+    }
+
     // استخدام transaction لضمان تنفيذ جميع العمليات أو عدم تنفيذ أي منها
     const result = await db.$transaction(async (prisma) => {
       const results = [];
 
       for (const record of attendanceRecords) {
         const { studentId, courseId, status, notes, date } = record;
-
-        // التحقق من صلاحية المعلمة للحلقة (إذا كانت معلمة)
-        if (session.user.userRole === 'TEACHER') {
-          const course = await prisma.course.findFirst({
-            where: {
-              id: courseId,
-              teacher: {
-                userEmail: session.user.email || '',
-              }
-            }
-          });
-
-          if (!course) {
-            throw new Error(`غير مصرح لك بتسجيل الحضور لهذه الحلقة: ${courseId}`);
-          }
-        }
 
         // البحث عن سجل حضور موجود
         const searchDate = new Date(date);
