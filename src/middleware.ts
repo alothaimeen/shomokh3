@@ -22,8 +22,8 @@ export default withAuth(
 
     // قواعد الوصول حسب الدور
     const rolePermissions = {
-      ADMIN: ['/dashboard', '/users', '/programs', '/students', '/attendance', '/attendance-report', '/academic-reports', '/reports', '/enrolled-students', '/teacher-requests', '/enrollment', '/my-attendance', '/my-grades', '/daily-tasks', '/profile'], // يمكنه الوصول لكل شيء
-      TEACHER: ['/dashboard', '/teacher', '/programs', '/students', '/attendance', '/teacher-requests', '/enrolled-students', '/profile'], // يمكنه إدارة حلقاته وطالباته
+      ADMIN: ['/dashboard', '/users', '/programs', '/students', '/attendance', '/attendance-report', '/academic-reports', '/reports', '/enrolled-students', '/teacher-requests', '/enrollment', '/my-attendance', '/my-grades', '/daily-tasks', '/daily-grades', '/profile'], // يمكنه الوصول لكل شيء
+      TEACHER: ['/dashboard', '/teacher', '/programs', '/students', '/attendance', '/teacher-requests', '/enrolled-students', '/daily-grades', '/profile'], // يمكنه إدارة حلقاته وطالباته
       STUDENT: ['/dashboard', '/enrollment', '/programs', '/my-attendance', '/my-grades', '/daily-tasks', '/profile'], // يمكنه طلب الانضمام ومشاهدة حضوره ودرجاته ومهامه
     };
 

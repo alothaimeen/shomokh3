@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // أنواع البيانات
-type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'LEFT_EARLY';
+type AttendanceStatus = 'PRESENT' | 'EXCUSED' | 'ABSENT' | 'REVIEWED' | 'LEFT_EARLY';
 
 interface Student {
   id: string;
@@ -60,27 +60,27 @@ interface AttendanceResponse {
   };
 }
 
-// خريطة الرموز والألوان
+// خريطة الرموز والألوان (محدثة - الجلسة 10.6)
 const statusConfig = {
   PRESENT: {
-    label: 'حاضر',
+    label: 'حاضرة',
     symbol: 'ح',
     color: 'bg-green-100 text-green-800 border-green-300'
   },
+  EXCUSED: {
+    label: 'غائبة بعذر (معتذرة)',
+    symbol: 'م',
+    color: 'bg-blue-100 text-blue-800 border-blue-300'
+  },
   ABSENT: {
-    label: 'غائب',
+    label: 'غائبة بدون عذر',
     symbol: 'غ',
     color: 'bg-red-100 text-red-800 border-red-300'
   },
-  LATE: {
-    label: 'متأخر',
-    symbol: 'ث',
-    color: 'bg-yellow-100 text-yellow-800 border-yellow-300'
-  },
-  EXCUSED: {
-    label: 'رخصة',
+  REVIEWED: {
+    label: 'راجعت بدون حضور',
     symbol: 'ر',
-    color: 'bg-blue-100 text-blue-800 border-blue-300'
+    color: 'bg-purple-100 text-purple-800 border-purple-300'
   },
   LEFT_EARLY: {
     label: 'خروج مبكر',
@@ -197,13 +197,13 @@ export default function AttendancePage() {
     }
   }, [selectedCourse, selectedDate, fetchAttendance]);
 
-  // تحديث الملخص الإحصائي
+  // تحديث الملخص الإحصائي (محدث - الجلسة 10.6)
   const updateSummary = (updatedData: AttendanceData[]) => {
     const newSummary = {
       totalStudents: updatedData.length,
       presentCount: updatedData.filter(item => item.status === 'PRESENT').length,
       absentCount: updatedData.filter(item => item.status === 'ABSENT').length,
-      lateCount: updatedData.filter(item => item.status === 'LATE').length,
+      lateCount: updatedData.filter(item => item.status === 'REVIEWED').length, // تم التحديث من LATE إلى REVIEWED
       excusedCount: updatedData.filter(item => item.status === 'EXCUSED').length,
       leftEarlyCount: updatedData.filter(item => item.status === 'LEFT_EARLY').length,
       notMarkedCount: updatedData.filter(item => !item.status).length,

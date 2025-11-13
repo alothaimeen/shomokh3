@@ -230,6 +230,14 @@ export default function TeacherCoursePage() {
                 </Link>
 
                 <Link
+                  href={`/daily-grades?courseId=${selectedCourse.id}`}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-md transition-colors flex items-center justify-center gap-2 hover:scale-105 transform"
+                >
+                  <span className="text-lg">📊</span>
+                  <span>التقييم اليومي</span>
+                </Link>
+
+                <Link
                   href={`/teacher-requests?courseId=${selectedCourse.id}`}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-md transition-colors flex items-center justify-center gap-2 hover:scale-105 transform"
                 >

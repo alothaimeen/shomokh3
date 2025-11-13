@@ -12,11 +12,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
 
-    // جلب البيانات من قاعدة البيانات
+    // جلب البيانات من قاعدة البيانات (محدث - الجلسة 10.6)
+    // إزالة قيد المستوى الأول - الطالبات يمكنهن الانضمام لأي مستوى
     const availableCourses = await db.course.findMany({
       where: {
         isActive: true,
-        level: 1, // المستوى الأول فقط للطالبات الجديدات
+        // تم إزالة: level: 1 - الطالبات تختار أي مستوى حسب حفظها
       },
       include: {
         program: {

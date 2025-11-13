@@ -140,8 +140,14 @@ export default function EnrollmentPage() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">طلب الانضمام للحلقات</h1>
-          <p className="text-gray-600">📚 اختاري البرنامج المناسب ثم الحلقة التي تريدين الانضمام إليها</p>
-          <p className="text-sm text-gray-500 mt-2">💡 يمكنك رؤية البرنامج التابع لكل حلقة أسفل اسمها مباشرة</p>
+          <p className="text-gray-600">📚 اختاري الحلقة المناسبة لمستواك من أي مستوى متاح</p>
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 text-sm">
+              <strong>✨ جديد:</strong> يمكنك الآن الانضمام لأي مستوى حسب حفظك الحالي!
+              <br />
+              <span className="text-blue-600">سواء كنتِ مبتدئة أو متقدمة، اختاري المستوى المناسب لكِ.</span>
+            </p>
+          </div>
         </div>
 
         {notification && (
@@ -186,7 +192,12 @@ export default function EnrollmentPage() {
                     {course.teacher && (
                       <p><span className="font-medium">المعلمة:</span> {course.teacher.userName}</p>
                     )}
-                    <p><span className="font-medium">المستوى:</span> {course.level}</p>
+                    <p className="flex items-center gap-2">
+                      <span className="font-medium">المستوى:</span> 
+                      <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
+                        المستوى {course.level}
+                      </span>
+                    </p>
                     <p><span className="font-medium">العدد:</span> {course.currentStudents}/{course.maxStudents}</p>
                   </div>
 

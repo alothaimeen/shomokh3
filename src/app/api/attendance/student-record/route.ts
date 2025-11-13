@@ -123,8 +123,8 @@ export async function GET(request: NextRequest) {
     const totalDays = attendanceRecords.length;
     const presentDays = attendanceRecords.filter(r => r.status === 'PRESENT').length;
     const absentDays = attendanceRecords.filter(r => r.status === 'ABSENT').length;
-    const lateDays = attendanceRecords.filter(r => r.status === 'LATE').length;
     const excusedDays = attendanceRecords.filter(r => r.status === 'EXCUSED').length;
+    const reviewedDays = attendanceRecords.filter(r => r.status === 'REVIEWED').length;
     const leftEarlyDays = attendanceRecords.filter(r => r.status === 'LEFT_EARLY').length;
 
     const attendancePercentage = totalDays > 0 ?
@@ -137,8 +137,8 @@ export async function GET(request: NextRequest) {
         totalDays,
         presentDays,
         absentDays,
-        lateDays,
         excusedDays,
+        reviewedDays,
         leftEarlyDays,
         attendancePercentage,
       },

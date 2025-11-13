@@ -140,8 +140,8 @@ export async function GET(request: NextRequest) {
       totalStudents: attendanceData.length,
       presentCount: attendanceData.filter(item => item.status === 'PRESENT').length,
       absentCount: attendanceData.filter(item => item.status === 'ABSENT').length,
-      lateCount: attendanceData.filter(item => item.status === 'LATE').length,
       excusedCount: attendanceData.filter(item => item.status === 'EXCUSED').length,
+      reviewedCount: attendanceData.filter(item => item.status === 'REVIEWED').length,
       leftEarlyCount: attendanceData.filter(item => item.status === 'LEFT_EARLY').length,
       notMarkedCount: attendanceData.filter(item => item.status === null).length,
     };

@@ -32,10 +32,10 @@ enum RequestStatus {
 }
 
 enum AttendanceStatus {
-  PRESENT    // ح - حاضر
-  ABSENT     // ن - نائم
-  LATE       // ث - تأخير
-  EXCUSED    // ر - رخصة
+  PRESENT    // ح - حاضرة
+  EXCUSED    // م - غائبة بعذر (معتذرة)
+  ABSENT     // غ - غائبة بدون عذر
+  REVIEWED   // ر - راجعت بدون حضور
   LEFT_EARLY // خ - خروج مبكر
 }
 
@@ -90,6 +90,7 @@ model Course {
   enrollmentRequests EnrollmentRequest[]
   enrollments        Enrollment[]
   attendances        Attendance[]
+  dailyGrades        DailyGrade[]
 
   @@map("courses")
 }
@@ -113,6 +114,7 @@ model Student {
   enrollmentRequests EnrollmentRequest[]
   enrollments        Enrollment[]
   attendances        Attendance[]
+  dailyGrades        DailyGrade[]
 
   @@map("students")
 }
@@ -171,4 +173,25 @@ model Attendance {
   // طالبة واحدة في حلقة واحدة في يوم واحد (تسجيل واحد فقط)
   @@unique([studentId, courseId, date])
   @@map("attendance")
+}
+
+model DailyGrade {
+  id           String   @id @default(cuid())
+  date         DateTime @default(now())         // تاريخ التقييم
+  memorization Decimal  @default(0) @db.Decimal(4, 2) // حفظ وتجويد (0 - 5.00)
+  review       Decimal  @default(0) @db.Decimal(4, 2) // مراجعة وتجويد (0 - 5.00)
+  notes        String?                          // ملاحظات اختيارية
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // العلاقات
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // طالبة واحدة في حلقة واحدة في يوم واحد (درجة واحدة يومياً)
+  @@unique([studentId, courseId, date])
+  @@map("daily_grades")
 }

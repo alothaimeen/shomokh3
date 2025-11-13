@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-// أنواع البيانات (مطابقة لواجهة المعلمة)
-type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'LEFT_EARLY';
+// أنواع البيانات (محدثة - الجلسة 10.6)
+type AttendanceStatus = 'PRESENT' | 'EXCUSED' | 'ABSENT' | 'REVIEWED' | 'LEFT_EARLY';
 
 interface AttendanceRecord {
   id: string;
@@ -46,27 +46,27 @@ interface StudentAttendanceResponse {
   statistics: AttendanceStatistics;
 }
 
-// خريطة الرموز والألوان (مطابقة لواجهة المعلمة)
+// خريطة الرموز والألوان (محدثة - الجلسة 10.6)
 const statusConfig = {
   PRESENT: {
-    label: 'حاضر',
+    label: 'حاضرة',
     symbol: 'ح',
     color: 'bg-green-100 text-green-800 border-green-300'
   },
+  EXCUSED: {
+    label: 'غائبة بعذر (معتذرة)',
+    symbol: 'م',
+    color: 'bg-blue-100 text-blue-800 border-blue-300'
+  },
   ABSENT: {
-    label: 'غائب',
+    label: 'غائبة بدون عذر',
     symbol: 'غ',
     color: 'bg-red-100 text-red-800 border-red-300'
   },
-  LATE: {
-    label: 'متأخر',
-    symbol: 'ث',
-    color: 'bg-yellow-100 text-yellow-800 border-yellow-300'
-  },
-  EXCUSED: {
-    label: 'رخصة',
+  REVIEWED: {
+    label: 'راجعت بدون حضور',
     symbol: 'ر',
-    color: 'bg-blue-100 text-blue-800 border-blue-300'
+    color: 'bg-purple-100 text-purple-800 border-purple-300'
   },
   LEFT_EARLY: {
     label: 'خروج مبكر',

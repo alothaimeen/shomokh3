@@ -61,6 +61,11 @@ export default function EnrolledStudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEnrollments, setSelectedEnrollments] = useState<string[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
+  
+  // إدارة تعديل الاسم (الجلسة 10.6)
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [newStudentName, setNewStudentName] = useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // التحقق من وجود courseId في URL
   useEffect(() => {
@@ -232,6 +237,67 @@ export default function EnrolledStudentsPage() {
     setSelectedEnrollments(
       selectedEnrollments.length === allIds.length ? [] : allIds
     );
+  };
+
+  // دالة فتح Modal تعديل الاسم (الجلسة 10.6)
+  const openEditNameModal = (student: Student) => {
+    setEditingStudent(student);
+    setNewStudentName(student.studentName);
+    setIsEditModalOpen(true);
+  };
+
+  // دالة إغلاق Modal
+  const closeEditNameModal = () => {
+    setEditingStudent(null);
+    setNewStudentName('');
+    setIsEditModalOpen(false);
+  };
+
+  // دالة تعديل اسم الطالبة (الجلسة 10.6)
+  const handleUpdateStudentName = async () => {
+    if (!editingStudent || !newStudentName.trim() || processing) return;
+
+    if (newStudentName.trim() === editingStudent.studentName) {
+      setNotification({
+        type: 'error',
+        message: 'الاسم الجديد مطابق للاسم الحالي'
+      });
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const response = await fetch(`/api/students/${editingStudent.id}/update-name`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ studentName: newStudentName.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setNotification({
+          type: 'success',
+          message: data.message || 'تم تحديث اسم الطالبة بنجاح'
+        });
+        closeEditNameModal();
+        fetchEnrolledStudents(); // إعادة تحميل البيانات
+      } else {
+        setNotification({
+          type: 'error',
+          message: data.error || 'خطأ في تحديث اسم الطالبة'
+        });
+      }
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'خطأ في الاتصال بالخادم'
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const getPaymentStatusColor = (status: string) => {
@@ -481,13 +547,23 @@ export default function EnrolledStudentsPage() {
                                     </div>
                                   </div>
                                 </div>
-                                <button
-                                  onClick={() => handleCancelEnrollment(enrollment.id)}
-                                  disabled={processing}
-                                  className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm rounded"
-                                >
-                                  إلغاء التسجيل
-                                </button>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => openEditNameModal(enrollment.student)}
+                                    disabled={processing}
+                                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm rounded"
+                                    title="تعديل الاسم"
+                                  >
+                                    ✏️ تعديل الاسم
+                                  </button>
+                                  <button
+                                    onClick={() => handleCancelEnrollment(enrollment.id)}
+                                    disabled={processing}
+                                    className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm rounded"
+                                  >
+                                    إلغاء التسجيل
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -537,13 +613,23 @@ export default function EnrolledStudentsPage() {
                             </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleCancelEnrollment(enrollment.id)}
-                          disabled={processing}
-                          className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm rounded"
-                        >
-                          إلغاء التسجيل
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openEditNameModal(enrollment.student)}
+                            disabled={processing}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm rounded"
+                            title="تعديل الاسم"
+                          >
+                            ✏️ تعديل الاسم
+                          </button>
+                          <button
+                            onClick={() => handleCancelEnrollment(enrollment.id)}
+                            disabled={processing}
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm rounded"
+                          >
+                            إلغاء التسجيل
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -552,6 +638,55 @@ export default function EnrolledStudentsPage() {
             )}
           </div>
         </div>
+
+        {/* Modal تعديل اسم الطالبة (الجلسة 10.6) */}
+        {isEditModalOpen && editingStudent && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+              <h2 className="text-xl font-bold mb-4">تعديل اسم الطالبة</h2>
+              
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  الاسم الحالي:
+                </label>
+                <p className="text-gray-900 bg-gray-100 p-2 rounded">
+                  {editingStudent.studentName}
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  الاسم الجديد: <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newStudentName}
+                  onChange={(e) => setNewStudentName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="أدخل الاسم الجديد"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={closeEditNameModal}
+                  disabled={processing}
+                  className="px-4 py-2 bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-800 rounded-lg"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={handleUpdateStudentName}
+                  disabled={processing || !newStudentName.trim()}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg"
+                >
+                  {processing ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* العودة للوحة التحكم */}
         <div className="text-center">
