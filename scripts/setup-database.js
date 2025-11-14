@@ -72,7 +72,7 @@ const testStudents = [
   {
     id: "std-1",
     studentNumber: 1,
-    studentName: "فاطمة أحمد محمد",
+    studentName: "الطالبة فاطمة", // يطابق userName في حساب student1
     qualification: "ثانوية عامة",
     nationality: "سعودية",
     studentPhone: "0501234567",
@@ -137,15 +137,8 @@ async function setupDatabase() {
       console.log(`   ✅ تم إضافة ${student.studentName}`);
     }
 
-    // 6. إضافة بعض التسجيلات التجريبية
-    console.log('📝 إضافة التسجيلات التجريبية...');
-    await prisma.enrollment.create({
-      data: {
-        studentId: "std-1",
-        courseId: "course-1"
-      }
-    });
-    console.log('   ✅ تم تسجيل فاطمة في حلقة الفجر');
+    // 6. لا نضيف تسجيلات تجريبية - يجب أن تمر عبر طلب الانضمام
+    console.log('📝 تخطي التسجيلات التجريبية (تتم عبر طلب الانضمام)...');
 
     // 7. إضافة بعض سجلات الحضور التجريبية
     console.log('📊 إضافة سجلات حضور تجريبية...');
@@ -166,8 +159,8 @@ async function setupDatabase() {
           studentId: "std-1",
           courseId: "course-1",
           date: yesterday,
-          status: "LATE",
-          notes: "تأخرت 10 دقائق"
+          status: "EXCUSED",
+          notes: "غابت بعذر"
         }
       ]
     });

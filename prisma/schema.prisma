@@ -91,6 +91,8 @@ model Course {
   enrollments        Enrollment[]
   attendances        Attendance[]
   dailyGrades        DailyGrade[]
+  weeklyGrades       WeeklyGrade[]
+  monthlyGrades      MonthlyGrade[]
 
   @@map("courses")
 }
@@ -115,6 +117,8 @@ model Student {
   enrollments        Enrollment[]
   attendances        Attendance[]
   dailyGrades        DailyGrade[]
+  weeklyGrades       WeeklyGrade[]
+  monthlyGrades      MonthlyGrade[]
 
   @@map("students")
 }
@@ -194,4 +198,47 @@ model DailyGrade {
   // طالبة واحدة في حلقة واحدة في يوم واحد (درجة واحدة يومياً)
   @@unique([studentId, courseId, date])
   @@map("daily_grades")
+}
+
+model WeeklyGrade {
+  id        String   @id @default(cuid())
+  week      Int                               // الأسبوع (1-10)
+  grade     Decimal  @default(0) @db.Decimal(4, 2) // درجة الأسبوع (0 - 5.00)
+  notes     String?                          // ملاحظات اختيارية
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // العلاقات
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // طالبة واحدة في حلقة واحدة في أسبوع واحد (درجة أسبوعية واحدة)
+  @@unique([studentId, courseId, week])
+  @@map("weekly_grades")
+}
+
+model MonthlyGrade {
+  id                  String   @id @default(cuid())
+  month               Int                               // الشهر (1-3)
+  quranForgetfulness  Decimal  @default(0) @db.Decimal(4, 2) // نسيان القرآن (0 - 5.00)
+  quranMajorMistakes  Decimal  @default(0) @db.Decimal(4, 2) // لحن جلي (0 - 5.00)
+  quranMinorMistakes  Decimal  @default(0) @db.Decimal(4, 2) // لحن خفي (0 - 5.00)
+  tajweedTheory       Decimal  @default(0) @db.Decimal(4, 2) // التجويد النظري (0 - 15.00)
+  notes               String?                          // ملاحظات اختيارية
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // العلاقات
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // طالبة واحدة في حلقة واحدة في شهر واحد (درجة شهرية واحدة)
+  @@unique([studentId, courseId, month])
+  @@map("monthly_grades")
 }

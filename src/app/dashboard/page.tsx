@@ -5,11 +5,31 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+interface TeacherCourse {
+  id: string;
+  courseName: string;
+  programName: string;
+  level: number;
+  studentsCount: number;
+}
+
+interface StudentEnrollment {
+  id: string;
+  courseName: string;
+  programName: string;
+  level: number;
+  teacherName: string;
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [stats, setStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [teacherCourses, setTeacherCourses] = useState<TeacherCourse[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [studentEnrollments, setStudentEnrollments] = useState<StudentEnrollment[]>([]);
+  const [loadingEnrollments, setLoadingEnrollments] = useState(true);
 
   useEffect(() => {
     if (status === "loading") return; // لا تفعل شيء أثناء التحميل
@@ -36,6 +56,54 @@ export default function DashboardPage() {
     };
 
     fetchStats();
+  }, [session]);
+
+  // جلب حلقات المعلمة
+  useEffect(() => {
+    const fetchTeacherCourses = async () => {
+      if (!session || session.user?.role !== 'TEACHER') {
+        setLoadingCourses(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/attendance/teacher-courses');
+        if (response.ok) {
+          const data = await response.json();
+          setTeacherCourses(data.courses || []);
+        }
+      } catch (error) {
+        console.error('خطأ في جلب الحلقات:', error);
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+
+    fetchTeacherCourses();
+  }, [session]);
+
+  // جلب حلقات الطالبة المسجلة
+  useEffect(() => {
+    const fetchStudentEnrollments = async () => {
+      if (!session || session.user?.role !== 'STUDENT') {
+        setLoadingEnrollments(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/enrollment/my-enrollments');
+        if (response.ok) {
+          const data = await response.json();
+          setStudentEnrollments(data.enrollments || []);
+        }
+      } catch (error) {
+        console.error('خطأ في جلب التسجيلات:', error);
+      } finally {
+        setLoadingEnrollments(false);
+      }
+    };
+
+    fetchStudentEnrollments();
   }, [session]);
 
   if (status === "loading") {
@@ -87,21 +155,14 @@ export default function DashboardPage() {
       case 'TEACHER':
         return {
           title: 'لوحة تحكم المعلمة',
-          actions: [
-            { title: 'اختيار الحلقة', color: 'bg-purple-600 hover:bg-purple-700', icon: '🎯', link: '/teacher' },
-            { title: 'البرامج والحلقات', color: 'bg-green-600 hover:bg-green-700', icon: '📚', link: '/programs' },
-          ],
-          stats: ['totalCourses', 'totalStudents']
+          actions: [],
+          stats: []
         };
       case 'STUDENT':
         return {
           title: 'لوحة تحكم الطالبة',
           actions: [
             { title: 'طلب الانضمام للحلقات', color: 'bg-blue-600 hover:bg-blue-700', icon: '📝', link: '/enrollment' },
-            { title: 'البرامج المتاحة', color: 'bg-green-600 hover:bg-green-700', icon: '📚', link: '/programs' },
-            { title: 'سجل حضوري', color: 'bg-red-600 hover:bg-red-700', icon: '✅', link: '/my-attendance' },
-            { title: 'درجاتي', color: 'bg-purple-600 hover:bg-purple-700', icon: '🏆', link: '/my-grades' },
-            { title: 'المهام اليومية', color: 'bg-orange-600 hover:bg-orange-700', icon: '📋', link: '/daily-tasks' },
           ],
           stats: []
         };
@@ -190,8 +251,162 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Quick Actions - حسب الدور */}
-          {roleContent.actions.length > 0 && (
+          {/* Teacher Courses Section */}
+          {currentUser.userRole === 'TEACHER' && (
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  حلقاتي
+                </h3>
+                {loadingCourses ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-600">جاري تحميل الحلقات...</p>
+                  </div>
+                ) : teacherCourses.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">لا توجد حلقات مسندة لك حالياً</p>
+                ) : (
+                  <div className="space-y-4">
+                    {teacherCourses.map((course) => (
+                      <div key={course.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="mb-3">
+                          <h4 className="text-lg font-semibold text-gray-900">{course.courseName}</h4>
+                          <p className="text-sm text-gray-600">
+                            {course.programName} - المستوى {course.level} - {course.studentsCount} طالبة
+                          </p>
+                        </div>
+                        
+                        {/* أزرار الإدارة */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                          <Link
+                            href={`/attendance?courseId=${course.id}`}
+                            className="bg-red-600 hover:bg-data-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                          >
+                            ✅ الحضور
+                          </Link>
+                          <Link
+                            href={`/teacher-requests?courseId=${course.id}`}
+                            className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                          >
+                            📋 الطلبات
+                          </Link>
+                          <Link
+                            href={`/enrolled-students?courseId=${course.id}`}
+                            className="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                          >
+                            👩‍🎓 الطالبات
+                          </Link>
+                          <Link
+                            href={`/attendance-report?courseId=${course.id}`}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                          >
+                            📊 التقرير
+                          </Link>
+                        </div>
+
+                        {/* أزرار الدرجات متجاورة */}
+                        <div className="border-t pt-3 mt-3">
+                          <p className="text-xs font-medium text-gray-700 mb-2">التقييمات والدرجات:</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <Link
+                              href={`/daily-grades?courseId=${course.id}`}
+                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                            >
+                              📝 يومي
+                            </Link>
+                            <Link
+                              href={`/weekly-grades?courseId=${course.id}`}
+                              className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                            >
+                              📅 أسبوعي
+                            </Link>
+                            <Link
+                              href={`/monthly-grades?courseId=${course.id}`}
+                              className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                            >
+                              🗓️ شهري
+                            </Link>
+                            <Link
+                              href={`#`}
+                              className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded text-sm text-center transition-colors opacity-50 cursor-not-allowed"
+                              onClick={(e) => e.preventDefault()}
+                            >
+                              🏆 نهائي
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Student Enrollments Section */}
+          {currentUser.userRole === 'STUDENT' && (
+            <div className="bg-white shadow rounded-lg mb-6">
+              <div className="px-4 py-5 sm:p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  حلقاتي المسجلة
+                </h3>
+                {loadingEnrollments ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-600">جاري تحميل الحلقات...</p>
+                  </div>
+                ) : studentEnrollments.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">لم تسجلي في أي حلقة بعد</p>
+                    <Link
+                      href="/enrollment"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md inline-block"
+                    >
+                      📝 طلب الانضمام للحلقات
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {studentEnrollments.map((enrollment) => (
+                      <div key={enrollment.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="mb-3">
+                          <h4 className="text-lg font-semibold text-gray-900">{enrollment.courseName}</h4>
+                          <p className="text-sm text-gray-600">
+                            {enrollment.programName} - المستوى {enrollment.level} - المعلمة: {enrollment.teacherName}
+                          </p>
+                        </div>
+                        
+                        {/* أزرار الوصول السريع */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          <Link
+                            href={`/my-attendance?courseId=${enrollment.id}`}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                          >
+                            ✅ حضوري
+                          </Link>
+                          <Link
+                            href={`/my-grades?courseId=${enrollment.id}`}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                          >
+                            🏆 درجاتي
+                          </Link>
+                          <Link
+                            href={`/daily-tasks?courseId=${enrollment.id}`}
+                            className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                          >
+                            📋 مهامي
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Actions - للأدوار الأخرى */}
+          {currentUser.userRole !== 'TEACHER' && currentUser.userRole !== 'STUDENT' && roleContent.actions.length > 0 && (
             <div className="bg-white shadow rounded-lg">
               <div className="px-4 py-5 sm:p-6">
                 <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">

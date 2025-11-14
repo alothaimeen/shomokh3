@@ -43,27 +43,14 @@ export async function POST(request: NextRequest) {
 
     let student = await db.student.findFirst({
       where: {
-        studentName: session.user.name || 'غير محدد', // ربط بالاسم مع التحقق من null
+        studentName: {
+          contains: session.user.name || 'غير محدد'
+        },
         isActive: true
       }
     });
 
-    // إذا لم نجد الطالبة، نبحث بالبريد الإلكتروني أو الاسم المشابه
-    if (!student) {
-      console.log('❌ Student not found, trying to find by email similarity');
-
-      // نبحث عن طالبة قد تكون مرتبطة بنفس المستخدم
-      const allStudents = await db.student.findMany({
-        where: { isActive: true },
-        orderBy: { createdAt: 'desc' }
-      });
-
-      // نأخذ آخر طالبة مسجلة (التي تم إنشاؤها عبر صفحة التسجيل)
-      if (allStudents.length > 0) {
-        student = allStudents[0];
-        console.log('✅ Using latest registered student:', student.studentName);
-      }
-    }
+    console.log('✅ Student search result:', student ? `Found: ${student.studentName}` : 'Not found');
 
     // إذا لم نجد أي طالبة، ننشئ واحدة جديدة (fallback)
     if (!student) {

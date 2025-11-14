@@ -238,6 +238,22 @@ export default function TeacherCoursePage() {
                 </Link>
 
                 <Link
+                  href={`/weekly-grades?courseId=${selectedCourse.id}`}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-md transition-colors flex items-center justify-center gap-2 hover:scale-105 transform"
+                >
+                  <span className="text-lg">📅</span>
+                  <span>التقييم الأسبوعي</span>
+                </Link>
+
+                <Link
+                  href={`/monthly-grades?courseId=${selectedCourse.id}`}
+                  className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-3 rounded-md transition-colors flex items-center justify-center gap-2 hover:scale-105 transform"
+                >
+                  <span className="text-lg">📆</span>
+                  <span>التقييم الشهري</span>
+                </Link>
+
+                <Link
                   href={`/teacher-requests?courseId=${selectedCourse.id}`}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-md transition-colors flex items-center justify-center gap-2 hover:scale-105 transform"
                 >

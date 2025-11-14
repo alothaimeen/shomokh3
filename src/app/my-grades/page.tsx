@@ -277,7 +277,13 @@ export default function MyGradesPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filterGradesByType(activeTab).map((grade) => (
+                    {filterGradesByType(activeTab).length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                          لا توجد درجات مسجلة في هذا القسم
+                        </td>
+                      </tr>
+                    ) : filterGradesByType(activeTab).map((grade) => (
                       <tr key={grade.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {new Date(grade.date).toLocaleDateString('ar-SA')}

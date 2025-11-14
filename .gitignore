@@ -25,3 +25,9 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Sensitive files - MCP configurations with tokens
+MCP_SETUP.md
+*_mcp_config.json
+*.token
+*.secret

@@ -141,86 +141,171 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
 
-    // محاولة جلب البيانات من قاعدة البيانات
-    if (process.env.DATABASE_URL) {
-      try {
-        // البحث عن الطالبة في قاعدة البيانات
-        const student = await db.user.findUnique({
-          where: { userEmail: session.user.email }
+    // جلب البيانات الحقيقية من قاعدة البيانات
+    try {
+      // البحث عن الطالبة
+      const student = await db.student.findFirst({
+        where: {
+          studentName: {
+            contains: session.user.name || ''
+          }
+        }
+      });
+
+      if (!student) {
+        return NextResponse.json({
+          grades: [],
+          summary: null,
+          message: 'لم يتم العثور على بيانات الطالبة'
+        });
+      }
+
+      // جلب التسجيلات النشطة
+      const enrollments = await db.enrollment.findMany({
+        where: {
+          studentId: student.id,
+          isActive: true
+        },
+        include: {
+          course: {
+            include: {
+              teacher: true,
+              program: true
+            }
+          }
+        }
+      });
+
+      if (enrollments.length === 0) {
+        return NextResponse.json({
+          grades: [],
+          summary: null,
+          message: 'لم تسجلي في أي حلقة بعد'
+        });
+      }
+
+      const allGrades: any[] = [];
+
+      // جلب الدرجات اليومية
+      for (const enrollment of enrollments) {
+        const dailyGrades = await db.dailyGrade.findMany({
+          where: {
+            studentId: student.id,
+            courseId: enrollment.courseId
+          },
+          orderBy: { date: 'desc' },
+          take: 20 // آخر 20 درجة يومية
         });
 
-        if (student) {
-          // ملاحظة: جدول الدرجات غير موجود حالياً في قاعدة البيانات
-          // لذا سنستخدم البيانات الاحتياطية مباشرة
-          console.log('Student found, but grades table not yet implemented');
-
-          // يمكن تفعيل هذا الكود عندما يتم إنشاء جدول الدرجات
-          /*
-          const grades = await db.grade.findMany({
-            where: { studentId: student.id },
-            include: {
-              course: {
-                select: {
-                  courseName: true,
-                  teacher: {
-                    select: {
-                      userName: true
-                    }
-                  }
-                }
-              }
-            },
-            orderBy: { createdAt: 'desc' }
-          });
-
-          if (grades.length > 0) {
-            // تنسيق البيانات من قاعدة البيانات
-            const formattedGrades = grades.map(grade => ({
-              id: grade.id,
-              type: grade.gradeType,
-              category: grade.category,
-              score: grade.score,
-              maxScore: grade.maxScore,
-              date: grade.date.toISOString().split('T')[0],
-              courseName: grade.course.courseName,
-              teacherName: grade.course.teacher?.userName || 'غير محدد',
-              notes: grade.notes
-            }));
-
-            // حساب الملخص من البيانات الحقيقية
-            const summary = calculateGradeSummary(formattedGrades);
-
-            return NextResponse.json({
-              grades: formattedGrades,
-              summary
-            });
-          }
-          */
-        }
-      } catch (dbError) {
-        console.log('Database connection failed, using fallback data');
+        allGrades.push(...dailyGrades.map(g => ({
+          id: g.id,
+          type: 'daily' as const,
+          category: 'حفظ ومراجعة',
+          score: parseFloat(g.memorization.toString()) + parseFloat(g.review.toString()),
+          maxScore: 10,
+          memorizationScore: parseFloat(g.memorization.toString()),
+          reviewScore: parseFloat(g.review.toString()),
+          date: g.date.toISOString().split('T')[0],
+          courseName: enrollment.course.courseName,
+          teacherName: enrollment.course.teacher?.userName || 'غير محدد'
+        })));
       }
+
+      // جلب الدرجات الأسبوعية
+      for (const enrollment of enrollments) {
+        const weeklyGrades = await (db as any).weeklyGrade.findMany({
+          where: {
+            studentId: student.id,
+            courseId: enrollment.courseId
+          },
+          orderBy: { week: 'desc' }
+        });
+
+        allGrades.push(...weeklyGrades.map((g: any) => ({
+          id: g.id,
+          type: 'weekly' as const,
+          category: `الأسبوع ${g.week}`,
+          score: parseFloat(g.grade.toString()),
+          maxScore: 5,
+          date: g.createdAt.toISOString().split('T')[0],
+          courseName: enrollment.course.courseName,
+          teacherName: enrollment.course.teacher?.userName || 'غير محدد'
+        })));
+      }
+
+      // جلب الدرجات الشهرية
+      for (const enrollment of enrollments) {
+        const monthlyGrades = await (db as any).monthlyGrade.findMany({
+          where: {
+            studentId: student.id,
+            courseId: enrollment.courseId
+          },
+          orderBy: { month: 'desc' }
+        });
+
+        const monthlyTotal = (g: any) => 
+          parseFloat(g.quranForgetfulness.toString()) +
+          parseFloat(g.quranMajorMistakes.toString()) +
+          parseFloat(g.quranMinorMistakes.toString()) +
+          parseFloat(g.tajweedTheory.toString());
+
+        allGrades.push(...monthlyGrades.map((g: any) => ({
+          id: g.id,
+          type: 'monthly' as const,
+          category: `الشهر ${g.month}`,
+          score: monthlyTotal(g),
+          maxScore: 30,
+          date: g.createdAt.toISOString().split('T')[0],
+          courseName: enrollment.course.courseName,
+          teacherName: enrollment.course.teacher?.userName || 'غير محدد'
+        })));
+      }
+
+      // حساب الملخص
+      const dailyTotal = allGrades
+        .filter(g => g.type === 'daily')
+        .reduce((sum, g) => sum + g.score, 0);
+      
+      const weeklyTotal = allGrades
+        .filter(g => g.type === 'weekly')
+        .reduce((sum, g) => sum + g.score, 0);
+      
+      const monthlyTotal = allGrades
+        .filter(g => g.type === 'monthly')
+        .reduce((sum, g) => sum + g.score, 0);
+
+      const summary = {
+        totalDailyGrades: dailyTotal,
+        totalWeeklyGrades: weeklyTotal,
+        totalMonthlyGrades: monthlyTotal,
+        finalExamGrade: 0, // سيتم إضافته لاحقاً
+        behaviorGrade: 0, // سيتم إضافته لاحقاً
+        totalPoints: dailyTotal + weeklyTotal + monthlyTotal,
+        finalPercentage: 0 // سيتم حسابه لاحقاً
+      };
+
+      return NextResponse.json({
+        grades: allGrades.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        summary
+      });
+
+    } catch (dbError) {
+      console.error('خطأ في قاعدة البيانات:', dbError);
+      // في حالة الخطأ، نرجع بيانات فارغة
+      return NextResponse.json({
+        grades: [],
+        summary: null,
+        error: 'خطأ في جلب البيانات'
+      });
     }
-
-    // استخدام البيانات الاحتياطية
-    const fallbackGrades = getFallbackGrades();
-    const fallbackSummary = getFallbackSummary();
-
-    return NextResponse.json({
-      grades: fallbackGrades,
-      summary: fallbackSummary
-    });
 
   } catch (error) {
     console.error('خطأ في جلب درجات الطالبة:', error);
-    // حتى في حالة الخطأ، نعطي بيانات احتياطية
-    const fallbackGrades = getFallbackGrades();
-    const fallbackSummary = getFallbackSummary();
-
     return NextResponse.json({
-      grades: fallbackGrades,
-      summary: fallbackSummary
-    });
+      grades: [],
+      summary: null,
+      error: 'خطأ غير متوقع'
+    }, { status: 500 });
   }
 }
 
