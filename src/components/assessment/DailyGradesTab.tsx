@@ -1,5 +1,4 @@
 import React, { useState, useEffect, memo } from 'react';
-import { DailyGradeEntry, Student } from '@/types/assessment';
 import { generateQuarterStepValues } from '@/lib/grading-formulas';
 
 interface DailyGradesTabProps {
@@ -8,83 +7,157 @@ interface DailyGradesTabProps {
   onUnsavedChanges: (hasChanges: boolean) => void;
 }
 
+interface StudentCardData {
+  id: string;
+  studentName: string;
+  studentEmail: string;
+  studentNumber: number;
+  // Grades (4 fields + behavior)
+  memorizationQuran: number;
+  memorizationTajweed: number;
+  reviewQuran: number;
+  reviewTajweed: number;
+  behaviorScore: number;
+  // Tasks (read-only)
+  listening5Times: boolean;
+  repetition10Times: boolean;
+  recitedToPeer: boolean;
+  // Points (4 checkboxes)
+  earlyAttendance: boolean;
+  perfectMemorization: boolean;
+  activeParticipation: boolean;
+  timeCommitment: boolean;
+}
+
 export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyGradesTabProps) => {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [grades, setGrades] = useState<Record<string, DailyGradeEntry>>({});
+  const [studentsData, setStudentsData] = useState<StudentCardData[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [expandedSections, setExpandedSections] = useState<Record<string, { grades: boolean; tasks: boolean; points: boolean }>>({});
 
   const gradeValues = generateQuarterStepValues(5, 0.25);
+  const behaviorValues = generateQuarterStepValues(1, 0.25);
 
   useEffect(() => {
-    if (courseId) {
-      fetchStudents();
-      fetchExistingGrades();
+    if (courseId && date) {
+      fetchAllData();
     }
   }, [courseId, date]);
 
-  const fetchStudents = async () => {
+  const fetchAllData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/enrollment/enrolled-students?courseId=${courseId}`);
-      const data = await res.json();
-      if (res.ok) {
-        const studentsList = (data.enrollments || []).map((enrollment: any) => ({
-          id: enrollment.student.id,
-          studentName: enrollment.student.studentName,
-          studentNumber: enrollment.student.studentNumber,
-        }));
-        setStudents(studentsList);
+      // 1. Get students
+      const studentsRes = await fetch(`/api/enrollment/enrolled-students?courseId=${courseId}`);
+      const studentsData = await studentsRes.json();
+      
+      if (!studentsRes.ok) {
+        throw new Error('فشل جلب الطالبات');
       }
+
+      const students = (studentsData.enrollments || []).map((enrollment: any) => ({
+        id: enrollment.student.id,
+        studentName: enrollment.student.studentName,
+        studentEmail: enrollment.student.userEmail,
+        studentNumber: enrollment.student.studentNumber,
+      }));
+
+      // 2. Fetch all data in parallel
+      const [dailyGradesRes, behaviorRes, pointsRes, tasksRes] = await Promise.all([
+        fetch(`/api/grades/daily?courseId=${courseId}&startDate=${new Date(date).toISOString()}&endDate=${new Date(date).toISOString()}`),
+        fetch(`/api/grades/behavior?courseId=${courseId}&date=${date}`),
+        fetch(`/api/points/behavior?courseId=${courseId}&date=${date}`),
+        fetch(`/api/points/daily-tasks?courseId=${courseId}&date=${date}`)
+      ]);
+
+      const dailyGrades = await dailyGradesRes.json();
+      const behavior = await behaviorRes.json();
+      const points = await pointsRes.json();
+      const tasks = await tasksRes.json();
+
+      // 3. Merge all data
+      const mergedData: StudentCardData[] = students.map((student: any) => {
+        const dailyGrade = dailyGrades.dailyGrades?.find((g: any) => g.studentId === student.id);
+        const behaviorGrade = behavior.students?.find((s: any) => s.id === student.id)?.behaviorGrade;
+        const studentPoints = points.students?.find((s: any) => s.studentId === student.id);
+        const studentTasks = tasks.tasks?.find((t: any) => t.studentId === student.id);
+
+        return {
+          id: student.id,
+          studentName: student.studentName,
+          studentEmail: student.studentEmail,
+          studentNumber: student.studentNumber,
+          // Split memorization and review into quran + tajweed (simplified: 50/50)
+          memorizationQuran: dailyGrade ? Number(dailyGrade.memorization) / 2 : 0,
+          memorizationTajweed: dailyGrade ? Number(dailyGrade.memorization) / 2 : 0,
+          reviewQuran: dailyGrade ? Number(dailyGrade.review) / 2 : 0,
+          reviewTajweed: dailyGrade ? Number(dailyGrade.review) / 2 : 0,
+          behaviorScore: behaviorGrade?.dailyScore || 0,
+          listening5Times: studentTasks?.listening5Times || false,
+          repetition10Times: studentTasks?.repetition10Times || false,
+          recitedToPeer: studentTasks?.recitedToPeer || false,
+          earlyAttendance: studentPoints?.earlyAttendance || false,
+          perfectMemorization: studentPoints?.perfectMemorization || false,
+          activeParticipation: studentPoints?.activeParticipation || false,
+          timeCommitment: studentPoints?.timeCommitment || false,
+        };
+      });
+
+      setStudentsData(mergedData);
+      
+      // Initialize all sections as expanded
+      const expanded: Record<string, any> = {};
+      mergedData.forEach(s => {
+        expanded[s.id] = { grades: true, tasks: true, points: true };
+      });
+      setExpandedSections(expanded);
+
     } catch (error) {
-      console.error('خطأ في جلب الطالبات:', error);
+      console.error('خطأ في جلب البيانات:', error);
+      setMessage('❌ حدث خطأ في جلب البيانات');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchExistingGrades = async () => {
-    try {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      const res = await fetch(
-        `/api/grades/daily?courseId=${courseId}&startDate=${startOfDay.toISOString()}&endDate=${endOfDay.toISOString()}`
-      );
-      const data = await res.json();
-
-      if (res.ok && data.dailyGrades) {
-        const existingGrades: Record<string, DailyGradeEntry> = {};
-        data.dailyGrades.forEach((g: any) => {
-          existingGrades[g.studentId] = {
-            studentId: g.studentId,
-            memorization: Number(g.memorization),
-            review: Number(g.review),
-            notes: g.notes || '',
-          };
-        });
-        setGrades(existingGrades);
-      }
-    } catch (error) {
-      console.error('خطأ في جلب الدرجات:', error);
-    }
-  };
-
-  const handleGradeChange = (studentId: string, field: 'memorization' | 'review', value: number) => {
-    setGrades((prev) => ({
+  const toggleSection = (studentId: string, section: 'grades' | 'tasks' | 'points') => {
+    setExpandedSections(prev => ({
       ...prev,
       [studentId]: {
-        studentId,
-        memorization: field === 'memorization' ? value : prev[studentId]?.memorization || 0,
-        review: field === 'review' ? value : prev[studentId]?.review || 0,
-        notes: prev[studentId]?.notes || '',
-      },
+        ...prev[studentId],
+        [section]: !prev[studentId]?.[section]
+      }
     }));
+  };
+
+  const handleGradeChange = (studentId: string, field: keyof StudentCardData, value: number) => {
+    setStudentsData(prev => prev.map(s => 
+      s.id === studentId ? { ...s, [field]: value } : s
+    ));
     onUnsavedChanges(true);
     setMessage('');
+  };
+
+  const handlePointChange = (studentId: string, field: keyof StudentCardData) => {
+    setStudentsData(prev => prev.map(s => 
+      s.id === studentId ? { ...s, [field]: !s[field] } : s
+    ));
+    onUnsavedChanges(true);
+    setMessage('');
+  };
+
+  const calculateTotals = (student: StudentCardData) => {
+    const gradesTotal = student.memorizationQuran + student.memorizationTajweed + 
+                       student.reviewQuran + student.reviewTajweed + student.behaviorScore;
+    const tasksTotal = (student.listening5Times ? 5 : 0) + 
+                      (student.repetition10Times ? 5 : 0) + 
+                      (student.recitedToPeer ? 5 : 0);
+    const pointsTotal = (student.earlyAttendance ? 5 : 0) + 
+                       (student.perfectMemorization ? 5 : 0) + 
+                       (student.activeParticipation ? 5 : 0) + 
+                       (student.timeCommitment ? 5 : 0);
+    return { gradesTotal, tasksTotal, pointsTotal, grandTotal: gradesTotal + tasksTotal + pointsTotal };
   };
 
   const handleSaveAll = async () => {
@@ -95,34 +168,58 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
       const dateToSave = new Date(date);
       dateToSave.setHours(12, 0, 0, 0);
 
-      const gradesArray = Object.values(grades).map((g) => ({
-        studentId: g.studentId,
-        memorization: g.memorization,
-        review: g.review,
-        notes: g.notes || '',
+      // Save daily grades (merge quran + tajweed back)
+      const dailyGradesArray = studentsData.map(s => ({
+        studentId: s.id,
+        memorization: s.memorizationQuran + s.memorizationTajweed,
+        review: s.reviewQuran + s.reviewTajweed,
+        notes: ''
       }));
 
-      const res = await fetch('/api/grades/daily/save', {
+      const dailyRes = await fetch('/api/grades/daily/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseId,
-          date: dateToSave.toISOString(),
-          grades: gradesArray,
-        }),
+        body: JSON.stringify({ courseId, date: dateToSave.toISOString(), grades: dailyGradesArray })
       });
 
-      const data = await res.json();
+      // Save behavior grades
+      const behaviorArray = studentsData.map(s => ({
+        studentId: s.id,
+        dailyScore: s.behaviorScore,
+        notes: ''
+      }));
 
-      if (res.ok) {
-        setMessage('✅ تم حفظ الدرجات بنجاح');
+      const behaviorRes = await fetch('/api/grades/behavior', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId, date, grades: behaviorArray })
+      });
+
+      // Save behavior points
+      const pointsArray = studentsData.map(s => ({
+        studentId: s.id,
+        earlyAttendance: s.earlyAttendance,
+        perfectMemorization: s.perfectMemorization,
+        activeParticipation: s.activeParticipation,
+        timeCommitment: s.timeCommitment,
+        notes: ''
+      }));
+
+      const pointsRes = await fetch('/api/points/behavior', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId, date, points: pointsArray })
+      });
+
+      if (dailyRes.ok && behaviorRes.ok && pointsRes.ok) {
+        setMessage('✅ تم حفظ جميع البيانات بنجاح');
         onUnsavedChanges(false);
       } else {
-        setMessage(`❌ ${data.error || 'فشل الحفظ'}`);
+        setMessage('❌ حدث خطأ في حفظ بعض البيانات');
       }
     } catch (error) {
       console.error('خطأ في الحفظ:', error);
-      setMessage('❌ حدث خطأ في حفظ الدرجات');
+      setMessage('❌ حدث خطأ في حفظ البيانات');
     } finally {
       setSaving(false);
     }
@@ -133,9 +230,9 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-700 mb-4">
-        التقييم اليومي - {new Date(date).toLocaleDateString('ar-EG')}
+        التقييم اليومي الشامل - {new Date(date).toLocaleDateString('ar-EG')}
       </h3>
 
       {message && (
@@ -144,72 +241,193 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                م
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                اسم الطالبة
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                حفظ وتجويد (5)
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                مراجعة وتجويد (5)
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {students.map((student) => (
-              <tr key={student.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {student.studentNumber}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {student.studentName}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <select
-                    value={grades[student.id]?.memorization || 0}
-                    onChange={(e) => handleGradeChange(student.id, 'memorization', Number(e.target.value))}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    {gradeValues.map((val) => (
-                      <option key={val} value={val}>
-                        {val.toFixed(2)}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <select
-                    value={grades[student.id]?.review || 0}
-                    onChange={(e) => handleGradeChange(student.id, 'review', Number(e.target.value))}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    {gradeValues.map((val) => (
-                      <option key={val} value={val}>
-                        {val.toFixed(2)}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {studentsData.map(student => {
+          const totals = calculateTotals(student);
+          const isExpanded = expandedSections[student.id] || { grades: true, tasks: true, points: true };
+
+          return (
+            <div key={student.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+              {/* Header */}
+              <div className="bg-gradient-to-br from-purple-500 to-pink-500 text-white p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h4 className="text-lg font-bold">👧 {student.studentName}</h4>
+                    <p className="text-sm opacity-90">{student.studentEmail}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">{totals.grandTotal.toFixed(2)}</div>
+                    <div className="text-xs">المجموع</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 1: Grades */}
+              <div className="border-b border-gray-200">
+                <button
+                  onClick={() => toggleSection(student.id, 'grades')}
+                  className="w-full p-3 bg-white hover:bg-gray-50 flex justify-between items-center text-right"
+                >
+                  <span className="font-semibold text-gray-700">📚 الدرجات ({totals.gradesTotal.toFixed(2)} درجة)</span>
+                  <span>{isExpanded.grades ? '⏬' : '⏫'}</span>
+                </button>
+                {isExpanded.grades && (
+                  <div className="p-4 bg-white space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-gray-600">د.ح.ق</label>
+                        <select
+                          value={student.memorizationQuran}
+                          onChange={(e) => handleGradeChange(student.id, 'memorizationQuran', Number(e.target.value))}
+                          className="w-full px-2 py-1 text-sm border rounded"
+                        >
+                          {gradeValues.map(v => <option key={v} value={v}>{v.toFixed(2)}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">د.ح.ت</label>
+                        <select
+                          value={student.memorizationTajweed}
+                          onChange={(e) => handleGradeChange(student.id, 'memorizationTajweed', Number(e.target.value))}
+                          className="w-full px-2 py-1 text-sm border rounded"
+                        >
+                          {gradeValues.map(v => <option key={v} value={v}>{v.toFixed(2)}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">د.م.ق</label>
+                        <select
+                          value={student.reviewQuran}
+                          onChange={(e) => handleGradeChange(student.id, 'reviewQuran', Number(e.target.value))}
+                          className="w-full px-2 py-1 text-sm border rounded"
+                        >
+                          {gradeValues.map(v => <option key={v} value={v}>{v.toFixed(2)}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">د.م.ت</label>
+                        <select
+                          value={student.reviewTajweed}
+                          onChange={(e) => handleGradeChange(student.id, 'reviewTajweed', Number(e.target.value))}
+                          className="w-full px-2 py-1 text-sm border rounded"
+                        >
+                          {gradeValues.map(v => <option key={v} value={v}>{v.toFixed(2)}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">د.سلوك (0-1)</label>
+                      <select
+                        value={student.behaviorScore}
+                        onChange={(e) => handleGradeChange(student.id, 'behaviorScore', Number(e.target.value))}
+                        className="w-full px-2 py-1 text-sm border rounded"
+                      >
+                        {behaviorValues.map(v => <option key={v} value={v}>{v.toFixed(2)}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Section 2: Tasks (Read-only) */}
+              <div className="border-b border-gray-200">
+                <button
+                  onClick={() => toggleSection(student.id, 'tasks')}
+                  className="w-full p-3 bg-green-50 hover:bg-green-100 flex justify-between items-center text-right"
+                >
+                  <span className="font-semibold text-gray-700">🎯 المهام ({totals.tasksTotal} نقطة)</span>
+                  <span>{isExpanded.tasks ? '⏬' : '⏫'}</span>
+                </button>
+                {isExpanded.tasks && (
+                  <div className="p-4 bg-green-50 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={student.listening5Times} disabled className="w-4 h-4" />
+                      <span className="text-sm">🔊 سماع 5× ({student.listening5Times ? 5 : 0})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={student.repetition10Times} disabled className="w-4 h-4" />
+                      <span className="text-sm">🔄 تكرار 10× ({student.repetition10Times ? 5 : 0})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={student.recitedToPeer} disabled className="w-4 h-4" />
+                      <span className="text-sm">👥 سرد ({student.recitedToPeer ? 5 : 0})</span>
+                    </div>
+                    <p className="text-xs text-gray-600 italic mt-2">(الطالبة أدخلت هذه المهام)</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Section 3: Points */}
+              <div>
+                <button
+                  onClick={() => toggleSection(student.id, 'points')}
+                  className="w-full p-3 bg-blue-50 hover:bg-blue-100 flex justify-between items-center text-right"
+                >
+                  <span className="font-semibold text-gray-700">🏆 النقاط ({totals.pointsTotal} نقطة)</span>
+                  <span>{isExpanded.points ? '⏬' : '⏫'}</span>
+                </button>
+                {isExpanded.points && (
+                  <div className="p-4 bg-blue-50 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={student.earlyAttendance}
+                        onChange={() => handlePointChange(student.id, 'earlyAttendance')}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">⏰ مبكر (5)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={student.perfectMemorization}
+                        onChange={() => handlePointChange(student.id, 'perfectMemorization')}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">✅ متقن (5)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={student.activeParticipation}
+                        onChange={() => handlePointChange(student.id, 'activeParticipation')}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">🙋 مشاركة (5)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={student.timeCommitment}
+                        onChange={() => handlePointChange(student.id, 'timeCommitment')}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">⌚ التزام (5)</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="bg-gray-50 px-4 py-2 text-xs text-gray-600 flex justify-between border-t">
+                <span>درجات: {totals.gradesTotal.toFixed(2)}</span>
+                <span>مهام: {totals.tasksTotal}</span>
+                <span>نقاط: {totals.pointsTotal}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
+      {/* Save Button */}
       <div className="flex justify-end mt-6">
         <button
           onClick={handleSaveAll}
-          disabled={saving}
-          className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          disabled={saving || studentsData.length === 0}
+          className="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
         >
-          {saving ? 'جاري الحفظ...' : 'حفظ جميع الدرجات'}
+          {saving ? 'جاري الحفظ...' : 'حفظ جميع البيانات'}
         </button>
       </div>
     </div>

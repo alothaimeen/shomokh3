@@ -12,9 +12,6 @@ const DailyGradesTab = lazy(() => import('@/components/assessment/DailyGradesTab
 const WeeklyGradesTab = lazy(() => import('@/components/assessment/WeeklyGradesTab').then(m => ({ default: m.WeeklyGradesTab })));
 const MonthlyGradesTab = lazy(() => import('@/components/assessment/MonthlyGradesTab').then(m => ({ default: m.MonthlyGradesTab })));
 const FinalExamTab = lazy(() => import('@/components/assessment/FinalExamTab').then(m => ({ default: m.FinalExamTab })));
-const BehaviorGradesTab = lazy(() => import('@/components/assessment/BehaviorGradesTab').then(m => ({ default: m.BehaviorGradesTab })));
-const DailyTasksTab = lazy(() => import('@/components/assessment/DailyTasksTab').then(m => ({ default: m.DailyTasksTab })));
-const BehaviorPointsTab = lazy(() => import('@/components/assessment/BehaviorPointsTab').then(m => ({ default: m.BehaviorPointsTab })));
 
 function UnifiedAssessmentContent() {
   const { data: session, status } = useSession();
@@ -185,17 +182,14 @@ function UnifiedAssessmentContent() {
 
         {selectedCourse ? (
           <>
-            {/* Tabs Navigation */}
+            {/* Tabs Navigation - 4 tabs only */}
             <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
               <div className="flex flex-wrap gap-2">
                 {TAB_CONFIGS.map((tab) => {
-                  // Hide certain tabs for students
-                  if (session.user.role === 'STUDENT') {
-                    if (tab.id === 'points') return null; // المعلمة فقط
+                  // Show only 4 main tabs: daily, weekly, monthly, final
+                  if (!['daily', 'weekly', 'monthly', 'final'].includes(tab.id)) {
+                    return null;
                   }
-                  
-                  // Hide tasks tab for teachers/admins
-                  if (isTeacherOrAdmin && tab.id === 'tasks') return null;
 
                   return (
                     <button
@@ -217,8 +211,8 @@ function UnifiedAssessmentContent() {
               </div>
             </div>
 
-            {/* Date/Week/Month Selector (conditional) */}
-            {(activeTab === 'daily' || activeTab === 'behavior' || activeTab === 'tasks') && (
+            {/* Date Selector for Daily Tab */}
+            {activeTab === 'daily' && (
               <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   التاريخ:
@@ -235,7 +229,7 @@ function UnifiedAssessmentContent() {
               </div>
             )}
 
-            {/* Tab Content */}
+            {/* Tab Content - 4 tabs only */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <Suspense fallback={<AssessmentSkeleton />}>
                 {activeTab === 'daily' && (
@@ -270,27 +264,6 @@ function UnifiedAssessmentContent() {
                 {activeTab === 'final' && (
                   <FinalExamTab
                     courseId={selectedCourse}
-                    onUnsavedChanges={setHasUnsavedChanges}
-                  />
-                )}
-                {activeTab === 'behavior' && (
-                  <BehaviorGradesTab
-                    courseId={selectedCourse}
-                    date={selectedDate}
-                    onUnsavedChanges={setHasUnsavedChanges}
-                  />
-                )}
-                {activeTab === 'tasks' && session.user.role === 'STUDENT' && (
-                  <DailyTasksTab
-                    courseId={selectedCourse}
-                    date={selectedDate}
-                    onUnsavedChanges={setHasUnsavedChanges}
-                  />
-                )}
-                {activeTab === 'points' && isTeacherOrAdmin && (
-                  <BehaviorPointsTab
-                    courseId={selectedCourse}
-                    date={selectedDate}
                     onUnsavedChanges={setHasUnsavedChanges}
                   />
                 )}
