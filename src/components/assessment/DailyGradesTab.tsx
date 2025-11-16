@@ -148,8 +148,8 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
   };
 
   const calculateTotals = (student: StudentCardData) => {
-    const gradesTotal = student.memorizationQuran + student.memorizationTajweed + 
-                       student.reviewQuran + student.reviewTajweed + student.behaviorScore;
+    const gradesTotal = Number(student.memorizationQuran) + Number(student.memorizationTajweed) + 
+                       Number(student.reviewQuran) + Number(student.reviewTajweed) + Number(student.behaviorScore);
     const tasksTotal = (student.listening5Times ? 5 : 0) + 
                       (student.repetition10Times ? 5 : 0) + 
                       (student.recitedToPeer ? 5 : 0);
