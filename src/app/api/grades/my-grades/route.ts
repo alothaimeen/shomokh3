@@ -261,6 +261,53 @@ export async function GET(request: NextRequest) {
         })));
       }
 
+      // جلب درجات الاختبار النهائي
+      for (const enrollment of enrollments) {
+        const finalExamGrades = await (db as any).finalExam.findMany({
+          where: {
+            studentId: student.id,
+            courseId: enrollment.courseId
+          }
+        });
+
+        allGrades.push(...finalExamGrades.map((g: any) => ({
+          id: g.id,
+          type: 'final' as const,
+          category: 'الاختبار النهائي',
+          score: parseFloat(g.quranTest.toString()) + parseFloat(g.tajweedTest.toString()),
+          maxScore: 60,
+          quranScore: parseFloat(g.quranTest.toString()),
+          tajweedScore: parseFloat(g.tajweedTest.toString()),
+          date: g.createdAt.toISOString().split('T')[0],
+          courseName: enrollment.course.courseName,
+          teacherName: enrollment.course.teacher?.userName || 'غير محدد'
+        })));
+      }
+
+      // جلب درجات السلوك
+      for (const enrollment of enrollments) {
+        const behaviorGrades = await (db as any).behaviorGrade.findMany({
+          where: {
+            studentId: student.id,
+            courseId: enrollment.courseId
+          },
+          orderBy: { date: 'desc' },
+          take: 70 // جميع الأيام
+        });
+
+        allGrades.push(...behaviorGrades.map((g: any) => ({
+          id: g.id,
+          type: 'behavior' as const,
+          category: 'السلوك اليومي',
+          score: parseFloat(g.dailyScore.toString()),
+          maxScore: 1,
+          date: g.date.toISOString().split('T')[0],
+          courseName: enrollment.course.courseName,
+          teacherName: enrollment.course.teacher?.userName || 'غير محدد',
+          notes: g.notes
+        })));
+      }
+
       // حساب الملخص
       const dailyTotal = allGrades
         .filter(g => g.type === 'daily')
@@ -274,14 +321,68 @@ export async function GET(request: NextRequest) {
         .filter(g => g.type === 'monthly')
         .reduce((sum, g) => sum + g.score, 0);
 
+      const finalExamTotal = allGrades
+        .filter(g => g.type === 'final')
+        .reduce((sum, g) => sum + g.score, 0);
+
+      const behaviorTotal = allGrades
+        .filter(g => g.type === 'behavior')
+        .reduce((sum, g) => sum + g.score, 0);
+
+      // حساب الدرجات النهائية حسب الصيغ
+      const finalDailyScore = dailyTotal / 14; // من 50
+      const finalWeeklyScore = weeklyTotal; // من 50
+      const finalMonthlyScore = monthlyTotal / 3; // من 30
+      const finalExamScore = finalExamTotal; // من 60
+      const finalBehaviorScore = behaviorTotal / 7; // من 10
+
+      const finalTotalScore = finalDailyScore + finalWeeklyScore + finalMonthlyScore + finalExamScore + finalBehaviorScore;
+      const finalPercentage = (finalTotalScore / 200) * 100;
+
+      // حساب النقاط التحفيزية
+      let taskPoints = 0;
+      let behaviorPoints = 0;
+
+      try {
+        // نقاط المهام اليومية
+        const dailyTasks: any = await db.$queryRawUnsafe(`
+          SELECT * FROM daily_tasks WHERE "studentId" = $1
+        `, student.id);
+        
+        taskPoints = dailyTasks.reduce((sum: number, task: any) => {
+          const listening = task.listening5Times ? 5 : 0;
+          const repetition = task.repetition10Times ? 5 : 0;
+          const recitation = task.recitedToPeer ? 5 : 0;
+          return sum + listening + repetition + recitation;
+        }, 0);
+
+        // النقاط السلوكية
+        const behaviorPointsData = await db.behaviorPoint.findMany({
+          where: { studentId: student.id }
+        });
+        
+        behaviorPoints = behaviorPointsData.reduce((sum, point) => {
+          let total = 0;
+          if (point.earlyAttendance) total += 5;
+          if (point.perfectMemorization) total += 5;
+          if (point.activeParticipation) total += 5;
+          if (point.timeCommitment) total += 5;
+          return sum + total;
+        }, 0);
+      } catch (pointsError) {
+        console.log('تحذير: لم يتم جلب النقاط التحفيزية', pointsError);
+      }
+
       const summary = {
         totalDailyGrades: dailyTotal,
         totalWeeklyGrades: weeklyTotal,
         totalMonthlyGrades: monthlyTotal,
-        finalExamGrade: 0, // سيتم إضافته لاحقاً
-        behaviorGrade: 0, // سيتم إضافته لاحقاً
-        totalPoints: dailyTotal + weeklyTotal + monthlyTotal,
-        finalPercentage: 0 // سيتم حسابه لاحقاً
+        finalExamGrade: finalExamTotal,
+        behaviorGrade: behaviorTotal,
+        totalPoints: dailyTotal + weeklyTotal + monthlyTotal + finalExamTotal + behaviorTotal,
+        finalPercentage: Math.round(finalPercentage * 10) / 10,
+        taskPoints,
+        behaviorPoints
       };
 
       return NextResponse.json({

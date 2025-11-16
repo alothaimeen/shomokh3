@@ -22,8 +22,8 @@ export default withAuth(
 
     // قواعد الوصول حسب الدور
     const rolePermissions = {
-      ADMIN: ['/dashboard', '/users', '/programs', '/students', '/attendance', '/attendance-report', '/academic-reports', '/reports', '/enrolled-students', '/teacher-requests', '/enrollment', '/my-attendance', '/my-grades', '/daily-tasks', '/daily-grades', '/weekly-grades', '/monthly-grades', '/profile'], // يمكنه الوصول لكل شيء
-      TEACHER: ['/dashboard', '/teacher', '/programs', '/students', '/attendance', '/teacher-requests', '/enrolled-students', '/daily-grades', '/weekly-grades', '/monthly-grades', '/profile'], // يمكنه إدارة حلقاته وطالباته
+      ADMIN: ['/dashboard', '/users', '/programs', '/students', '/attendance', '/attendance-report', '/academic-reports', '/reports', '/enrolled-students', '/teacher-requests', '/enrollment', '/my-attendance', '/my-grades', '/daily-tasks', '/daily-grades', '/weekly-grades', '/monthly-grades', '/final-exam', '/behavior-grades', '/behavior-points', '/profile'], // يمكنه الوصول لكل شيء
+      TEACHER: ['/dashboard', '/teacher', '/programs', '/students', '/attendance', '/attendance-report', '/academic-reports', '/teacher-requests', '/enrolled-students', '/daily-grades', '/weekly-grades', '/monthly-grades', '/final-exam', '/behavior-grades', '/behavior-points', '/profile'], // يمكنه إدارة حلقاته وطالباته
       STUDENT: ['/dashboard', '/enrollment', '/programs', '/my-attendance', '/my-grades', '/daily-tasks', '/profile'], // يمكنه طلب الانضمام ومشاهدة حضوره ودرجاته ومهامه
     };
 
@@ -32,7 +32,7 @@ export default withAuth(
 
     // التحقق إذا كان المسار مسموح للدور الحالي
     const hasAccess = allowedPaths.some(allowedPath =>
-      path.startsWith(allowedPath) || path === '/' || path === '/api/auth' || path.startsWith('/api/attendance') || path.startsWith('/api/enrollment') || path.startsWith('/api/grades') || path.startsWith('/api/tasks') || path.startsWith('/api/dashboard') || path.startsWith('/api/programs') || path.startsWith('/api/students') || path.startsWith('/api/users')
+      path.startsWith(allowedPath) || path === '/' || path === '/api/auth' || path.startsWith('/api/attendance') || path.startsWith('/api/enrollment') || path.startsWith('/api/grades') || path.startsWith('/api/tasks') || path.startsWith('/api/points') || path.startsWith('/api/dashboard') || path.startsWith('/api/programs') || path.startsWith('/api/students') || path.startsWith('/api/users') || path.startsWith('/api/courses')
     );
 
     if (!hasAccess) {

@@ -67,10 +67,12 @@ export default function DashboardPage() {
       }
 
       try {
-        const response = await fetch('/api/attendance/teacher-courses');
+        const response = await fetch('/api/courses/teacher-courses');
         if (response.ok) {
           const data = await response.json();
           setTeacherCourses(data.courses || []);
+        } else {
+          console.error('فشل جلب الحلقات:', response.status);
         }
       } catch (error) {
         console.error('خطأ في جلب الحلقات:', error);
@@ -297,7 +299,7 @@ export default function DashboardPage() {
                             👩‍🎓 الطالبات
                           </Link>
                           <Link
-                            href={`/attendance-report?courseId=${course.id}`}
+                            href={`/academic-reports?courseId=${course.id}`}
                             className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
                           >
                             📊 التقرير
@@ -307,7 +309,7 @@ export default function DashboardPage() {
                         {/* أزرار الدرجات متجاورة */}
                         <div className="border-t pt-3 mt-3">
                           <p className="text-xs font-medium text-gray-700 mb-2">التقييمات والدرجات:</p>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             <Link
                               href={`/daily-grades?courseId=${course.id}`}
                               className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
@@ -327,11 +329,22 @@ export default function DashboardPage() {
                               🗓️ شهري
                             </Link>
                             <Link
-                              href={`#`}
-                              className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded text-sm text-center transition-colors opacity-50 cursor-not-allowed"
-                              onClick={(e) => e.preventDefault()}
+                              href={`/behavior-grades?courseId=${course.id}`}
+                              className="bg-cyan-500 hover:bg-cyan-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
                             >
-                              🏆 نهائي
+                              ⭐ السلوك
+                            </Link>
+                            <Link
+                              href={`/behavior-points?courseId=${course.id}`}
+                              className="bg-pink-500 hover:bg-pink-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                            >
+                              🌟 النقاط السلوكية
+                            </Link>
+                            <Link
+                              href={`/final-exam?courseId=${course.id}`}
+                              className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                            >
+                              📄 النهائي
                             </Link>
                           </div>
                         </div>

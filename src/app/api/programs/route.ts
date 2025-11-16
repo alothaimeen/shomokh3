@@ -16,6 +16,20 @@ export async function GET(request: NextRequest) {
     const programs = await prisma.program.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
+        courses: {
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                userName: true,
+                userEmail: true
+              }
+            },
+            _count: {
+              select: { enrollments: true }
+            }
+          }
+        },
         _count: {
           select: { courses: true }
         }
@@ -29,10 +43,19 @@ export async function GET(request: NextRequest) {
       programDescription: program.programDescription || '',
       isActive: program.isActive,
       createdAt: program.createdAt.toISOString().split('T')[0],
-      coursesCount: program._count.courses
+      coursesCount: program._count.courses,
+      courses: program.courses.map(course => ({
+        id: course.id,
+        courseName: course.courseName,
+        courseDescription: course.courseDescription || '',
+        level: course.level,
+        maxStudents: course.maxStudents,
+        teacher: course.teacher,
+        studentsCount: course._count.enrollments
+      }))
     }));
 
-    return NextResponse.json(formattedPrograms);
+    return NextResponse.json({ programs: formattedPrograms });
 
   } catch (error) {
     console.error('خطأ في جلب البرامج:', error);

@@ -72,15 +72,15 @@ export default function ReportsPage() {
             </button>
           </div>
 
-          {/* تقارير الأداء */}
+          {/* تقارير الدرجات */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">📈</span>
+                <span className="text-2xl">�</span>
               </div>
               <div className="mr-4">
-                <h3 className="text-lg font-semibold text-gray-800">تقارير الأداء</h3>
-                <p className="text-sm text-gray-600">أداء الطالبات والمعلمات</p>
+                <h3 className="text-lg font-semibold text-gray-800">تقارير الدرجات</h3>
+                <p className="text-sm text-gray-600">التقرير الشامل للدرجات النهائية</p>
               </div>
             </div>
             <button
@@ -141,10 +141,11 @@ export default function ReportsPage() {
         </div>
 
         {/* رسالة تحت التطوير */}
-        <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <div className="text-yellow-800">
-            <h3 className="text-lg font-semibold mb-2">قريباً</h3>
-            <p>معظم هذه التقارير تحت التطوير. حالياً متوفر تقرير الحضور فقط.</p>
+        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+          <div className="text-blue-800">
+            <h3 className="text-lg font-semibold mb-2">✅ التقارير المتوفرة حالياً</h3>
+            <p className="mb-2">تقرير الحضور وتقرير الدرجات الشامل</p>
+            <p className="text-sm text-blue-600">التقارير الأخرى قيد التطوير</p>
           </div>
         </div>
 

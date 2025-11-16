@@ -93,6 +93,10 @@ model Course {
   dailyGrades        DailyGrade[]
   weeklyGrades       WeeklyGrade[]
   monthlyGrades      MonthlyGrade[]
+  finalExams         FinalExam[]
+  behaviorGrades     BehaviorGrade[]
+  dailyTasks         DailyTask[]
+  behaviorPoints     BehaviorPoint[]
 
   @@map("courses")
 }
@@ -119,6 +123,10 @@ model Student {
   dailyGrades        DailyGrade[]
   weeklyGrades       WeeklyGrade[]
   monthlyGrades      MonthlyGrade[]
+  finalExams         FinalExam[]
+  behaviorGrades     BehaviorGrade[]
+  dailyTasks         DailyTask[]
+  behaviorPoints     BehaviorPoint[]
 
   @@map("students")
 }
@@ -241,4 +249,89 @@ model MonthlyGrade {
   // طالبة واحدة في حلقة واحدة في شهر واحد (درجة شهرية واحدة)
   @@unique([studentId, courseId, month])
   @@map("monthly_grades")
+}
+
+model FinalExam {
+  id           String   @id @default(cuid())
+  quranTest    Decimal  @default(0) @db.Decimal(4, 2) // اختبار القرآن (0 - 40.00)
+  tajweedTest  Decimal  @default(0) @db.Decimal(4, 2) // اختبار التجويد (0 - 20.00)
+  notes        String?                          // ملاحظات اختيارية
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // العلاقات
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // طالبة واحدة في حلقة واحدة (اختبار نهائي واحد)
+  @@unique([studentId, courseId])
+  @@map("final_exams")
+}
+
+model BehaviorGrade {
+  id           String   @id @default(cuid())
+  date         DateTime                         // تاريخ التقييم
+  dailyScore   Decimal  @default(0) @db.Decimal(3, 2) // درجة يومية (0 - 1.00)
+  notes        String?                          // ملاحظات اختيارية
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // العلاقات
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // طالبة واحدة في حلقة واحدة في يوم واحد (درجة سلوك يومية واحدة)
+  @@unique([studentId, courseId, date])
+  @@map("behavior_grades")
+}
+
+model DailyTask {
+  id                String   @id @default(cuid())
+  date              DateTime                         // تاريخ المهام
+  listening5Times   Boolean  @default(false)         // السماع 5 مرات (5 نقاط)
+  repetition10Times Boolean  @default(false)         // التكرار 10 مرات (5 نقاط)
+  recitedToPeer     Boolean  @default(false)         // السرد على الرفيقة (5 نقاط)
+  notes             String?                          // ملاحظات اختيارية
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // العلاقات
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // طالبة واحدة في حلقة واحدة في يوم واحد (مهام يومية واحدة)
+  @@unique([studentId, courseId, date])
+  @@map("daily_tasks")
+}
+
+model BehaviorPoint {
+  id              String   @id @default(cuid())
+  date            DateTime                         // تاريخ التقييم
+  earlyAttendance Boolean  @default(false)         // الحضور المبكر (5 نقاط)
+  perfectMemorization Boolean @default(false)      // الحفظ المتقن (5 نقاط)
+  activeParticipation Boolean @default(false)      // المشاركة الفعالة (5 نقاط)
+  timeCommitment  Boolean  @default(false)         // الالتزام بالحضور حتى نهاية الوقت (5 نقاط)
+  notes           String?                          // ملاحظات اختيارية
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // العلاقات
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // طالبة واحدة في حلقة واحدة في يوم واحد (نقاط سلوكية يومية واحدة)
+  @@unique([studentId, courseId, date])
+  @@map("behavior_points")
 }

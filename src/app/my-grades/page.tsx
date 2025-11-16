@@ -24,6 +24,8 @@ interface GradeSummary {
   behaviorGrade: number;
   totalPoints: number;
   finalPercentage: number;
+  taskPoints?: number;
+  behaviorPoints?: number;
 }
 
 export default function MyGradesPage() {
@@ -202,6 +204,40 @@ export default function MyGradesPage() {
                 <div className="text-2xl font-bold text-indigo-600">{summary.finalPercentage}%</div>
                 <div className="text-sm text-gray-600">النسبة النهائية</div>
                 <div className="text-xs text-gray-500">{summary.totalPoints} من 970</div>
+              </div>
+            </div>
+            
+            {/* النقاط التحفيزية */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
+              <h3 className="text-lg font-bold text-purple-800 mb-3">🌟 النقاط التحفيزية</h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-white rounded-lg shadow">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {summary.taskPoints || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">نقاط المهام اليومية</div>
+                  <div className="text-xs text-gray-500">من 1050 نقطة</div>
+                  <div className="text-xs text-purple-600 mt-1">
+                    السماع + التكرار + السرد
+                  </div>
+                </div>
+                <div className="text-center p-3 bg-white rounded-lg shadow">
+                  <div className="text-2xl font-bold text-pink-600">
+                    {summary.behaviorPoints || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">النقاط السلوكية</div>
+                  <div className="text-xs text-gray-500">من 1400 نقطة</div>
+                  <div className="text-xs text-pink-600 mt-1">
+                    الحضور + الحفظ + المشاركة + الالتزام
+                  </div>
+                </div>
+                <div className="text-center p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg shadow">
+                  <div className="text-3xl font-bold text-purple-700">
+                    {(summary.taskPoints || 0) + (summary.behaviorPoints || 0)}
+                  </div>
+                  <div className="text-sm font-semibold text-purple-800">إجمالي النقاط</div>
+                  <div className="text-xs text-purple-600">من 2450 نقطة</div>
+                </div>
               </div>
             </div>
           </div>

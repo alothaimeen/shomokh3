@@ -85,29 +85,108 @@ export function calculateSingleMonthGrade(components: {
   );
 }
 
-export function calculateFinalGrade(student: {
-  dailyGrades: number; // 700 درجة خام
-  weeklyGrades: number; // 50 درجة (10 × 5)
-  monthlyGrades: number; // 90 درجة خام
-  behaviorGrades: number; // 70 درجة خام
-  finalExam: number; // 60 درجة
-}) {
-  const daily = student.dailyGrades / 14; // 700 ÷ 14 = 50
-  const weekly = student.weeklyGrades; // 50 already (10 × 5)
-  const monthly = student.monthlyGrades / 3; // 90 ÷ 3 = 30
-  const behavior = student.behaviorGrades / 7; // 70 ÷ 7 = 10
-  const finalScore = student.finalExam; // 60
+/**
+ * حساب إجمالي درجة الاختبار النهائي (القرآن + التجويد)
+ * @param quranTest درجة اختبار القرآن (0-40)
+ * @param tajweedTest درجة اختبار التجويد (0-20)
+ * @returns المجموع (0-60)
+ */
+export function calculateFinalExamTotal(quranTest: number, tajweedTest: number): number {
+  return quranTest + tajweedTest;
+}
 
-  const total = daily + weekly + monthly + behavior + finalScore;
+/**
+ * حساب إجمالي السلوك الخام (مجموع 70 يوم × درجة 0-1)
+ * @param behaviorGrades مصفوفة الدرجات اليومية
+ * @returns المجموع الخام (0-70)
+ */
+export function calculateBehaviorRaw(behaviorGrades: number[]): number {
+  if (!Array.isArray(behaviorGrades)) return 0;
+  return behaviorGrades.reduce((sum, grade) => sum + grade, 0);
+}
+
+/**
+ * حساب السلوك النهائي (70 درجة خام ÷ 7 = 10 درجات نهائية)
+ * @param rawBehaviorTotal المجموع الخام للسلوك
+ * @returns الدرجة النهائية (0-10)
+ */
+export function calculateBehaviorTotal(rawBehaviorTotal: number): number {
+  return rawBehaviorTotal / 7;
+}
+
+/**
+ * حساب الدرجة اليومية النهائية (700 ÷ 14 = 50)
+ * @param rawDailyTotal المجموع الخام (0-700)
+ * @returns الدرجة النهائية (0-50)
+ */
+export function calculateDailyFinalGrade(rawDailyTotal: number): number {
+  return rawDailyTotal / 14;
+}
+
+/**
+ * حساب الدرجة الأسبوعية النهائية (10 أسابيع × 5 = 50)
+ * @param rawWeeklyTotal المجموع (0-50)
+ * @returns الدرجة النهائية (0-50)
+ */
+export function calculateWeeklyFinalGrade(rawWeeklyTotal: number): number {
+  return rawWeeklyTotal; // Already 50
+}
+
+/**
+ * حساب الدرجة الشهرية النهائية (90 ÷ 3 = 30)
+ * @param rawMonthlyTotal المجموع الخام (0-90)
+ * @returns الدرجة النهائية (0-30)
+ */
+export function calculateMonthlyFinalGrade(rawMonthlyTotal: number): number {
+  return rawMonthlyTotal / 3;
+}
+
+/**
+ * حساب الدرجة السلوكية النهائية (70 ÷ 7 = 10)
+ * @param rawBehaviorTotal المجموع الخام (0-70)
+ * @returns الدرجة النهائية (0-10)
+ */
+export function calculateBehaviorFinalGrade(rawBehaviorTotal: number): number {
+  return rawBehaviorTotal / 7;
+}
+
+/**
+ * حساب الدرجة النهائية للاختبار (القرآن + التجويد = 60)
+ * @param finalExamTotal المجموع (0-60)
+ * @returns الدرجة النهائية (0-60)
+ */
+export function calculateFinalExamFinalGrade(finalExamTotal: number): number {
+  return finalExamTotal; // Already 60
+}
+
+/**
+ * حساب المجموع النهائي والنسبة المئوية
+ * @param grades كائن يحتوي على جميع الدرجات الخام
+ * @returns كائن يحتوي على الدرجات النهائية والمجموع والنسبة المئوية
+ */
+export function calculateFinalGrade(grades: {
+  dailyRaw: number; // 0-700
+  weeklyRaw: number; // 0-50
+  monthlyRaw: number; // 0-90
+  behaviorRaw: number; // 0-70
+  finalExamRaw: number; // 0-60
+}) {
+  const daily = calculateDailyFinalGrade(grades.dailyRaw); // 50
+  const weekly = calculateWeeklyFinalGrade(grades.weeklyRaw); // 50
+  const monthly = calculateMonthlyFinalGrade(grades.monthlyRaw); // 30
+  const behavior = calculateBehaviorFinalGrade(grades.behaviorRaw); // 10
+  const finalExam = calculateFinalExamFinalGrade(grades.finalExamRaw); // 60
+
+  const total = daily + weekly + monthly + behavior + finalExam; // 200
   const percentage = (total / 200) * 100;
 
   return {
-    daily,
-    weekly,
-    monthly,
-    behavior,
-    final: finalScore,
-    total,
-    percentage,
+    daily: Math.round(daily * 100) / 100,
+    weekly: Math.round(weekly * 100) / 100,
+    monthly: Math.round(monthly * 100) / 100,
+    behavior: Math.round(behavior * 100) / 100,
+    finalExam: Math.round(finalExam * 100) / 100,
+    total: Math.round(total * 100) / 100,
+    percentage: Math.round(percentage * 100) / 100,
   };
 }

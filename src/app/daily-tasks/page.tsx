@@ -1,352 +1,297 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+
+interface Enrollment {
+  id: string;
+  courseName: string;
+  programName: string;
+  level: number;
+  teacherName: string;
+}
 
 interface DailyTask {
-  id: string;
-  taskType: 'listening' | 'repetition' | 'narration';
-  taskName: string;
-  description: string;
-  points: number;
-  maxOccurrences: number;
-  currentOccurrences: number;
-  completed: boolean;
   date: string;
+  listening5Times: boolean;
+  repetition10Times: boolean;
+  recitedToPeer: boolean;
+  notes?: string;
 }
 
-interface TaskProgress {
-  totalPointsToday: number;
-  maxPointsPerDay: number;
-  weeklyProgress: number;
-  totalPointsWeek: number;
-  maxPointsPerWeek: number;
-}
-
-export default function DailyTasksPage() {
+function DailyTasksContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [tasks, setTasks] = useState<DailyTask[]>([]);
-  const [progress, setProgress] = useState<TaskProgress | null>(null);
+  const searchParams = useSearchParams();
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  const [taskData, setTaskData] = useState<DailyTask>({
+    date: new Date().toISOString().split('T')[0],
+    listening5Times: false,
+    repetition10Times: false,
+    recitedToPeer: false,
+    notes: ''
+  });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState<string | null>(null);
-
-  const fetchDailyTasks = useCallback(async () => {
-    try {
-      const response = await fetch('/api/tasks/daily-tasks');
-      if (!response.ok) {
-        throw new Error('فشل في تحميل المهام');
-      }
-      const data = await response.json();
-      setTasks(data.tasks);
-      setProgress(data.progress);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطأ غير متوقع');
-      // بيانات احتياطية
-      setTasks(getFallbackTasks());
-      setProgress(getFallbackProgress());
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (status === 'loading') return;
-
-    if (!session || session.user.userRole !== 'STUDENT') {
-      router.push('/dashboard');
-      return;
+    if (status === "unauthenticated") {
+      router.push('/login');
     }
+  }, [status, router]);
 
-    fetchDailyTasks();
-  }, [session, status, router, fetchDailyTasks]);
-
-  const getFallbackTasks = (): DailyTask[] => {
-    const today = new Date().toISOString().split('T')[0];
-    return [
-      {
-        id: "task-1",
-        taskType: "listening",
-        taskName: "السماع",
-        description: "الاستماع للصفحات المحددة من المعلمة",
-        points: 1,
-        maxOccurrences: 5,
-        currentOccurrences: 3,
-        completed: false,
-        date: today
-      },
-      {
-        id: "task-2",
-        taskType: "repetition",
-        taskName: "التكرار",
-        description: "تكرار الآيات المحفوظة حديثاً",
-        points: 0.5,
-        maxOccurrences: 10,
-        currentOccurrences: 6,
-        completed: false,
-        date: today
-      },
-      {
-        id: "task-3",
-        taskType: "narration",
-        taskName: "السرد على الرفيقة",
-        description: "سرد ما تم حفظه على رفيقة في الحلقة",
-        points: 5,
-        maxOccurrences: 1,
-        currentOccurrences: 0,
-        completed: false,
-        date: today
+  useEffect(() => {
+    const fetchEnrollments = async () => {
+      try {
+        const response = await fetch('/api/enrollment/my-enrollments');
+        const data = await response.json();
+        
+        if (data.enrollments) {
+          setEnrollments(data.enrollments);
+          
+          const courseId = searchParams.get('courseId');
+          if (courseId && data.enrollments.some((e: Enrollment) => e.id === courseId)) {
+            setSelectedCourseId(courseId);
+          } else if (data.enrollments.length > 0) {
+            setSelectedCourseId(data.enrollments[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching enrollments:', error);
+      } finally {
+        setLoading(false);
       }
-    ];
-  };
-
-  const getFallbackProgress = (): TaskProgress => {
-    return {
-      totalPointsToday: 8, // 3×1 + 6×0.5 + 0×5
-      maxPointsPerDay: 15, // 5×1 + 10×0.5 + 1×5
-      weeklyProgress: 65, // نسبة مئوية
-      totalPointsWeek: 68,
-      maxPointsPerWeek: 105 // 15×7
     };
-  };
 
-  const handleCompleteTask = async (taskId: string) => {
-    setSubmitting(taskId);
+    if (status === "authenticated") {
+      fetchEnrollments();
+    }
+  }, [status, searchParams]);
+
+  useEffect(() => {
+    const fetchTask = async () => {
+      if (!selectedCourseId || !taskData.date) return;
+
+      try {
+        const response = await fetch(`/api/points/daily-tasks?courseId=${selectedCourseId}&date=${taskData.date}`);
+        const data = await response.json();
+        
+        if (data.task) {
+          setTaskData({
+            date: taskData.date,
+            listening5Times: data.task.listening5Times || false,
+            repetition10Times: data.task.repetition10Times || false,
+            recitedToPeer: data.task.recitedToPeer || false,
+            notes: data.task.notes || ''
+          });
+        } else {
+          // إعادة تعيين للقيم الافتراضية إذا لم توجد بيانات
+          setTaskData({
+            date: taskData.date,
+            listening5Times: false,
+            repetition10Times: false,
+            recitedToPeer: false,
+            notes: ''
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching task:', error);
+      }
+    };
+
+    fetchTask();
+  }, [selectedCourseId, taskData.date]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage('');
+
     try {
-      const response = await fetch('/api/tasks/complete-task', {
+      const response = await fetch('/api/points/daily-tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ taskId }),
+        body: JSON.stringify({
+          courseId: selectedCourseId,
+          date: taskData.date,
+          listening5Times: taskData.listening5Times,
+          repetition10Times: taskData.repetition10Times,
+          recitedToPeer: taskData.recitedToPeer,
+          notes: taskData.notes
+        }),
       });
-
-      if (!response.ok) {
-        throw new Error('فشل في تسجيل المهمة');
-      }
 
       const data = await response.json();
 
-      // تحديث المهمة محلياً
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task.id === taskId
-            ? {
-                ...task,
-                currentOccurrences: Math.min(task.currentOccurrences + 1, task.maxOccurrences),
-                completed: task.currentOccurrences + 1 >= task.maxOccurrences
-              }
-            : task
-        )
-      );
-
-      // تحديث التقدم
-      if (progress) {
-        const task = tasks.find(t => t.id === taskId);
-        if (task) {
-          setProgress(prev => prev ? {
-            ...prev,
-            totalPointsToday: prev.totalPointsToday + task.points,
-            totalPointsWeek: prev.totalPointsWeek + task.points
-          } : null);
-        }
+      if (!response.ok) {
+        throw new Error(data.error || 'فشل حفظ المهام');
       }
 
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطأ في تسجيل المهمة');
+      setMessage('✅ تم حفظ المهام بنجاح!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      setMessage('❌ حدث خطأ أثناء الحفظ');
+      console.error('Error saving task:', error);
     } finally {
-      setSubmitting(null);
+      setSaving(false);
     }
   };
 
-  const getTaskIcon = (taskType: string) => {
-    switch (taskType) {
-      case 'listening': return '🎧';
-      case 'repetition': return '🔄';
-      case 'narration': return '👥';
-      default: return '📝';
-    }
+  const calculatePoints = () => {
+    return (taskData.listening5Times ? 5 : 0) + 
+           (taskData.repetition10Times ? 5 : 0) + 
+           (taskData.recitedToPeer ? 5 : 0);
   };
 
-  const getProgressColor = (current: number, max: number) => {
-    const percentage = (current / max) * 100;
-    if (percentage >= 100) return 'bg-green-500';
-    if (percentage >= 75) return 'bg-blue-500';
-    if (percentage >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">جاري تحميل المهام...</div>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-xl">جاري التحميل...</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
+
+  if (enrollments.length === 0) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 mb-4">لم تسجلي في أي حلقة بعد</p>
+          <button
+            onClick={() => router.push('/enrollment')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+          >
+            📝 طلب الانضمام للحلقات
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">المهام اليومية</h1>
-          <p className="text-gray-600">سجلي مهامك اليومية لكسب النقاط التحفيزية</p>
-        </div>
+    <div className="p-8 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">📋 مهامي اليومية</h1>
 
-        {error && (
-          <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
-            {error} - يتم عرض بيانات تجريبية
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {enrollments.length > 1 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">اختاري الحلقة</label>
+            <select
+              value={selectedCourseId}
+              onChange={(e) => setSelectedCourseId(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              {enrollments.map((enrollment) => (
+                <option key={enrollment.id} value={enrollment.id}>
+                  {enrollment.courseName} - {enrollment.programName}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
-        {/* ملخص التقدم */}
-        {progress && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">تقدم اليوم</h2>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* النقاط اليومية */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-700">النقاط اليوم</span>
-                  <span className="text-sm text-gray-600">{progress.totalPointsToday}/{progress.maxPointsPerDay}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className={`h-3 rounded-full ${getProgressColor(progress.totalPointsToday, progress.maxPointsPerDay)}`}
-                    style={{ width: `${Math.min((progress.totalPointsToday / progress.maxPointsPerDay) * 100, 100)}%` }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {Math.round((progress.totalPointsToday / progress.maxPointsPerDay) * 100)}% مكتمل
-                </p>
-              </div>
-
-              {/* النقاط الأسبوعية */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-700">النقاط هذا الأسبوع</span>
-                  <span className="text-sm text-gray-600">{progress.totalPointsWeek}/{progress.maxPointsPerWeek}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className={`h-3 rounded-full ${getProgressColor(progress.totalPointsWeek, progress.maxPointsPerWeek)}`}
-                    style={{ width: `${Math.min((progress.totalPointsWeek / progress.maxPointsPerWeek) * 100, 100)}%` }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {progress.weeklyProgress}% من الهدف الأسبوعي
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* قائمة المهام */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800">المهام المتاحة</h2>
-
-          {tasks.map((task) => (
-            <div key={task.id} className={`bg-white rounded-lg shadow-lg p-6 border-r-4 ${
-              task.completed ? 'border-green-500 bg-green-50' : 'border-blue-500'
-            }`}>
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{getTaskIcon(task.taskType)}</span>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800">{task.taskName}</h3>
-                    <p className="text-gray-600 text-sm">{task.description}</p>
-                  </div>
-                </div>
-                <div className="text-left">
-                  <div className="text-2xl font-bold text-blue-600">{task.points}</div>
-                  <div className="text-xs text-gray-500">نقطة</div>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-sm text-gray-700">التقدم:</span>
-                    <span className="text-sm font-medium text-gray-800">
-                      {task.currentOccurrences}/{task.maxOccurrences}
-                    </span>
-                  </div>
-                  <div className="w-48 bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${getProgressColor(task.currentOccurrences, task.maxOccurrences)}`}
-                      style={{ width: `${(task.currentOccurrences / task.maxOccurrences) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div>
-                  {task.completed ? (
-                    <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-medium">
-                      ✓ مكتملة
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => handleCompleteTask(task.id)}
-                      disabled={submitting === task.id}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        submitting === task.id
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white'
-                      }`}
-                    >
-                      {submitting === task.id ? 'جاري التسجيل...' : 'سجل إنجاز'}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {task.currentOccurrences > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">
-                    تم إنجاز {task.currentOccurrences} مرة اليوم •
-                    كسبت {task.currentOccurrences * task.points} نقطة
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* معلومات إضافية */}
-        <div className="bg-blue-50 rounded-lg p-6 mt-6">
-          <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 نصائح لكسب النقاط</h3>
-          <ul className="space-y-2 text-blue-700">
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>السماع: استمعي لكل صفحة 5 مرات للحصول على 5 نقاط</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>التكرار: كرري الآيات 10 مرات للحصول على 5 نقاط</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>السرد: اسردي على رفيقة للحصول على 5 نقاط</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span className="font-medium">المجموع اليومي: 15 نقطة × 70 يوم = 1050 نقطة تحفيزية</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* زر العودة */}
-        <div className="mt-6">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded font-medium transition-colors"
-          >
-            العودة للوحة التحكم
-          </button>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">التاريخ</label>
+          <input
+            type="date"
+            value={taskData.date}
+            onChange={(e) => setTaskData({...taskData, date: e.target.value})}
+            max={new Date().toISOString().split('T')[0]}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+          />
         </div>
       </div>
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="listening5Times"
+            checked={taskData.listening5Times}
+            onChange={(e) => setTaskData({...taskData, listening5Times: e.target.checked})}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label htmlFor="listening5Times" className="mr-2 text-sm font-medium text-gray-700">
+            🎧 السماع 5 مرات (5 نقاط)
+          </label>
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="repetition10Times"
+            checked={taskData.repetition10Times}
+            onChange={(e) => setTaskData({...taskData, repetition10Times: e.target.checked})}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label htmlFor="repetition10Times" className="mr-2 text-sm font-medium text-gray-700">
+            🔄 التكرار 10 مرات (5 نقاط)
+          </label>
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="recitedToPeer"
+            checked={taskData.recitedToPeer}
+            onChange={(e) => setTaskData({...taskData, recitedToPeer: e.target.checked})}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label htmlFor="recitedToPeer" className="mr-2 text-sm font-medium text-gray-700">
+            👭 السرد على الرفيقة (5 نقاط)
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            📝 ملاحظات (اختياري)
+          </label>
+          <textarea
+            value={taskData.notes}
+            onChange={(e) => setTaskData({...taskData, notes: e.target.value})}
+            rows={3}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            placeholder="أي ملاحظات إضافية..."
+          />
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-lg font-semibold text-blue-900">
+            🏆 مجموع النقاط اليوم: {calculatePoints()} نقطة
+          </p>
+        </div>
+
+        {message && (
+          <div className={`p-4 rounded-md ${message.includes('✅') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+            {message}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-md transition-colors disabled:bg-gray-400"
+        >
+          {saving ? 'جاري الحفظ...' : '💾 حفظ المهام'}
+        </button>
+      </form>
     </div>
+  );
+}
+
+export default function DailyTasksPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="text-xl">جاري التحميل...</div></div>}>
+      <DailyTasksContent />
+    </Suspense>
   );
 }

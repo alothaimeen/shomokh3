@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || !['ADMIN', 'TEACHER'].includes(session.user.userRole)) {
+    if (!session || !['ADMIN', 'TEACHER'].includes(session.user.role)) {
       return NextResponse.json(
         { error: 'غير مصرح لك بالوصول' },
         { status: 403 }
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     // بناء شرط WHERE حسب دور المستخدم
     let whereCondition: any = { isActive: true };
-    if (session.user.userRole === 'TEACHER') {
+    if (session.user.role === 'TEACHER') {
       whereCondition = {
         ...whereCondition,
         teacher: {
