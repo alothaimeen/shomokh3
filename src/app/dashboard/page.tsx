@@ -193,6 +193,12 @@ export default function DashboardPage() {
                 مرحباً، {currentUser.userName} ({currentUser.userRole})
               </span>
               <Link
+                href="/settings"
+                className="text-indigo-600 hover:text-indigo-800"
+              >
+                ⚙️ الإعدادات
+              </Link>
+              <Link
                 href="/profile"
                 className="text-blue-600 hover:text-blue-800"
               >
@@ -306,9 +312,20 @@ export default function DashboardPage() {
                           </Link>
                         </div>
 
-                        {/* أزرار الدرجات متجاورة */}
+                        {/* الصفحة الموحدة - موصى بها */}
+                        <div className="border-t pt-3 mt-3 mb-3">
+                          <Link
+                            href={`/unified-assessment?courseId=${course.id}`}
+                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg text-center font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                          >
+                            <span className="text-lg">⭐</span>
+                            <span>الصفحة الموحدة للتقييم (موصى بها)</span>
+                          </Link>
+                        </div>
+
+                        {/* أزرار الدرجات متجاورة - الواجهات المنفصلة */}
                         <div className="border-t pt-3 mt-3">
-                          <p className="text-xs font-medium text-gray-700 mb-2">التقييمات والدرجات:</p>
+                          <p className="text-xs font-medium text-gray-700 mb-2">التقييمات والدرجات (الواجهات المنفصلة):</p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             <Link
                               href={`/daily-grades?courseId=${course.id}`}
@@ -389,26 +406,40 @@ export default function DashboardPage() {
                           </p>
                         </div>
                         
-                        {/* أزرار الوصول السريع */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {/* الصفحة الموحدة - موصى بها */}
+                        <div className="mb-3">
                           <Link
-                            href={`/my-attendance?courseId=${enrollment.id}`}
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                            href={`/unified-assessment?courseId=${enrollment.id}`}
+                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg text-center font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                           >
-                            ✅ حضوري
+                            <span className="text-lg">⭐</span>
+                            <span>الصفحة الموحدة (موصى بها)</span>
                           </Link>
-                          <Link
-                            href={`/my-grades?courseId=${enrollment.id}`}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                          >
-                            🏆 درجاتي
-                          </Link>
-                          <Link
-                            href={`/daily-tasks?courseId=${enrollment.id}`}
-                            className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                          >
-                            📋 مهامي
-                          </Link>
+                        </div>
+
+                        {/* أزرار الوصول السريع - الواجهات المنفصلة */}
+                        <div className="border-t pt-3">
+                          <p className="text-xs font-medium text-gray-700 mb-2">الواجهات المنفصلة:</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            <Link
+                              href={`/my-attendance?courseId=${enrollment.id}`}
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                            >
+                              ✅ حضوري
+                            </Link>
+                            <Link
+                              href={`/my-grades?courseId=${enrollment.id}`}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                            >
+                              🏆 درجاتي
+                            </Link>
+                            <Link
+                              href={`/daily-tasks?courseId=${enrollment.id}`}
+                              className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+                            >
+                              📋 مهامي
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     ))}

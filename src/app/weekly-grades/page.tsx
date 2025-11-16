@@ -54,12 +54,10 @@ function WeeklyGradesContent() {
       setStudents(data.students || []);
       setCourseName(data.course?.courseName || "");
 
-      // تعبئة editedGrades بالدرجة الكاملة (5) كافتراضي
+      // تعبئة editedGrades بالقيم الموجودة أو 0
       const initialGrades: { [studentId: string]: number } = {};
       data.students.forEach((student: StudentGrade) => {
-        initialGrades[student.studentId] = student.grades[selectedWeek] !== undefined 
-          ? student.grades[selectedWeek] 
-          : 5; // الدرجة الافتراضية هي الكاملة
+        initialGrades[student.studentId] = student.grades[selectedWeek] || 0;
       });
       setEditedGrades(initialGrades);
     } catch (error) {
@@ -74,12 +72,10 @@ function WeeklyGradesContent() {
     setSelectedWeek(week);
     setMessage(""); // مسح الرسالة عند تغيير الأسبوع
     
-    // تحديث editedGrades بقيم الأسبوع الجديد أو الدرجة الكاملة
+    // تحديث editedGrades بقيم الأسبوع الجديد
     const newGrades: { [studentId: string]: number } = {};
     students.forEach((student) => {
-      newGrades[student.studentId] = student.grades[week] !== undefined 
-        ? student.grades[week] 
-        : 5; // الدرجة الافتراضية هي الكاملة
+      newGrades[student.studentId] = student.grades[week] || 0;
     });
     setEditedGrades(newGrades);
   }
@@ -228,7 +224,7 @@ function WeeklyGradesContent() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <select
-                        value={editedGrades[student.studentId] || 5}
+                        value={editedGrades[student.studentId] || 0}
                         onChange={(e) =>
                           handleGradeChange(student.studentId, Number(e.target.value))
                         }

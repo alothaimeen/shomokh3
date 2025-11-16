@@ -1,0 +1,318 @@
+'use client';
+
+import { useState, useEffect, Suspense, lazy } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { TabType, TAB_CONFIGS } from '@/types/assessment';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { AssessmentSkeleton } from '@/components/assessment/AssessmentSkeleton';
+
+// Lazy load all tab components
+const DailyGradesTab = lazy(() => import('@/components/assessment/DailyGradesTab').then(m => ({ default: m.DailyGradesTab })));
+const WeeklyGradesTab = lazy(() => import('@/components/assessment/WeeklyGradesTab').then(m => ({ default: m.WeeklyGradesTab })));
+const MonthlyGradesTab = lazy(() => import('@/components/assessment/MonthlyGradesTab').then(m => ({ default: m.MonthlyGradesTab })));
+const FinalExamTab = lazy(() => import('@/components/assessment/FinalExamTab').then(m => ({ default: m.FinalExamTab })));
+const BehaviorGradesTab = lazy(() => import('@/components/assessment/BehaviorGradesTab').then(m => ({ default: m.BehaviorGradesTab })));
+const DailyTasksTab = lazy(() => import('@/components/assessment/DailyTasksTab').then(m => ({ default: m.DailyTasksTab })));
+const BehaviorPointsTab = lazy(() => import('@/components/assessment/BehaviorPointsTab').then(m => ({ default: m.BehaviorPointsTab })));
+
+function UnifiedAssessmentContent() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [courses, setCourses] = useState<any[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState('');
+  const [activeTab, setActiveTab] = useState<TabType>('daily');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedWeek, setSelectedWeek] = useState(1);
+  const [selectedMonth, setSelectedMonth] = useState(1);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // تحذير عند المغادرة بدون حفظ
+  useUnsavedChanges(hasUnsavedChanges);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+
+    if (status === 'authenticated') {
+      fetchCourses();
+      
+      // Sync with URL parameters
+      const courseId = searchParams.get('courseId');
+      const tab = searchParams.get('tab') as TabType;
+      const date = searchParams.get('date');
+      const week = searchParams.get('week');
+      const month = searchParams.get('month');
+
+      if (courseId) setSelectedCourse(courseId);
+      if (tab && TAB_CONFIGS.find(t => t.id === tab)) setActiveTab(tab);
+      if (date) setSelectedDate(date);
+      if (week) setSelectedWeek(Number(week));
+      if (month) setSelectedMonth(Number(month));
+    }
+  }, [status, router, searchParams]);
+
+  const fetchCourses = async () => {
+    setLoading(true);
+    try {
+      let endpoint = '/api/attendance/teacher-courses';
+      
+      // Check user role for appropriate API
+      if (session?.user.role === 'STUDENT') {
+        endpoint = '/api/enrollment/my-enrollments';
+      }
+
+      const res = await fetch(endpoint);
+      const data = await res.json();
+
+      if (res.ok) {
+        if (session?.user.role === 'STUDENT') {
+          // Transform enrollments to courses format
+          setCourses((data.enrollments || []).map((e: any) => ({
+            id: e.id,
+            courseName: e.courseName,
+            programName: e.programName
+          })));
+        } else {
+          setCourses(data.courses || []);
+        }
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الحلقات:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateURL = (updates: Partial<{ tab: TabType; courseId: string; date: string; week: number; month: number }>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (updates.courseId !== undefined) params.set('courseId', updates.courseId);
+    if (updates.tab) params.set('tab', updates.tab);
+    if (updates.date) params.set('date', updates.date);
+    if (updates.week) params.set('week', String(updates.week));
+    if (updates.month) params.set('month', String(updates.month));
+
+    router.push(`/unified-assessment?${params.toString()}`, { scroll: false });
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    if (hasUnsavedChanges) {
+      if (!confirm('لديك تعديلات غير محفوظة. هل تريد المتابعة؟')) {
+        return;
+      }
+      setHasUnsavedChanges(false);
+    }
+    
+    setActiveTab(tab);
+    updateURL({ tab });
+  };
+
+  const handleCourseChange = (courseId: string) => {
+    if (hasUnsavedChanges) {
+      if (!confirm('لديك تعديلات غير محفوظة. هل تريد المتابعة؟')) {
+        return;
+      }
+      setHasUnsavedChanges(false);
+    }
+    
+    setSelectedCourse(courseId);
+    updateURL({ courseId });
+  };
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-xl">جاري التحميل...</div>
+      </div>
+    );
+  }
+
+  if (!session) return null;
+
+  const selectedCourseData = courses.find(c => c.id === selectedCourse);
+  const isTeacherOrAdmin = session.user.role === 'ADMIN' || session.user.role === 'TEACHER';
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            الصفحة الموحدة للتقييم
+          </h1>
+          <p className="text-gray-600">
+            {isTeacherOrAdmin 
+              ? 'إدارة جميع أنواع التقييم من صفحة واحدة' 
+              : 'عرض جميع درجاتك ومهامك من صفحة واحدة'
+            }
+          </p>
+        </div>
+
+        {/* Course Selection */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              اختر الحلقة:
+            </label>
+            <select
+              value={selectedCourse}
+              onChange={(e) => handleCourseChange(e.target.value)}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">-- اختر الحلقة --</option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.courseName} {course.programName ? `(${course.programName})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          {selectedCourseData && (
+            <div className="mt-4 p-4 bg-indigo-50 rounded-md">
+              <p className="text-sm text-indigo-700">
+                <strong>الحلقة المختارة:</strong> {selectedCourseData.courseName}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {selectedCourse ? (
+          <>
+            {/* Tabs Navigation */}
+            <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+              <div className="flex flex-wrap gap-2">
+                {TAB_CONFIGS.map((tab) => {
+                  // Hide certain tabs for students
+                  if (session.user.role === 'STUDENT') {
+                    if (tab.id === 'points') return null; // المعلمة فقط
+                  }
+                  
+                  // Hide tasks tab for teachers/admins
+                  if (isTeacherOrAdmin && tab.id === 'tasks') return null;
+
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => handleTabChange(tab.id)}
+                      className={`relative px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {tab.label}
+                      {hasUnsavedChanges && activeTab === tab.id && (
+                        <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Date/Week/Month Selector (conditional) */}
+            {(activeTab === 'daily' || activeTab === 'behavior' || activeTab === 'tasks') && (
+              <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  التاريخ:
+                </label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    updateURL({ date: e.target.value });
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+            )}
+
+            {/* Tab Content */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <Suspense fallback={<AssessmentSkeleton />}>
+                {activeTab === 'daily' && (
+                  <DailyGradesTab
+                    courseId={selectedCourse}
+                    date={selectedDate}
+                    onUnsavedChanges={setHasUnsavedChanges}
+                  />
+                )}
+                {activeTab === 'weekly' && (
+                  <WeeklyGradesTab
+                    courseId={selectedCourse}
+                    week={selectedWeek}
+                    onWeekChange={(week) => {
+                      setSelectedWeek(week);
+                      updateURL({ week });
+                    }}
+                    onUnsavedChanges={setHasUnsavedChanges}
+                  />
+                )}
+                {activeTab === 'monthly' && (
+                  <MonthlyGradesTab
+                    courseId={selectedCourse}
+                    month={selectedMonth}
+                    onMonthChange={(month) => {
+                      setSelectedMonth(month);
+                      updateURL({ month });
+                    }}
+                    onUnsavedChanges={setHasUnsavedChanges}
+                  />
+                )}
+                {activeTab === 'final' && (
+                  <FinalExamTab
+                    courseId={selectedCourse}
+                    onUnsavedChanges={setHasUnsavedChanges}
+                  />
+                )}
+                {activeTab === 'behavior' && (
+                  <BehaviorGradesTab
+                    courseId={selectedCourse}
+                    date={selectedDate}
+                    onUnsavedChanges={setHasUnsavedChanges}
+                  />
+                )}
+                {activeTab === 'tasks' && session.user.role === 'STUDENT' && (
+                  <DailyTasksTab
+                    courseId={selectedCourse}
+                    date={selectedDate}
+                    onUnsavedChanges={setHasUnsavedChanges}
+                  />
+                )}
+                {activeTab === 'points' && isTeacherOrAdmin && (
+                  <BehaviorPointsTab
+                    courseId={selectedCourse}
+                    date={selectedDate}
+                    onUnsavedChanges={setHasUnsavedChanges}
+                  />
+                )}
+              </Suspense>
+            </div>
+          </>
+        ) : (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <p className="text-yellow-800">
+              الرجاء اختيار الحلقة أولاً للبدء في التقييم
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function UnifiedAssessmentPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="text-xl">جاري التحميل...</div></div>}>
+      <UnifiedAssessmentContent />
+    </Suspense>
+  );
+}

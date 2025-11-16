@@ -1,0 +1,199 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+
+export default function SettingsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [useUnifiedInterface, setUseUnifiedInterface] = useState(true);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+
+    // Load preference from localStorage
+    const savedPreference = localStorage.getItem('useUnifiedInterface');
+    if (savedPreference !== null) {
+      setUseUnifiedInterface(savedPreference === 'true');
+    }
+  }, [status, router]);
+
+  const handleSavePreference = () => {
+    localStorage.setItem('useUnifiedInterface', String(useUnifiedInterface));
+    setMessage('✅ تم حفظ الإعدادات بنجاح');
+    
+    setTimeout(() => {
+      setMessage('');
+    }, 3000);
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-xl">جاري التحميل...</div>
+      </div>
+    );
+  }
+
+  if (!session) return null;
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            الإعدادات
+          </h1>
+          <p className="text-gray-600">
+            إدارة تفضيلاتك في المنصة
+          </p>
+        </div>
+
+        {/* Success Message */}
+        {message && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-700">{message}</p>
+          </div>
+        )}
+
+        {/* Settings Sections */}
+        <div className="space-y-6">
+          {/* Interface Preference */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              تفضيلات الواجهة
+            </h2>
+
+            <div className="space-y-4">
+              {/* Unified Interface Toggle */}
+              <div className="flex items-start">
+                <div className="flex items-center h-5">
+                  <input
+                    id="unified-interface"
+                    type="checkbox"
+                    checked={useUnifiedInterface}
+                    onChange={(e) => setUseUnifiedInterface(e.target.checked)}
+                    className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                </div>
+                <div className="mr-3">
+                  <label htmlFor="unified-interface" className="font-medium text-gray-900">
+                    استخدام الواجهة الموحدة للتقييم
+                  </label>
+                  <p className="text-sm text-gray-500 mt-1">
+                    عند التفعيل، ستستخدم الصفحة الموحدة التي تجمع جميع أنواع التقييم في مكان واحد.
+                    عند الإلغاء، ستستخدم الواجهات المنفصلة التقليدية.
+                  </p>
+                </div>
+              </div>
+
+              {/* Explanation */}
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">
+                  الفرق بين الخيارين:
+                </h3>
+                <div className="space-y-3 text-sm text-blue-800">
+                  <div>
+                    <strong>✅ الواجهة الموحدة (موصى بها):</strong>
+                    <ul className="mr-6 mt-1 list-disc space-y-1">
+                      <li>جميع أنواع التقييم في صفحة واحدة مع tabs للتنقل</li>
+                      <li>سهلة الاستخدام وأسرع في التنقل</li>
+                      <li>تحذير تلقائي عند المغادرة بدون حفظ</li>
+                      <li>مناسبة للمعلمات والطالبات</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <strong>📋 الواجهات المنفصلة (الطريقة التقليدية):</strong>
+                    <ul className="mr-6 mt-1 list-disc space-y-1">
+                      <li>صفحة منفصلة لكل نوع تقييم (7 صفحات)</li>
+                      <li>مناسبة للمعلمات المعتادات على الطريقة القديمة</li>
+                      <li>تُستخدم كخيار احتياطي عند الحاجة</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Access Links */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              روابط سريعة
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {useUnifiedInterface ? (
+                <a
+                  href="/unified-assessment"
+                  className="p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-colors"
+                >
+                  <div className="font-semibold text-indigo-900">الصفحة الموحدة</div>
+                  <div className="text-sm text-indigo-700 mt-1">
+                    الانتقال للصفحة الموحدة للتقييم
+                  </div>
+                </a>
+              ) : (
+                <>
+                  {(session.user.role === 'ADMIN' || session.user.role === 'TEACHER') && (
+                    <>
+                      <a
+                        href="/daily-grades"
+                        className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                      >
+                        <div className="font-semibold text-gray-900">التقييم اليومي</div>
+                      </a>
+                      <a
+                        href="/weekly-grades"
+                        className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                      >
+                        <div className="font-semibold text-gray-900">التقييم الأسبوعي</div>
+                      </a>
+                      <a
+                        href="/monthly-grades"
+                        className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                      >
+                        <div className="font-semibold text-gray-900">التقييم الشهري</div>
+                      </a>
+                      <a
+                        href="/final-exam"
+                        className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                      >
+                        <div className="font-semibold text-gray-900">الاختبار النهائي</div>
+                      </a>
+                    </>
+                  )}
+                </>
+              )}
+              
+              <a
+                href="/dashboard"
+                className="p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
+              >
+                <div className="font-semibold text-green-900">لوحة التحكم</div>
+                <div className="text-sm text-green-700 mt-1">
+                  العودة للوحة التحكم الرئيسية
+                </div>
+              </a>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleSavePreference}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium transition-colors"
+            >
+              حفظ الإعدادات
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
