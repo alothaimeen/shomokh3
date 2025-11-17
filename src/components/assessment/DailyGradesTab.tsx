@@ -12,6 +12,8 @@ interface StudentCardData {
   studentName: string;
   studentEmail: string;
   studentNumber: number;
+  // Attendance
+  attendanceStatus: string;
   // Grades (2 fields + behavior)
   memorization: number;
   review: number;
@@ -61,18 +63,20 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
         studentNumber: enrollment.student.studentNumber,
       }));
 
-      // 2. Fetch all data in parallel
-      const [dailyGradesRes, behaviorRes, pointsRes, tasksRes] = await Promise.all([
+      // 2. Fetch all data in parallel (including attendance)
+      const [dailyGradesRes, behaviorRes, pointsRes, tasksRes, attendanceRes] = await Promise.all([
         fetch(`/api/grades/daily?courseId=${courseId}&startDate=${new Date(date).toISOString()}&endDate=${new Date(date).toISOString()}`),
         fetch(`/api/grades/behavior?courseId=${courseId}&date=${date}`),
         fetch(`/api/points/behavior?courseId=${courseId}&date=${date}`),
-        fetch(`/api/points/daily-tasks?courseId=${courseId}&date=${date}`)
+        fetch(`/api/points/daily-tasks?courseId=${courseId}&date=${date}`),
+        fetch(`/api/attendance/course-attendance?courseId=${courseId}&date=${date}`)
       ]);
 
       const dailyGrades = await dailyGradesRes.json();
       const behavior = await behaviorRes.json();
       const points = await pointsRes.json();
       const tasks = await tasksRes.json();
+      const attendance = await attendanceRes.json();
 
       // 3. Merge all data
       const mergedData: StudentCardData[] = students.map((student: any) => {
@@ -80,12 +84,15 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
         const behaviorGrade = behavior.students?.find((s: any) => s.id === student.id)?.behaviorGrade;
         const studentPoints = points.students?.find((s: any) => s.studentId === student.id);
         const studentTasks = tasks.tasks?.find((t: any) => t.studentId === student.id);
+        const studentAttendance = attendance.attendances?.find((a: any) => a.studentId === student.id);
 
         return {
           id: student.id,
           studentName: student.studentName,
           studentEmail: student.studentEmail,
           studentNumber: student.studentNumber,
+          // Attendance
+          attendanceStatus: studentAttendance?.status || 'PRESENT',
           // Keep original 2 fields
           memorization: dailyGrade ? Number(dailyGrade.memorization) : 0,
           review: dailyGrade ? Number(dailyGrade.review) : 0,
@@ -138,6 +145,14 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
   const handlePointChange = (studentId: string, field: keyof StudentCardData) => {
     setStudentsData(prev => prev.map(s => 
       s.id === studentId ? { ...s, [field]: !s[field] } : s
+    ));
+    onUnsavedChanges(true);
+    setMessage('');
+  };
+
+  const handleAttendanceChange = (studentId: string, status: string) => {
+    setStudentsData(prev => prev.map(s => 
+      s.id === studentId ? { ...s, attendanceStatus: status } : s
     ));
     onUnsavedChanges(true);
     setMessage('');
@@ -206,7 +221,24 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
         body: JSON.stringify({ courseId, date, points: pointsArray })
       });
 
-      if (dailyRes.ok && behaviorRes.ok && pointsRes.ok) {
+      // Save attendance for all students
+      const attendancePromises = studentsData.map(s =>
+        fetch('/api/attendance/mark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentId: s.id,
+            courseId,
+            status: s.attendanceStatus,
+            date: dateToSave.toISOString()
+          })
+        })
+      );
+
+      const attendanceResults = await Promise.all(attendancePromises);
+      const allAttendanceOk = attendanceResults.every(r => r.ok);
+
+      if (dailyRes.ok && behaviorRes.ok && pointsRes.ok && allAttendanceOk) {
         setMessage('✅ تم حفظ جميع البيانات بنجاح');
         onUnsavedChanges(false);
       } else {
@@ -256,6 +288,22 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
                     <div className="text-xs">المجموع</div>
                   </div>
                 </div>
+              </div>
+
+              {/* Attendance Section */}
+              <div className="p-4 bg-indigo-50 border-b border-gray-200">
+                <label className="text-xs text-gray-700 font-semibold block mb-2">📋 الحضور</label>
+                <select
+                  value={student.attendanceStatus}
+                  onChange={(e) => handleAttendanceChange(student.id, e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-indigo-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="PRESENT">حاضرة</option>
+                  <option value="EXCUSED">معتذرة (غائبة بعذر)</option>
+                  <option value="ABSENT">غائبة بدون عذر</option>
+                  <option value="REVIEWED">راجعت بدون حضور</option>
+                  <option value="LEFT_EARLY">خروج مبكر</option>
+                </select>
               </div>
 
               {/* Section 1: Grades */}
