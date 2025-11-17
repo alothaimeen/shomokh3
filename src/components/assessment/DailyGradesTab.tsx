@@ -12,11 +12,9 @@ interface StudentCardData {
   studentName: string;
   studentEmail: string;
   studentNumber: number;
-  // Grades (4 fields + behavior)
-  memorizationQuran: number;
-  memorizationTajweed: number;
-  reviewQuran: number;
-  reviewTajweed: number;
+  // Grades (2 fields + behavior)
+  memorization: number;
+  review: number;
   behaviorScore: number;
   // Tasks (read-only)
   listening5Times: boolean;
@@ -88,11 +86,9 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
           studentName: student.studentName,
           studentEmail: student.studentEmail,
           studentNumber: student.studentNumber,
-          // Split memorization and review into quran + tajweed (simplified: 50/50)
-          memorizationQuran: dailyGrade ? Number(dailyGrade.memorization) / 2 : 0,
-          memorizationTajweed: dailyGrade ? Number(dailyGrade.memorization) / 2 : 0,
-          reviewQuran: dailyGrade ? Number(dailyGrade.review) / 2 : 0,
-          reviewTajweed: dailyGrade ? Number(dailyGrade.review) / 2 : 0,
+          // Keep original 2 fields
+          memorization: dailyGrade ? Number(dailyGrade.memorization) : 0,
+          review: dailyGrade ? Number(dailyGrade.review) : 0,
           behaviorScore: behaviorGrade?.dailyScore || 0,
           listening5Times: studentTasks?.listening5Times || false,
           repetition10Times: studentTasks?.repetition10Times || false,
@@ -148,8 +144,7 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
   };
 
   const calculateTotals = (student: StudentCardData) => {
-    const gradesTotal = Number(student.memorizationQuran) + Number(student.memorizationTajweed) + 
-                       Number(student.reviewQuran) + Number(student.reviewTajweed) + Number(student.behaviorScore);
+    const gradesTotal = Number(student.memorization) + Number(student.review) + Number(student.behaviorScore);
     const tasksTotal = (student.listening5Times ? 5 : 0) + 
                       (student.repetition10Times ? 5 : 0) + 
                       (student.recitedToPeer ? 5 : 0);
@@ -168,11 +163,11 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
       const dateToSave = new Date(date);
       dateToSave.setHours(12, 0, 0, 0);
 
-      // Save daily grades (merge quran + tajweed back)
+      // Save daily grades
       const dailyGradesArray = studentsData.map(s => ({
         studentId: s.id,
-        memorization: s.memorizationQuran + s.memorizationTajweed,
-        review: s.reviewQuran + s.reviewTajweed,
+        memorization: s.memorization,
+        review: s.review,
         notes: ''
       }));
 
@@ -274,42 +269,22 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
                 </button>
                 {isExpanded.grades && (
                   <div className="p-4 bg-white space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
                       <div>
-                        <label className="text-xs text-gray-600">د.ح.ق</label>
+                        <label className="text-xs text-gray-600 block mb-1">حفظ وتجويد (0-5)</label>
                         <select
-                          value={student.memorizationQuran}
-                          onChange={(e) => handleGradeChange(student.id, 'memorizationQuran', Number(e.target.value))}
+                          value={student.memorization}
+                          onChange={(e) => handleGradeChange(student.id, 'memorization', Number(e.target.value))}
                           className="w-full px-2 py-1 text-sm border rounded"
                         >
                           {gradeValues.map(v => <option key={v} value={v}>{v.toFixed(2)}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="text-xs text-gray-600">د.ح.ت</label>
+                        <label className="text-xs text-gray-600 block mb-1">مراجعة وتجويد (0-5)</label>
                         <select
-                          value={student.memorizationTajweed}
-                          onChange={(e) => handleGradeChange(student.id, 'memorizationTajweed', Number(e.target.value))}
-                          className="w-full px-2 py-1 text-sm border rounded"
-                        >
-                          {gradeValues.map(v => <option key={v} value={v}>{v.toFixed(2)}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600">د.م.ق</label>
-                        <select
-                          value={student.reviewQuran}
-                          onChange={(e) => handleGradeChange(student.id, 'reviewQuran', Number(e.target.value))}
-                          className="w-full px-2 py-1 text-sm border rounded"
-                        >
-                          {gradeValues.map(v => <option key={v} value={v}>{v.toFixed(2)}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600">د.م.ت</label>
-                        <select
-                          value={student.reviewTajweed}
-                          onChange={(e) => handleGradeChange(student.id, 'reviewTajweed', Number(e.target.value))}
+                          value={student.review}
+                          onChange={(e) => handleGradeChange(student.id, 'review', Number(e.target.value))}
                           className="w-full px-2 py-1 text-sm border rounded"
                         >
                           {gradeValues.map(v => <option key={v} value={v}>{v.toFixed(2)}</option>)}
@@ -317,7 +292,7 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs text-gray-600">د.سلوك (0-1)</label>
+                      <label className="text-xs text-gray-600 block mb-1">درجة السلوك (0-1)</label>
                       <select
                         value={student.behaviorScore}
                         onChange={(e) => handleGradeChange(student.id, 'behaviorScore', Number(e.target.value))}
