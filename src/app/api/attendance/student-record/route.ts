@@ -29,13 +29,16 @@ export async function GET(request: NextRequest) {
 
     // للطالبة: يمكنها رؤية سجلها فقط
     if (session.user.userRole === 'STUDENT') {
-      // للطالبة يجب أن تطلب سجلها الشخصي فقط
-      // نحتاج للتحقق من أن هذه الطالبة هي نفسها المستخدمة
-      // هذا يتطلب ربط جدول Student بـ User، لكن حالياً سنمنع الوصول
-      return NextResponse.json(
-        { error: 'لا يمكن الوصول لهذه البيانات حالياً' },
-        { status: 403 }
-      );
+      const studentUser = await prisma.student.findFirst({
+        where: { userId: session.user.id },
+      });
+
+      if (!studentUser || studentUser.id !== studentId) {
+        return NextResponse.json(
+          { error: 'يمكنك فقط عرض سجلك الشخصي' },
+          { status: 403 }
+        );
+      }
     }
 
     // للمعلمة: يمكنها رؤية سجل طالباتها فقط

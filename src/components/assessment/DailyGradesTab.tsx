@@ -316,8 +316,8 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
                   <span>{isExpanded.grades ? '⏬' : '⏫'}</span>
                 </button>
                 {isExpanded.grades && (
-                  <div className="p-4 bg-white space-y-3">
-                    <div className="space-y-2">
+                  <div className="p-4 bg-white space-y-2">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs text-gray-600 block mb-1">حفظ وتجويد (0-5)</label>
                         <select
@@ -363,20 +363,22 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
                   <span>{isExpanded.tasks ? '⏬' : '⏫'}</span>
                 </button>
                 {isExpanded.tasks && (
-                  <div className="p-4 bg-green-50 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" checked={student.listening5Times} disabled className="w-4 h-4" />
-                      <span className="text-sm">🔊 سماع 5× ({student.listening5Times ? 5 : 0})</span>
+                  <div className="p-3 bg-green-50">
+                    <div className="grid grid-cols-3 gap-2 mb-2">
+                      <div className="flex items-center gap-1">
+                        <input type="checkbox" checked={student.listening5Times} disabled className="w-4 h-4" />
+                        <span className="text-xs">🔊 سماع 5×</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <input type="checkbox" checked={student.repetition10Times} disabled className="w-4 h-4" />
+                        <span className="text-xs">🔄 تكرار 10×</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <input type="checkbox" checked={student.recitedToPeer} disabled className="w-4 h-4" />
+                        <span className="text-xs">👥 سرد</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" checked={student.repetition10Times} disabled className="w-4 h-4" />
-                      <span className="text-sm">🔄 تكرار 10× ({student.repetition10Times ? 5 : 0})</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" checked={student.recitedToPeer} disabled className="w-4 h-4" />
-                      <span className="text-sm">👥 سرد ({student.recitedToPeer ? 5 : 0})</span>
-                    </div>
-                    <p className="text-xs text-gray-600 italic mt-2">(الطالبة أدخلت هذه المهام)</p>
+                    <p className="text-xs text-gray-600 italic">(أدخلتها الطالبة)</p>
                   </div>
                 )}
               </div>
@@ -391,42 +393,44 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
                   <span>{isExpanded.points ? '⏬' : '⏫'}</span>
                 </button>
                 {isExpanded.points && (
-                  <div className="p-4 bg-blue-50 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={student.earlyAttendance}
-                        onChange={() => handlePointChange(student.id, 'earlyAttendance')}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-sm">⏰ مبكر (5)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={student.perfectMemorization}
-                        onChange={() => handlePointChange(student.id, 'perfectMemorization')}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-sm">✅ متقن (5)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={student.activeParticipation}
-                        onChange={() => handlePointChange(student.id, 'activeParticipation')}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-sm">🙋 مشاركة (5)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={student.timeCommitment}
-                        onChange={() => handlePointChange(student.id, 'timeCommitment')}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-sm">⌚ التزام (5)</span>
+                  <div className="p-3 bg-blue-50">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={student.earlyAttendance}
+                          onChange={() => handlePointChange(student.id, 'earlyAttendance')}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-xs">⏰ مبكر (5)</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={student.perfectMemorization}
+                          onChange={() => handlePointChange(student.id, 'perfectMemorization')}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-xs">✅ متقن (5)</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={student.activeParticipation}
+                          onChange={() => handlePointChange(student.id, 'activeParticipation')}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-xs">🙋 مشاركة (5)</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={student.timeCommitment}
+                          onChange={() => handlePointChange(student.id, 'timeCommitment')}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-xs">⌚ التزام (5)</span>
+                      </div>
                     </div>
                   </div>
                 )}

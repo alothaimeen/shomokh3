@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        // ثم إنشاء الطالبة في جدول Students بنفس الاسم
+        // ثم إنشاء الطالبة في جدول Students ومربوطة بالمستخدم
         const newStudent = await prisma.student.create({
           data: {
             studentNumber: nextStudentNumber,
@@ -106,7 +106,8 @@ export async function POST(request: NextRequest) {
             memorizedAmount: studentData.memorizedAmount,
             memorizationPlan: studentData.memorizationPlan,
             notes: studentData.notes,
-            paymentStatus: 'UNPAID' // حالة السداد الافتراضية
+            paymentStatus: 'UNPAID', // حالة السداد الافتراضية
+            userId: newUser.id // ربط الطالبة بالمستخدم
           }
         });
 

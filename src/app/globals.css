@@ -5,6 +5,22 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* ألوان الهوية - محدثة لتباين أفضل */
+  --primary-purple: #8B5CF6;
+  --primary-blue: #3B82F6;
+  --secondary-dark: #615D6B;
+  --secondary-purple: #A78BFA;
+  --secondary-blue: #60A5FA;
+  
+  /* تدرجات */
+  --gradient-primary: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+  --gradient-purple: linear-gradient(135deg, #8B5CF6 0%, rgba(139, 92, 246, 0.9) 100%);
+  --gradient-blue: linear-gradient(135deg, #3B82F6 0%, rgba(59, 130, 246, 0.9) 100%);
+  
+  /* خلفيات خفيفة */
+  --bg-purple-light: rgba(139, 92, 246, 0.05);
+  --bg-blue-light: rgba(59, 130, 246, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {

@@ -90,10 +90,16 @@ export async function GET(request: NextRequest) {
     });
 
     // جلب سجلات الحضور لليوم المحدد
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
     const attendanceRecords = await db.attendance.findMany({
       where: {
         courseId: courseId,
-        date: targetDate
+        date: {
+          gte: targetDate,
+          lt: nextDay
+        }
       },
       include: {
         student: {

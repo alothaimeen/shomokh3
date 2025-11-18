@@ -1,9 +1,13 @@
 'use client';
 
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Sidebar from "@/components/shared/Sidebar";
+import AppHeader from "@/components/shared/AppHeader";
+import HijriDateDisplay from "@/components/shared/HijriDateDisplay";
+import { Users, BookOpen, GraduationCap, UserCheck, Calendar, FileText, BarChart3, ClipboardCheck, Star, Award, ListChecks } from 'lucide-react';
 
 interface TeacherCourse {
   id: string;
@@ -32,7 +36,7 @@ export default function DashboardPage() {
   const [loadingEnrollments, setLoadingEnrollments] = useState(true);
 
   useEffect(() => {
-    if (status === "loading") return; // لا تفعل شيء أثناء التحميل
+    if (status === "loading") return;
     if (!session) {
       router.push('/login');
     }
@@ -58,7 +62,6 @@ export default function DashboardPage() {
     fetchStats();
   }, [session]);
 
-  // جلب حلقات المعلمة
   useEffect(() => {
     const fetchTeacherCourses = async () => {
       if (!session || session.user?.role !== 'TEACHER') {
@@ -71,8 +74,6 @@ export default function DashboardPage() {
         if (response.ok) {
           const data = await response.json();
           setTeacherCourses(data.courses || []);
-        } else {
-          console.error('فشل جلب الحلقات:', response.status);
         }
       } catch (error) {
         console.error('خطأ في جلب الحلقات:', error);
@@ -84,7 +85,6 @@ export default function DashboardPage() {
     fetchTeacherCourses();
   }, [session]);
 
-  // جلب حلقات الطالبة المسجلة
   useEffect(() => {
     const fetchStudentEnrollments = async () => {
       if (!session || session.user?.role !== 'STUDENT') {
@@ -112,7 +112,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
           <p className="mt-4 text-gray-600">جاري التحقق من الجلسة...</p>
         </div>
       </div>
@@ -120,16 +120,10 @@ export default function DashboardPage() {
   }
 
   if (!session) {
-    return null; // سيتم التوجيه للـ login
+    return null;
   }
 
-  const currentUser = {
-    userName: session.user?.name || "مستخدم",
-    userEmail: session.user?.email || "",
-    userRole: session.user?.role || "STUDENT"
-  };
-
-  // استخدام الإحصائيات الحقيقية أو القيم الافتراضية
+  const userRole = session.user?.role;
   const currentStats = stats || {
     totalUsers: 0,
     totalPrograms: 0,
@@ -137,261 +131,193 @@ export default function DashboardPage() {
     totalStudents: 0
   };
 
-  // محتوى مختلف حسب الدور
-  const getRoleContent = () => {
-    switch (currentUser.userRole) {
-      case 'ADMIN':
-        return {
-          title: 'لوحة تحكم المدير',
-          actions: [
-            { title: 'إدارة المستخدمين', color: 'bg-blue-600 hover:bg-blue-700', icon: '👥', link: '/users' },
-            { title: 'إدارة البرامج', color: 'bg-green-600 hover:bg-green-700', icon: '📚', link: '/programs' },
-            { title: 'بيانات الطالبات', color: 'bg-indigo-600 hover:bg-indigo-700', icon: '👩‍🎓', link: '/students' },
-            { title: 'الطالبات المسجلات', color: 'bg-teal-600 hover:bg-teal-700', icon: '📝', link: '/enrolled-students' },
-            { title: 'الحضور والغياب', color: 'bg-red-600 hover:bg-red-700', icon: '✅', link: '/attendance' },
-            { title: 'تقرير الحضور', color: 'bg-orange-600 hover:bg-orange-700', icon: '📋', link: '/attendance-report' },
-            { title: 'التقارير الشاملة', color: 'bg-purple-600 hover:bg-purple-700', icon: '📊', link: '/reports' },
-          ],
-          stats: ['totalUsers', 'totalPrograms', 'totalCourses', 'totalStudents']
-        };
-      case 'TEACHER':
-        return {
-          title: 'لوحة تحكم المعلمة',
-          actions: [],
-          stats: []
-        };
-      case 'STUDENT':
-        return {
-          title: 'لوحة تحكم الطالبة',
-          actions: [
-            { title: 'طلب الانضمام للحلقات', color: 'bg-blue-600 hover:bg-blue-700', icon: '📝', link: '/enrollment' },
-          ],
-          stats: []
-        };
-      default:
-        return {
-          title: 'لوحة التحكم',
-          actions: [],
-          stats: []
-        };
-    }
-  };
-
-  const roleContent = getRoleContent();
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <h1 className="text-3xl font-bold text-gray-900">
-              {roleContent.title}
-            </h1>
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <span className="text-sm text-gray-700">
-                مرحباً، {currentUser.userName} ({currentUser.userRole})
-              </span>
-              <Link
-                href="/settings"
-                className="text-indigo-600 hover:text-indigo-800"
-              >
-                ⚙️ الإعدادات
-              </Link>
-              <Link
-                href="/profile"
-                className="text-blue-600 hover:text-blue-800"
-              >
-                الملف الشخصي
-              </Link>
-              <button
-                onClick={() => signOut({ callbackUrl: '/login' })}
-                className="text-red-600 hover:text-red-800"
-              >
-                تسجيل الخروج
-              </button>
-            </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="لوحة التحكم" />
+        
+        <main className="p-6 space-y-6">
+          {/* التاريخ الهجري */}
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <HijriDateDisplay format="full" />
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {/* Stats Cards - حسب الدور */}
-          {roleContent.stats.length > 0 && (
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${roleContent.stats.length > 2 ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-6 mb-8`}>
-              {roleContent.stats.map((statKey) => {
-                const statConfigMap = {
-                  totalUsers: { label: 'إجمالي المستخدمين', icon: '👥', color: 'bg-blue-500' },
-                  totalPrograms: { label: 'البرامج التعليمية', icon: '📚', color: 'bg-green-500' },
-                  totalCourses: { label: 'الحلقات', icon: '🎓', color: 'bg-purple-500' },
-                  totalStudents: { label: 'الطالبات', icon: '👩‍🎓', color: 'bg-orange-500' },
-                };
-                const statConfig = statConfigMap[statKey as keyof typeof statConfigMap];
+          {/* مديرة - الإحصائيات */}
+          {userRole === 'ADMIN' && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-primary-purple">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm font-medium">المستخدمون</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">
+                        {loadingStats ? '...' : currentStats.totalUsers}
+                      </p>
+                    </div>
+                    <Users className="text-primary-purple" size={40} />
+                  </div>
+                </div>
 
-                if (!statConfig) return null;
+                <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-primary-blue">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm font-medium">البرامج</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">
+                        {loadingStats ? '...' : currentStats.totalPrograms}
+                      </p>
+                    </div>
+                    <BookOpen className="text-primary-blue" size={40} />
+                  </div>
+                </div>
 
-                return (
-                  <div key={statKey} className="bg-white overflow-hidden shadow rounded-lg">
-                    <div className="p-5">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <div className={`w-8 h-8 ${statConfig.color} rounded-md flex items-center justify-center`}>
-                            <span className="text-white font-bold">{statConfig.icon}</span>
-                          </div>
-                        </div>
-                        <div className="mr-5 w-0 flex-1">
-                          <dl>
-                            <dt className="text-sm font-medium text-gray-500 truncate">
-                              {statConfig.label}
-                            </dt>
-                            <dd className="text-lg font-medium text-gray-900">
-                              {loadingStats ? '...' : currentStats[statKey as keyof typeof currentStats]}
-                            </dd>
-                          </dl>
-                        </div>
+                <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-primary-purple">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm font-medium">الحلقات</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">
+                        {loadingStats ? '...' : currentStats.totalCourses}
+                      </p>
+                    </div>
+                    <GraduationCap className="text-primary-purple" size={40} />
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-primary-blue">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm font-medium">الطالبات</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">
+                        {loadingStats ? '...' : currentStats.totalStudents}
+                      </p>
+                    </div>
+                    <UserCheck className="text-primary-blue" size={40} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">الإجراءات السريعة</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Link href="/users" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    <Users size={20} />
+                    <span>المستخدمين</span>
+                  </Link>
+                  <Link href="/programs" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    <BookOpen size={20} />
+                    <span>البرامج</span>
+                  </Link>
+                  <Link href="/students" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    <UserCheck size={20} />
+                    <span>الطالبات</span>
+                  </Link>
+                  <Link href="/enrolled-students" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    <GraduationCap size={20} />
+                    <span>المسجلات</span>
+                  </Link>
+                  <Link href="/attendance" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    <Calendar size={20} />
+                    <span>الحضور</span>
+                  </Link>
+                  <Link href="/attendance-report" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    <FileText size={20} />
+                    <span>تقرير الحضور</span>
+                  </Link>
+                  <Link href="/teacher-requests" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    <ClipboardCheck size={20} />
+                    <span>الطلبات</span>
+                  </Link>
+                  <Link href="/academic-reports" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    <BarChart3 size={20} />
+                    <span>التقارير</span>
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* معلمة - حلقاتي */}
+          {userRole === 'TEACHER' && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">حلقاتي</h3>
+              {loadingCourses ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-blue mx-auto"></div>
+                  <p className="mt-2 text-gray-600">جاري تحميل الحلقات...</p>
+                </div>
+              ) : teacherCourses.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">لا توجد حلقات مسندة لك حالياً</p>
+              ) : (
+                <div className="space-y-4">
+                  {teacherCourses.map((course) => (
+                    <div key={course.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="mb-3">
+                        <h4 className="text-lg font-semibold text-gray-900">{course.courseName}</h4>
+                        <p className="text-sm text-gray-600">
+                          {course.programName} - المستوى {course.level} - {course.studentsCount} طالبة
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        <Link href={`/attendance?courseId=${course.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                          <Calendar size={16} />
+                          <span>الحضور</span>
+                        </Link>
+                        <Link href={`/daily-grades?courseId=${course.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                          <ClipboardCheck size={16} />
+                          <span>يومي</span>
+                        </Link>
+                        <Link href={`/weekly-grades?courseId=${course.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                          <FileText size={16} />
+                          <span>أسبوعي</span>
+                        </Link>
+                        <Link href={`/monthly-grades?courseId=${course.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                          <GraduationCap size={16} />
+                          <span>شهري</span>
+                        </Link>
+                        <Link href={`/behavior-grades?courseId=${course.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                          <Star size={16} />
+                          <span>السلوك</span>
+                        </Link>
+                        <Link href={`/behavior-points?courseId=${course.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                          <Award size={16} />
+                          <span>النقاط</span>
+                        </Link>
+                        <Link href={`/final-exam?courseId=${course.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                          <FileText size={16} />
+                          <span>النهائي</span>
+                        </Link>
+                        <Link href={`/enrolled-students?courseId=${course.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                          <UserCheck size={16} />
+                          <span>الطالبات</span>
+                        </Link>
+                        <Link href={`/academic-reports?courseId=${course.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                          <BarChart3 size={16} />
+                          <span>التقرير</span>
+                        </Link>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Teacher Courses Section */}
-          {currentUser.userRole === 'TEACHER' && (
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                  حلقاتي
-                </h3>
-                {loadingCourses ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">جاري تحميل الحلقات...</p>
-                  </div>
-                ) : teacherCourses.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">لا توجد حلقات مسندة لك حالياً</p>
-                ) : (
-                  <div className="space-y-4">
-                    {teacherCourses.map((course) => (
-                      <div key={course.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="mb-3">
-                          <h4 className="text-lg font-semibold text-gray-900">{course.courseName}</h4>
-                          <p className="text-sm text-gray-600">
-                            {course.programName} - المستوى {course.level} - {course.studentsCount} طالبة
-                          </p>
-                        </div>
-                        
-                        {/* أزرار الإدارة */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-                          <Link
-                            href={`/attendance?courseId=${course.id}`}
-                            className="bg-red-600 hover:bg-data-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                          >
-                            ✅ الحضور
-                          </Link>
-                          <Link
-                            href={`/teacher-requests?courseId=${course.id}`}
-                            className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                          >
-                            📋 الطلبات
-                          </Link>
-                          <Link
-                            href={`/enrolled-students?courseId=${course.id}`}
-                            className="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                          >
-                            👩‍🎓 الطالبات
-                          </Link>
-                          <Link
-                            href={`/academic-reports?courseId=${course.id}`}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                          >
-                            📊 التقرير
-                          </Link>
-                        </div>
-
-                        {/* الصفحة الموحدة - موصى بها */}
-                        <div className="border-t pt-3 mt-3 mb-3">
-                          <Link
-                            href={`/unified-assessment?courseId=${course.id}`}
-                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg text-center font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                          >
-                            <span className="text-lg">⭐</span>
-                            <span>الصفحة الموحدة للتقييم (موصى بها)</span>
-                          </Link>
-                        </div>
-
-                        {/* أزرار الدرجات متجاورة - الواجهات المنفصلة */}
-                        <div className="border-t pt-3 mt-3">
-                          <p className="text-xs font-medium text-gray-700 mb-2">التقييمات والدرجات (الواجهات المنفصلة):</p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            <Link
-                              href={`/daily-grades?courseId=${course.id}`}
-                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                            >
-                              📝 يومي
-                            </Link>
-                            <Link
-                              href={`/weekly-grades?courseId=${course.id}`}
-                              className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                            >
-                              📅 أسبوعي
-                            </Link>
-                            <Link
-                              href={`/monthly-grades?courseId=${course.id}`}
-                              className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                            >
-                              🗓️ شهري
-                            </Link>
-                            <Link
-                              href={`/behavior-grades?courseId=${course.id}`}
-                              className="bg-cyan-500 hover:bg-cyan-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                            >
-                              ⭐ السلوك
-                            </Link>
-                            <Link
-                              href={`/behavior-points?courseId=${course.id}`}
-                              className="bg-pink-500 hover:bg-pink-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                            >
-                              🌟 النقاط السلوكية
-                            </Link>
-                            <Link
-                              href={`/final-exam?courseId=${course.id}`}
-                              className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                            >
-                              📄 النهائي
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Student Enrollments Section */}
-          {currentUser.userRole === 'STUDENT' && (
-            <div className="bg-white shadow rounded-lg mb-6">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                  حلقاتي المسجلة
-                </h3>
+          {/* طالبة - حلقاتي */}
+          {userRole === 'STUDENT' && (
+            <>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">حلقاتي المسجلة</h3>
                 {loadingEnrollments ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-purple mx-auto"></div>
                     <p className="mt-2 text-gray-600">جاري تحميل الحلقات...</p>
                   </div>
                 ) : studentEnrollments.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500 mb-4">لم تسجلي في أي حلقة بعد</p>
-                    <Link
-                      href="/enrollment"
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md inline-block"
-                    >
+                    <Link href="/enrollment" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-6 py-3 rounded-lg inline-block font-semibold hover:shadow-lg transition-all">
                       📝 طلب الانضمام للحلقات
                     </Link>
                   </div>
@@ -406,83 +332,47 @@ export default function DashboardPage() {
                           </p>
                         </div>
                         
-                        {/* الصفحة الموحدة - موصى بها */}
-                        <div className="mb-3">
-                          <Link
-                            href={`/unified-assessment?courseId=${enrollment.id}`}
-                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg text-center font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                          >
-                            <span className="text-lg">⭐</span>
-                            <span>الصفحة الموحدة (موصى بها)</span>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Link href={`/my-attendance?courseId=${enrollment.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                            <Calendar size={16} />
+                            <span>حضوري</span>
                           </Link>
-                        </div>
-
-                        {/* أزرار الوصول السريع - الواجهات المنفصلة */}
-                        <div className="border-t pt-3">
-                          <p className="text-xs font-medium text-gray-700 mb-2">الواجهات المنفصلة:</p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            <Link
-                              href={`/my-attendance?courseId=${enrollment.id}`}
-                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                            >
-                              ✅ حضوري
-                            </Link>
-                            <Link
-                              href={`/my-grades?courseId=${enrollment.id}`}
-                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                            >
-                              🏆 درجاتي
-                            </Link>
-                            <Link
-                              href={`/daily-tasks?courseId=${enrollment.id}`}
-                              className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
-                            >
-                              📋 مهامي
-                            </Link>
-                          </div>
+                          <Link href={`/my-grades?courseId=${enrollment.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                            <GraduationCap size={16} />
+                            <span>درجاتي</span>
+                          </Link>
+                          <Link href={`/daily-tasks?courseId=${enrollment.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                            <ListChecks size={16} />
+                            <span>مهامي</span>
+                          </Link>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-            </div>
-          )}
 
-          {/* Quick Actions - للأدوار الأخرى */}
-          {currentUser.userRole !== 'TEACHER' && currentUser.userRole !== 'STUDENT' && roleContent.actions.length > 0 && (
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                  الإجراءات السريعة
-                </h3>
-                <div className={`grid grid-cols-1 ${roleContent.actions.length === 2 ? 'md:grid-cols-2' : roleContent.actions.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'} gap-4`}>
-                  {roleContent.actions.map((action, index) => (
-                    <Link
-                      key={index}
-                      href={action.link || '#'}
-                      className={`${action.color} text-white px-4 py-3 rounded-md transition-colors flex items-center justify-center gap-2 hover:scale-105 transform`}
-                    >
-                      <span className="text-lg">{action.icon}</span>
-                      <span>{action.title}</span>
-                    </Link>
-                  ))}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">روابط سريعة</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <Link href="/my-attendance" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex flex-col items-center justify-center gap-2">
+                    <Calendar size={24} />
+                    <span className="text-sm">حضوري</span>
+                  </Link>
+                  <Link href="/my-grades" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex flex-col items-center justify-center gap-2">
+                    <GraduationCap size={24} />
+                    <span className="text-sm">درجاتي</span>
+                  </Link>
+                  <Link href="/enrollment" className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-4 py-3 rounded-lg text-center font-semibold hover:shadow-lg transition-all flex flex-col items-center justify-center gap-2">
+                    <BookOpen size={24} />
+                    <span className="text-sm">الانضمام</span>
+                  </Link>
                 </div>
               </div>
-            </div>
+            </>
           )}
-        </div>
-
-        {/* Navigation */}
-        <div className="mt-8 text-center">
-          <Link href="/" className="text-blue-600 hover:text-blue-500 mr-4">
-            الصفحة الرئيسية
-          </Link>
-          <Link href="/login" className="text-blue-600 hover:text-blue-500">
-            تسجيل الدخول
-          </Link>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

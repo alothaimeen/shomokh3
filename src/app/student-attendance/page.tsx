@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
-// أنواع البيانات (محدثة - الجلسة 10.6)
 type AttendanceStatus = 'PRESENT' | 'EXCUSED' | 'ABSENT' | 'REVIEWED' | 'LEFT_EARLY';
 
 interface AttendanceRecord {
@@ -34,8 +34,8 @@ interface AttendanceStatistics {
   totalDays: number;
   presentDays: number;
   absentDays: number;
-  lateDays: number;
   excusedDays: number;
+  reviewedDays: number;
   leftEarlyDays: number;
   attendancePercentage: number;
 }
@@ -46,7 +46,6 @@ interface StudentAttendanceResponse {
   statistics: AttendanceStatistics;
 }
 
-// خريطة الرموز والألوان (محدثة - الجلسة 10.6)
 const statusConfig = {
   PRESENT: {
     label: 'حاضرة',
@@ -75,45 +74,28 @@ const statusConfig = {
   },
 };
 
-export default function MyAttendancePage() {
+function StudentAttendancePageContent() {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const studentId = searchParams.get('studentId');
 
   const [attendanceData, setAttendanceData] = useState<StudentAttendanceResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [studentId, setStudentId] = useState<string | null>(null);
 
-  // التحقق من أن المستخدم طالبة
   useEffect(() => {
-    if (session && session.user.userRole !== 'STUDENT') {
+    if (session && session.user.userRole !== 'TEACHER' && session.user.userRole !== 'ADMIN') {
       router.push('/dashboard');
     }
   }, [session, router]);
 
-  // جلب معرف الطالبة
-  useEffect(() => {
-    const fetchStudentId = async () => {
-      if (!session?.user.id) return;
-      
-      try {
-        const response = await fetch(`/api/students/by-user/${session.user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setStudentId(data.id);
-        }
-      } catch (err) {
-        console.error('خطأ في جلب معرف الطالبة:', err);
-      }
-    };
-
-    fetchStudentId();
-  }, [session]);
-
-  // جلب سجل الحضور
   useEffect(() => {
     const fetchAttendance = async () => {
-      if (!studentId) return;
+      if (!studentId) {
+        setError('معرف الطالبة مفقود');
+        return;
+      }
 
       setLoading(true);
       setError('');
@@ -154,31 +136,53 @@ export default function MyAttendancePage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
           {error}
         </div>
+        <Link
+          href="/attendance"
+          className="mt-4 inline-block text-blue-600 hover:text-blue-800"
+        >
+          ← العودة للحضور
+        </Link>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6" dir="rtl">
-      <h1 className="text-3xl font-bold mb-6">سجل حضوري</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">سجل حضور الطالبة</h1>
+        <Link
+          href="/attendance"
+          className="text-blue-600 hover:text-blue-800 flex items-center gap-2"
+        >
+          ← العودة للحضور
+        </Link>
+      </div>
 
       {attendanceData && (
         <>
           {/* معلومات الطالبة */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">معلومات الطالبة</h2>
-            <p className="text-gray-700">
-              <strong>الاسم:</strong> {attendanceData.student.studentName}
-            </p>
-            <p className="text-gray-700">
-              <strong>الرقم التسلسلي:</strong> {attendanceData.student.studentNumber}
-            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <span className="text-gray-600">الاسم: </span>
+                <span className="font-medium">{attendanceData.student.studentName}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">الرقم التسلسلي: </span>
+                <span className="font-medium">{attendanceData.student.studentNumber}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">رقم التواصل: </span>
+                <span className="font-medium">{attendanceData.student.studentPhone}</span>
+              </div>
+            </div>
           </div>
 
           {/* إحصائيات الحضور */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">إحصائيات الحضور</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <div className="text-center p-4 bg-gray-50 rounded">
                 <div className="text-2xl font-bold text-gray-800">
                   {attendanceData.statistics.totalDays}
@@ -199,9 +203,21 @@ export default function MyAttendancePage() {
               </div>
               <div className="text-center p-4 bg-blue-50 rounded">
                 <div className="text-2xl font-bold text-blue-800">
+                  {attendanceData.statistics.excusedDays}
+                </div>
+                <div className="text-sm text-blue-600">معتذرة</div>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded">
+                <div className="text-2xl font-bold text-purple-800">
+                  {attendanceData.statistics.reviewedDays}
+                </div>
+                <div className="text-sm text-purple-600">راجعت</div>
+              </div>
+              <div className="text-center p-4 bg-indigo-50 rounded">
+                <div className="text-2xl font-bold text-indigo-800">
                   {attendanceData.statistics.attendancePercentage}%
                 </div>
-                <div className="text-sm text-blue-600">نسبة الحضور</div>
+                <div className="text-sm text-indigo-600">نسبة الحضور</div>
               </div>
             </div>
           </div>
@@ -253,33 +269,31 @@ export default function MyAttendancePage() {
               </div>
             )}
           </div>
+
+          {/* معلومات أساسية عن الحضور */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-lg font-medium mb-3">رموز الحضور:</h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {Object.entries(statusConfig).map(([status, config]) => (
+                <div key={status} className="flex items-center gap-2">
+                  <span className={`px-2 py-1 text-sm font-medium rounded border ${config.color}`}>
+                    {config.symbol}
+                  </span>
+                  <span className="text-sm">{config.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </>
       )}
-
-      {/* معلومات أساسية عن الحضور */}
-      <div className="mt-6 bg-gray-50 p-6 rounded-lg">
-        <h3 className="text-lg font-medium mb-3">رموز الحضور:</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {Object.entries(statusConfig).map(([status, config]) => (
-            <div key={status} className="flex items-center gap-2">
-              <span className={`px-2 py-1 text-sm font-medium rounded border ${config.color}`}>
-                {config.symbol}
-              </span>
-              <span className="text-sm">{config.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* رابط العودة */}
-      <div className="mt-6 text-center">
-        <a
-          href="/dashboard"
-          className="text-blue-600 hover:text-blue-800 font-medium"
-        >
-          العودة للوحة التحكم
-        </a>
-      </div>
     </div>
+  );
+}
+
+export default function StudentAttendancePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">جاري التحميل...</div>}>
+      <StudentAttendancePageContent />
+    </Suspense>
   );
 }

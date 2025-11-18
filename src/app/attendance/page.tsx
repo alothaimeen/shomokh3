@@ -455,7 +455,12 @@ export default function AttendancePage() {
                       {item.student.studentNumber}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.student.studentName}
+                      <Link 
+                        href={`/student-attendance?studentId=${item.student.id}`}
+                        className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                      >
+                        {item.student.studentName}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {item.student.studentPhone}

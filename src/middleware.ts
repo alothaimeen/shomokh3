@@ -22,8 +22,8 @@ export default withAuth(
 
     // قواعد الوصول حسب الدور
     const rolePermissions = {
-      ADMIN: ['/dashboard', '/users', '/programs', '/students', '/attendance', '/attendance-report', '/academic-reports', '/reports', '/enrolled-students', '/teacher-requests', '/enrollment', '/my-attendance', '/my-grades', '/daily-tasks', '/daily-grades', '/weekly-grades', '/monthly-grades', '/final-exam', '/behavior-grades', '/behavior-points', '/unified-assessment', '/settings', '/profile'], // يمكنه الوصول لكل شيء
-      TEACHER: ['/dashboard', '/teacher', '/programs', '/students', '/attendance', '/attendance-report', '/academic-reports', '/teacher-requests', '/enrolled-students', '/daily-grades', '/weekly-grades', '/monthly-grades', '/final-exam', '/behavior-grades', '/behavior-points', '/unified-assessment', '/settings', '/profile'], // يمكنه إدارة حلقاته وطالباته
+      ADMIN: ['/dashboard', '/users', '/programs', '/students', '/attendance', '/attendance-report', '/student-attendance', '/academic-reports', '/reports', '/enrolled-students', '/teacher-requests', '/enrollment', '/my-attendance', '/my-grades', '/daily-tasks', '/daily-grades', '/weekly-grades', '/monthly-grades', '/final-exam', '/behavior-grades', '/behavior-points', '/unified-assessment', '/settings', '/profile'], // يمكنه الوصول لكل شيء
+      TEACHER: ['/dashboard', '/teacher', '/programs', '/students', '/attendance', '/attendance-report', '/student-attendance', '/academic-reports', '/teacher-requests', '/enrolled-students', '/daily-grades', '/weekly-grades', '/monthly-grades', '/final-exam', '/behavior-grades', '/behavior-points', '/unified-assessment', '/settings', '/profile'], // يمكنه إدارة حلقاته وطالباته
       STUDENT: ['/dashboard', '/enrollment', '/programs', '/my-attendance', '/my-grades', '/daily-tasks', '/unified-assessment', '/settings', '/profile'], // يمكنه طلب الانضمام ومشاهدة حضوره ودرجاته ومهامه
     };
 

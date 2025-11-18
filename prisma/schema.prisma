@@ -51,6 +51,7 @@ model User {
 
   // العلاقات
   courses      Course[] @relation("TeacherCourses")
+  student      Student? @relation("StudentUser")
 
   @@map("users")
 }
@@ -115,6 +116,10 @@ model Student {
   isActive         Boolean       @default(true)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
+
+  // ربط الطالبة بمستخدم (للسماح بتسجيل الدخول)
+  userId           String?       @unique
+  user             User?         @relation("StudentUser", fields: [userId], references: [id], onDelete: SetNull)
 
   // العلاقات
   enrollmentRequests EnrollmentRequest[]

@@ -11,10 +11,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'غير مصادق عليه' }, { status: 401 });
     }
 
-    if (session.user.role !== 'STUDENT') {
-      return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
-    }
-
     const { searchParams } = new URL(request.url);
     const courseId = searchParams.get('courseId');
     const date = searchParams.get('date');
@@ -23,25 +19,65 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'courseId و date مطلوبان' }, { status: 400 });
     }
 
-    // البحث عن الطالبة
-    const student = await db.student.findFirst({
-      where: { studentName: session.user.name || '' }
-    });
+    // للمعلمة أو الإدارة: جلب مهام جميع الطالبات في الحلقة
+    if (session.user.role === 'TEACHER' || session.user.role === 'ADMIN') {
+      const targetDate = new Date(date);
+      targetDate.setHours(0, 0, 0, 0);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
 
-    if (!student) {
-      return NextResponse.json({ error: 'الطالبة غير موجودة' }, { status: 404 });
+      const tasks = await db.dailyTask.findMany({
+        where: {
+          courseId,
+          date: {
+            gte: targetDate,
+            lt: nextDay
+          }
+        },
+        include: {
+          student: {
+            select: {
+              id: true,
+              studentName: true,
+              studentNumber: true,
+            }
+          }
+        }
+      });
+
+      return NextResponse.json({ tasks });
     }
 
-    // جلب المهام اليومية
-    const tasks: any = await db.$queryRawUnsafe(`
-      SELECT * FROM daily_tasks
-      WHERE "studentId" = $1 AND "courseId" = $2 AND date = $3
-      LIMIT 1
-    `, student.id, courseId, new Date(date));
+    // للطالبة: جلب مهامها فقط
+    if (session.user.role === 'STUDENT') {
+      const student = await db.student.findFirst({
+        where: { userId: session.user.id }
+      });
 
-    const task = tasks && tasks.length > 0 ? tasks[0] : null;
+      if (!student) {
+        return NextResponse.json({ error: 'الطالبة غير موجودة' }, { status: 404 });
+      }
 
-    return NextResponse.json({ task });
+      const targetDate = new Date(date);
+      targetDate.setHours(0, 0, 0, 0);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      const task = await db.dailyTask.findFirst({
+        where: {
+          studentId: student.id,
+          courseId,
+          date: {
+            gte: targetDate,
+            lt: nextDay
+          }
+        }
+      });
+
+      return NextResponse.json({ task });
+    }
+
+    return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
   } catch (error) {
     console.error('خطأ في جلب المهام:', error);
     return NextResponse.json({ error: 'خطأ في جلب المهام' }, { status: 500 });
