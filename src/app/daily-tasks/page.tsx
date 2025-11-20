@@ -6,6 +6,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Sidebar from '@/components/shared/Sidebar';
 import BackButton from '@/components/shared/BackButton';
+import AppHeader from '@/components/shared/AppHeader';
 
 interface Enrollment {
   id: string;
