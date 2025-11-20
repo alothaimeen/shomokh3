@@ -4,6 +4,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import { generateQuarterStepValues } from '@/lib/grading-formulas';
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 interface Student {
   id: string;
@@ -230,13 +233,14 @@ function DailyGradesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-8" dir="rtl">
-      <div className="max-w-7xl mx-auto">
-        {/* العنوان */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">📊 التقييم اليومي</h1>
-          <p className="text-gray-600">إدخال درجات التقييم اليومي للطالبات (حفظ وتجويد + مراجعة وتجويد)</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="الدرجات اليومية" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">📊 التقييم اليومي</h1>
+          <p className="text-gray-600 mb-6">إدخال درجات التقييم اليومي للطالبات (حفظ وتجويد + مراجعة وتجويد)</p>
 
         {/* اختيار التاريخ */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -364,6 +368,7 @@ function DailyGradesContent() {
           <p className="text-sm text-blue-800">
             💡 الدرجة اليومية الكاملة: 10 درجات (5 حفظ + 5 مراجعة) | المجموع الخام على 70 يوم: 700 درجة
           </p>
+        </div>
         </div>
       </div>
     </div>

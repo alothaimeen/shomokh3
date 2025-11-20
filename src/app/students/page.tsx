@@ -4,6 +4,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 interface Student {
   id: string;
@@ -275,25 +278,16 @@ export default function StudentsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                بيانات الطالبات
-              </h1>
-              <p className="text-gray-600 mt-1">إدارة بيانات الطالبات المسجلات في المنصة</p>
-            </div>
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <Link href="/dashboard" className="text-blue-600 hover:text-blue-800">
-                لوحة التحكم
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="الطالبات" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">
+            بيانات الطالبات
+          </h1>
+          <p className="text-gray-600 mb-6">إدارة بيانات الطالبات المسجلات في المنصة</p>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -663,6 +657,8 @@ export default function StudentsPage() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

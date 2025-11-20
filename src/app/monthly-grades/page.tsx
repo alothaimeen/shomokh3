@@ -4,6 +4,9 @@ import React, { useEffect, useState, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { generateQuarterStepValues } from "@/lib/grading-formulas";
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 interface MonthGrade {
   quranForgetfulness: number;
@@ -197,16 +200,17 @@ function MonthlyGradesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-8" dir="rtl">
-      <div className="max-w-7xl mx-auto">
-        {/* العنوان */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">📆 التقييم الشهري</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="الدرجات الشهرية" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">📆 التقييم الشهري</h1>
           <p className="text-gray-600">الحلقة: {courseName}</p>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 mb-6">
             القرآن: 15 درجة (نسيان، لحن جلي، لحن خفي) + التجويد النظري: 15 درجة = 30 درجة شهرياً × 3 أشهر = 90 درجة (الدرجات الافتراضية: كاملة)
           </p>
-        </div>
 
         {/* اختيار الشهر */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -423,6 +427,7 @@ function MonthlyGradesContent() {
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       </div>
     </div>

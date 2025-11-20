@@ -6,6 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { TabType, TAB_CONFIGS } from '@/types/assessment';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { AssessmentSkeleton } from '@/components/assessment/AssessmentSkeleton';
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 // Lazy load all tab components
 const DailyGradesTab = lazy(() => import('@/components/assessment/DailyGradesTab').then(m => ({ default: m.DailyGradesTab })));
@@ -136,13 +139,17 @@ function UnifiedAssessmentContent() {
   const isTeacherOrAdmin = session.user.role === 'ADMIN' || session.user.role === 'TEACHER';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            الصفحة الموحدة للتقييم
-          </h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="واجهة الدرجات الموحدة" />
+        <div className="p-8">
+          <BackButton />
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent mb-2">
+              الصفحة الموحدة للتقييم
+            </h1>
           <p className="text-gray-600">
             {isTeacherOrAdmin 
               ? 'إدارة جميع أنواع التقييم من صفحة واحدة' 
@@ -195,9 +202,9 @@ function UnifiedAssessmentContent() {
                     <button
                       key={tab.id}
                       onClick={() => handleTabChange(tab.id)}
-                      className={`relative px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         activeTab === tab.id
-                          ? 'bg-indigo-600 text-white'
+                          ? 'bg-gradient-to-r from-primary-purple to-primary-blue text-white shadow-md'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -277,6 +284,7 @@ function UnifiedAssessmentContent() {
             </p>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

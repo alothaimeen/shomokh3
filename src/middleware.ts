@@ -58,7 +58,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // حماية جميع المسارات عدا الصفحة الرئيسية، تسجيل الدخول، التسجيل، والملفات الثابتة
-    '/((?!api/auth|api/students/register|_next/static|_next/image|favicon.ico|login|register|$).*)',
+    // حماية جميع المسارات عدا الصفحة الرئيسية، تسجيل الدخول، التسجيل، صفحات "عن الجمعية"، والملفات الثابتة
+    '/((?!api/auth|api/students/register|_next/static|_next/image|favicon.ico|login|register|about|$).*)',
   ],
 };

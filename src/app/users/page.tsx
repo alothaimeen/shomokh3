@@ -4,6 +4,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 // أنواع البيانات
 interface User {
@@ -250,19 +253,24 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="container mx-auto p-6" dir="rtl">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">إدارة المستخدمين</h1>
-          <p className="text-gray-600">عرض وإدارة جميع مستخدمي النظام</p>
-        </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-        >
-          + إضافة مستخدم جديد
-        </button>
-      </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="إدارة المستخدمين" />
+        <div className="p-8">
+          <BackButton />
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">إدارة المستخدمين</h1>
+              <p className="text-gray-600">عرض وإدارة جميع مستخدمي النظام</p>
+            </div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-6 py-3 rounded-lg font-medium transition-colors hover:opacity-90"
+            >
+              + إضافة مستخدم جديد
+            </button>
+          </div>
 
       {/* إحصائيات سريعة */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -520,6 +528,8 @@ export default function UsersPage() {
         >
           العودة للوحة التحكم
         </Link>
+      </div>
+        </div>
       </div>
     </div>
   );

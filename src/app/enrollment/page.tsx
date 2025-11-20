@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 interface Course {
   id: string;
@@ -136,19 +139,21 @@ export default function EnrollmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">طلب الانضمام للحلقات</h1>
-          <p className="text-gray-600">📚 اختاري الحلقة المناسبة لمستواك من أي مستوى متاح</p>
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="طلب الانضمام" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">طلب الانضمام للحلقات</h1>
+          <p className="text-gray-600 mb-4">📚 اختاري الحلقة المناسبة لمستواك من أي مستوى متاح</p>
+          <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-blue-800 text-sm">
               <strong>✨ جديد:</strong> يمكنك الآن الانضمام لأي مستوى حسب حفظك الحالي!
               <br />
               <span className="text-blue-600">سواء كنتِ مبتدئة أو متقدمة، اختاري المستوى المناسب لكِ.</span>
             </p>
           </div>
-        </div>
 
         {notification && (
           <div className={`mb-6 p-4 rounded-lg ${
@@ -284,6 +289,7 @@ export default function EnrollmentPage() {
               </button>
             </div>
           </form>
+        </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 // أنواع البيانات (محدثة - الجلسة 10.6)
 type AttendanceStatus = 'PRESENT' | 'EXCUSED' | 'ABSENT' | 'REVIEWED' | 'LEFT_EARLY';
@@ -159,8 +162,13 @@ export default function MyAttendancePage() {
   }
 
   return (
-    <div className="container mx-auto p-6" dir="rtl">
-      <h1 className="text-3xl font-bold mb-6">سجل حضوري</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="حضوري" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">سجل حضوري</h1>
 
       {attendanceData && (
         <>
@@ -279,6 +287,8 @@ export default function MyAttendancePage() {
         >
           العودة للوحة التحكم
         </a>
+      </div>
+        </div>
       </div>
     </div>
   );

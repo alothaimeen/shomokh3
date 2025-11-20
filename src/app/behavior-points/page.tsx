@@ -3,6 +3,9 @@
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 interface Enrollment {
   id: string;
@@ -192,8 +195,13 @@ function BehaviorPointsContent() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">النقاط السلوكية</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="النقاط السلوكية" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">النقاط السلوكية</h1>
 
       {/* اختيار الحلقة والتاريخ */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -351,6 +359,8 @@ function BehaviorPointsContent() {
           لا توجد طالبات مسجلات في هذه الحلقة
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
@@ -43,17 +46,18 @@ export default function SettingsPage() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="الإعدادات" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">
             الإعدادات
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-6">
             إدارة تفضيلاتك في المنصة
           </p>
-        </div>
 
         {/* Success Message */}
         {message && (
@@ -187,11 +191,12 @@ export default function SettingsPage() {
           <div className="flex justify-end">
             <button
               onClick={handleSavePreference}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium transition-colors"
+              className="px-6 py-3 bg-gradient-to-r from-primary-purple to-primary-blue text-white rounded-md hover:opacity-90 font-medium transition-colors"
             >
               حفظ الإعدادات
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>

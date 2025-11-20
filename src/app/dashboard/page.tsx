@@ -264,6 +264,10 @@ export default function DashboardPage() {
                           <Calendar size={16} />
                           <span>الحضور</span>
                         </Link>
+                        <Link href={`/unified-assessment?courseId=${course.id}`} className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
+                          <GraduationCap size={16} />
+                          <span>واجهة الدرجات</span>
+                        </Link>
                         <Link href={`/daily-grades?courseId=${course.id}`} className="bg-gradient-to-r from-primary-purple to-primary-blue text-white px-3 py-2 rounded-lg text-sm text-center font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
                           <ClipboardCheck size={16} />
                           <span>يومي</span>

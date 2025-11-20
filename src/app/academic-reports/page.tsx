@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 interface StudentGrades {
   dailyRaw: number;
@@ -119,15 +122,20 @@ export default function AcademicReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">التقرير الشامل للدرجات</h1>
-          <p className="text-gray-600">عرض تفصيلي لجميع درجات الطالبات والحساب النهائي</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="التقارير الأكاديمية" />
+        <div className="p-8">
+          <BackButton />
+          
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">التقرير الشامل للدرجات</h1>
+            <p className="text-gray-600">عرض تفصيلي لجميع درجات الطالبات والحساب النهائي</p>
+          </div>
 
-        {/* Course Selection */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          {/* Course Selection */}
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -159,11 +167,11 @@ export default function AcademicReportsPage() {
               {message}
             </div>
           )}
-        </div>
+          </div>
 
-        {/* Reports Table */}
-        {reports.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          {/* Reports Table */}
+          {reports.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -245,12 +253,12 @@ export default function AcademicReportsPage() {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* Legend */}
-        {reports.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
+          {/* Legend */}
+          {reports.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">شرح الصيغ:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
               <div>
@@ -272,17 +280,18 @@ export default function AcademicReportsPage() {
                 <span className="font-semibold text-gray-800">المجموع:</span> 50 + 50 + 30 + 10 + 60 = 200 درجة
               </div>
             </div>
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* العودة للوحة التحكم */}
-        <div className="text-center mt-8">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded font-medium transition-colors"
-          >
-            العودة للوحة التحكم
-          </button>
+          {/* العودة للوحة التحكم */}
+          <div className="text-center mt-8">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded font-medium transition-colors"
+            >
+              العودة للوحة التحكم
+            </button>
+          </div>
         </div>
       </div>
     </div>

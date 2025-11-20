@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 interface Student {
   id: string;
@@ -297,22 +300,14 @@ export default function TeacherRequestsPage() {
   const currentRequests = filteredRequests;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-gray-800">طلبات الانضمام للحلقات</h1>
-            {preSelectedCourse && (
-              <Link
-                href="/teacher"
-                className="text-blue-600 hover:text-blue-800 flex items-center gap-2"
-              >
-                ← العودة لاختيار الحلقة
-              </Link>
-            )}
-          </div>
-          <p className="text-gray-600">إدارة طلبات الطالبات للانضمام لحلقاتك</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="طلبات الانضمام" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">طلبات الانضمام للحلقات</h1>
+          <p className="text-gray-600 mb-6">إدارة طلبات الطالبات للانضمام لحلقاتك</p>
 
         {notification && (
           <div className={`mb-6 p-4 rounded-lg ${
@@ -527,6 +522,7 @@ export default function TeacherRequestsPage() {
           >
             العودة للوحة التحكم
           </button>
+        </div>
         </div>
       </div>
     </div>

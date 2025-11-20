@@ -4,6 +4,9 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { generateQuarterStepValues } from "@/lib/grading-formulas";
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 interface StudentGrade {
   enrollmentId: string;
@@ -163,16 +166,17 @@ function WeeklyGradesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50 p-8" dir="rtl">
-      <div className="max-w-7xl mx-auto">
-        {/* العنوان */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">📅 التقييم الأسبوعي</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="الدرجات الأسبوعية" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">📅 التقييم الأسبوعي</h1>
           <p className="text-gray-600">الحلقة: {courseName}</p>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 mb-6">
             كل أسبوع: 5 درجات × 10 أسابيع = 50 درجة (الدرجة الافتراضية: 5)
           </p>
-        </div>
 
         {/* اختيار الأسبوع */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -303,6 +307,7 @@ function WeeklyGradesContent() {
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       </div>
     </div>

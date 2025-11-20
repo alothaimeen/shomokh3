@@ -71,10 +71,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-purple/10 to-primary-blue/10">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-2xl shadow-xl">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-bold bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">
             تسجيل الدخول
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
@@ -121,7 +121,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-primary-purple to-primary-blue hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
             </button>
@@ -139,7 +139,7 @@ export default function LoginPage() {
             <button
               onClick={() => quickLogin('admin@shamokh.edu', 'admin123')}
               disabled={isLoading}
-              className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-col items-center p-3 border-2 border-primary-purple rounded-lg hover:bg-primary-purple/5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-purple transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="text-lg mb-1">👑</span>
               <span className="text-sm font-medium">المدير</span>
@@ -150,7 +150,7 @@ export default function LoginPage() {
             <button
               onClick={() => quickLogin('teacher1@shamokh.edu', 'teacher123')}
               disabled={isLoading}
-              className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-col items-center p-3 border-2 border-primary-blue rounded-lg hover:bg-primary-blue/5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-blue transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="text-lg mb-1">👩‍🏫</span>
               <span className="text-sm font-medium">معلمة</span>
@@ -161,7 +161,7 @@ export default function LoginPage() {
             <button
               onClick={() => quickLogin('student1@shamokh.edu', 'student123')}
               disabled={isLoading}
-              className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-col items-center p-3 border-2 border-primary-purple rounded-lg hover:bg-primary-purple/5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-purple transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="text-lg mb-1">👩‍🎓</span>
               <span className="text-sm font-medium">طالبة</span>

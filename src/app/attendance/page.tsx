@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 // أنواع البيانات
 type AttendanceStatus = 'PRESENT' | 'EXCUSED' | 'ABSENT' | 'REVIEWED' | 'LEFT_EARLY';
@@ -299,18 +302,15 @@ export default function AttendancePage() {
   }
 
   return (
-    <div className="container mx-auto p-6" dir="rtl">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">تسجيل الحضور والغياب</h1>
-        {preSelectedCourse && session?.user?.userRole === 'TEACHER' && (
-          <Link
-            href="/teacher"
-            className="text-blue-600 hover:text-blue-800 flex items-center gap-2"
-          >
-            ← العودة لاختيار الحلقة
-          </Link>
-        )}
-      </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="تسجيل الحضور" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">
+            تسجيل الحضور والغياب
+          </h1>
 
       {/* اختيار الحلقة والتاريخ */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -528,6 +528,8 @@ export default function AttendancePage() {
               <span className="text-sm">{config.label}</span>
             </div>
           ))}
+        </div>
+      </div>
         </div>
       </div>
     </div>

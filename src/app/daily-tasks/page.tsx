@@ -4,6 +4,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Sidebar from '@/components/shared/Sidebar';
+import BackButton from '@/components/shared/BackButton';
 
 interface Enrollment {
   id: string;
@@ -178,8 +180,13 @@ function DailyTasksContent() {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">📋 مهامي اليومية</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 lg:mr-72">
+        <AppHeader title="مهامي اليومية" />
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">📋 مهامي اليومية</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {enrollments.length > 1 && (
@@ -284,6 +291,8 @@ function DailyTasksContent() {
           {saving ? 'جاري الحفظ...' : '💾 حفظ المهام'}
         </button>
       </form>
+        </div>
+      </div>
     </div>
   );
 }

@@ -75,6 +75,12 @@ const navItems: NavItem[] = [
     roles: ['TEACHER']
   },
   {
+    href: '/unified-assessment',
+    label: 'واجهة الدرجات الموحدة',
+    icon: <GraduationCap size={20} />,
+    roles: ['TEACHER']
+  },
+  {
     href: '/daily-grades',
     label: 'الدرجات اليومية',
     icon: <ClipboardCheck size={20} />,
