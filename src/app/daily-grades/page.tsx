@@ -7,6 +7,9 @@ import { generateQuarterStepValues } from '@/lib/grading-formulas';
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
+import { useTeacherCourses } from '@/hooks/useCourses';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
 interface Student {
   id: string;
@@ -25,11 +28,9 @@ interface Course {
   id: string;
   courseName: string;
   level: number;
-  program: {
-    id: string;
-    programName: string;
-  };
-  _count: {
+  studentsCount?: number;
+  programName?: string;
+  _count?: {
     enrollments: number;
   };
 }
@@ -39,32 +40,40 @@ function DailyGradesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [students, setStudents] = useState<Student[]>([]);
   const [grades, setGrades] = useState<Record<string, GradeEntry>>({});
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split('T')[0]
   );
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
   // قيم الدرجات (10، 9.75، 9.5، ... 0)
   const gradeValues = generateQuarterStepValues(5, 0.25);
 
+  // ✅ استخدام SWR hooks
+  const { courses, isLoading: loadingCourses } = useTeacherCourses(session?.user?.role === 'TEACHER');
+  const { data: enrollmentData, isLoading: loadingStudents, mutate: refreshStudents } = useSWR<{ 
+    enrollments: any[];
+    enrollmentsByCourse: any[];
+    summary: any;
+  }>(
+    selectedCourse ? `/api/enrollment/enrolled-students?courseId=${selectedCourse}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+    }
+  );
+
+  const loading = loadingCourses || loadingStudents;
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
     }
   }, [status, router]);
-
-  // جلب الحلقات
-  useEffect(() => {
-    if (session) {
-      fetchCourses();
-    }
-  }, [session]);
 
   // التعامل مع courseId من URL
   useEffect(() => {
@@ -77,62 +86,28 @@ function DailyGradesContent() {
     }
   }, [searchParams, courses]);
 
-  // جلب البيانات عند تغيير الحلقة أو التاريخ
+  // تحويل students من SWR data
+  useEffect(() => {
+    if (enrollmentData?.enrollments && Array.isArray(enrollmentData.enrollments)) {
+      // تحويل enrollments إلى students
+      const studentsFromEnrollments = enrollmentData.enrollments.map((enrollment: any) => ({
+        id: enrollment.student.id,
+        studentName: enrollment.student.studentName,
+        studentNumber: enrollment.student.studentNumber,
+      }));
+      setStudents(studentsFromEnrollments);
+    } else {
+      setStudents([]);
+    }
+  }, [enrollmentData]);
+
+  // جلب الدرجات عند تغيير الحلقة أو التاريخ
   useEffect(() => {
     if (selectedCourse && selectedDate) {
-      fetchStudents();
       fetchExistingGrades();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCourse, selectedDate]);
-
-  const fetchCourses = async () => {
-    try {
-      const response = await fetch('/api/attendance/teacher-courses');
-      if (!response.ok) return;
-
-      const data = await response.json();
-      const fetchedCourses = data.courses || [];
-      setCourses(fetchedCourses);
-
-      // اختيار أول حلقة تلقائياً إذا لم يكن هناك courseId في URL
-      const courseIdFromUrl = searchParams.get('courseId');
-      if (!courseIdFromUrl && fetchedCourses.length > 0) {
-        setSelectedCourse(fetchedCourses[0].id);
-      }
-    } catch (error) {
-      console.error('خطأ في جلب الحلقات:', error);
-    }
-  };
-
-  const fetchStudents = async () => {
-    if (!selectedCourse) return;
-
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/enrollment/enrolled-students?courseId=${selectedCourse}`
-      );
-      const data = await res.json();
-
-      if (res.ok) {
-        // تحويل enrollments إلى students بسيطة
-        const studentsList = (data.enrollments || []).map((enrollment: any) => ({
-          id: enrollment.student.id,
-          studentName: enrollment.student.studentName,
-          studentNumber: enrollment.student.studentNumber,
-        }));
-        setStudents(studentsList);
-      } else {
-        setMessage(data.error || 'فشل جلب الطالبات');
-      }
-    } catch (error) {
-      console.error('خطأ في جلب الطالبات:', error);
-      setMessage('فشل جلب الطالبات');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchExistingGrades = async () => {
     if (!selectedCourse || !selectedDate) return;
@@ -235,7 +210,7 @@ function DailyGradesContent() {
 
       if (res.ok) {
         setMessage(`✅ ${data.message}`);
-        // انتظار قليل ثم إعادة جلب للتأكيد
+        refreshStudents(); // ✅ تحديث SWR cache
         setTimeout(() => fetchExistingGrades(), 500);
       } else {
         setMessage(`❌ ${data.error}`);
@@ -250,8 +225,14 @@ function DailyGradesContent() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">جاري التحميل...</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
+            <p className="mt-4 text-gray-600">جاري التحميل...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -288,7 +269,7 @@ function DailyGradesContent() {
               {courses.length === 0 && <option value="">جاري التحميل...</option>}
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>
-                  {course.courseName} ({course._count.enrollments} طالبة)
+                  {course.courseName} ({course.studentsCount || course._count?.enrollments || 0} طالبة)
                 </option>
               ))}
             </select>

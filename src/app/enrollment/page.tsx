@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
 interface Course {
   id: string;
@@ -35,46 +37,29 @@ interface EnrollmentRequestData {
 export default function EnrollmentPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [message, setMessage] = useState('');
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
+  // ✅ استخدام SWR
+  const { data: coursesData, isLoading: loading, mutate: refreshCourses } = useSWR<{ courses: Course[] }>(
+    session?.user?.userRole === 'STUDENT' ? '/api/enrollment/available-courses' : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 3000,
+    }
+  );
+
+  const courses = coursesData?.courses || [];
+
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session || session.user.userRole !== 'STUDENT') {
       router.push('/dashboard');
-      return;
     }
-
-    fetchAvailableCourses();
   }, [session, status, router]);
-
-  const fetchAvailableCourses = async () => {
-    try {
-      const response = await fetch('/api/enrollment/available-courses');
-      const data = await response.json();
-
-      if (response.ok) {
-        setCourses(data.courses);
-      } else {
-        setNotification({
-          type: 'error',
-          message: data.error || 'خطأ في جلب البيانات'
-        });
-      }
-    } catch (error) {
-      setNotification({
-        type: 'error',
-        message: 'خطأ في الاتصال بالخادم'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,8 +97,7 @@ export default function EnrollmentPage() {
         });
         setSelectedCourse('');
         setMessage('');
-        // إعادة جلب البيانات لتحديث الحالة
-        fetchAvailableCourses();
+        refreshCourses(); // ✅ تحديث SWR cache
       } else {
         setNotification({
           type: 'error',
@@ -132,8 +116,14 @@ export default function EnrollmentPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">جاري التحميل...</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
+            <p className="mt-4 text-gray-600">جاري التحميل...</p>
+          </div>
+        </div>
       </div>
     );
   }

@@ -9,6 +9,8 @@ import { AssessmentSkeleton } from '@/components/assessment/AssessmentSkeleton';
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
+import { useTeacherCourses } from '@/hooks/useCourses';
+import { useMyEnrollments } from '@/hooks/useEnrollments';
 
 // Lazy load all tab components
 const DailyGradesTab = lazy(() => import('@/components/assessment/DailyGradesTab').then(m => ({ default: m.DailyGradesTab })));
@@ -21,14 +23,29 @@ function UnifiedAssessmentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('daily');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [selectedMonth, setSelectedMonth] = useState(1);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [loading, setLoading] = useState(true);
+
+  // ✅ استخدام SWR hooks
+  const isStudent = session?.user?.role === 'STUDENT';
+  const { courses: teacherCourses, isLoading: loadingTeacherCourses } = useTeacherCourses(
+    !isStudent
+  );
+  const { enrollments, isLoading: loadingEnrollments } = useMyEnrollments();
+  
+  const courses = isStudent 
+    ? enrollments.map((e: any) => ({
+        id: e.id,
+        courseName: e.courseName,
+        programName: e.programName
+      }))
+    : teacherCourses;
+  
+  const loading = isStudent ? loadingEnrollments : loadingTeacherCourses;
 
   // تحذير عند المغادرة بدون حفظ
   useUnsavedChanges(hasUnsavedChanges);
@@ -40,8 +57,6 @@ function UnifiedAssessmentContent() {
     }
 
     if (status === 'authenticated') {
-      fetchCourses();
-      
       // Sync with URL parameters
       const courseId = searchParams.get('courseId');
       const tab = searchParams.get('tab') as TabType;
@@ -56,38 +71,6 @@ function UnifiedAssessmentContent() {
       if (month) setSelectedMonth(Number(month));
     }
   }, [status, router, searchParams]);
-
-  const fetchCourses = async () => {
-    setLoading(true);
-    try {
-      let endpoint = '/api/attendance/teacher-courses';
-      
-      // Check user role for appropriate API
-      if (session?.user.role === 'STUDENT') {
-        endpoint = '/api/enrollment/my-enrollments';
-      }
-
-      const res = await fetch(endpoint);
-      const data = await res.json();
-
-      if (res.ok) {
-        if (session?.user.role === 'STUDENT') {
-          // Transform enrollments to courses format
-          setCourses((data.enrollments || []).map((e: any) => ({
-            id: e.id,
-            courseName: e.courseName,
-            programName: e.programName
-          })));
-        } else {
-          setCourses(data.courses || []);
-        }
-      }
-    } catch (error) {
-      console.error('خطأ في جلب الحلقات:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const updateURL = (updates: Partial<{ tab: TabType; courseId: string; date: string; week: number; month: number }>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -127,8 +110,14 @@ function UnifiedAssessmentContent() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-xl">جاري التحميل...</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
+            <p className="mt-4 text-gray-600">جاري التحميل...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -170,7 +159,7 @@ function UnifiedAssessmentContent() {
               className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">-- اختر الحلقة --</option>
-              {courses.map((course) => (
+              {courses.map((course: any) => (
                 <option key={course.id} value={course.id}>
                   {course.courseName} {course.programName ? `(${course.programName})` : ''}
                 </option>

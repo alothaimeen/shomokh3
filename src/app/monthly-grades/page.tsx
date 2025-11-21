@@ -7,6 +7,9 @@ import { generateQuarterStepValues } from "@/lib/grading-formulas";
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
+import { useTeacherCourses } from '@/hooks/useCourses';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
 interface MonthGrade {
   quranForgetfulness: number;
@@ -43,11 +46,8 @@ function MonthlyGradesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
-  const [students, setStudents] = useState<StudentGrade[]>([]);
   const [courseName, setCourseName] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<number>(1);
   const [message, setMessage] = useState("");
@@ -64,17 +64,25 @@ function MonthlyGradesContent() {
   const quranGradeValues = generateQuarterStepValues(5, 0.25);  // 0-5
   const tajweedGradeValues = generateQuarterStepValues(15, 0.25); // 0-15
 
+  // ✅ استخدام SWR hooks
+  const { courses, isLoading: loadingCourses } = useTeacherCourses(session?.user?.role === 'TEACHER');
+  const { data: gradesData, isLoading: loadingGrades, mutate: refreshGrades } = useSWR<{ students: StudentGrade[] }>(
+    selectedCourse ? `/api/grades/monthly?courseId=${selectedCourse}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+    }
+  );
+
+  const students = gradesData?.students || [];
+  const loading = loadingCourses || loadingGrades;
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     }
   }, [status, router]);
-
-  useEffect(() => {
-    if (session) {
-      fetchCourses();
-    }
-  }, [session]);
 
   useEffect(() => {
     const courseIdFromUrl = searchParams.get('courseId');
@@ -86,44 +94,19 @@ function MonthlyGradesContent() {
   }, [searchParams, courses]);
 
   useEffect(() => {
-    if (selectedCourse) {
-      fetchMonthlyGrades();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCourse]);
-
-  async function fetchCourses() {
-    try {
-      const res = await fetch('/api/attendance/teacher-courses');
-      if (!res.ok) return;
-      
-      const data = await res.json();
-      const fetchedCourses = data.courses || [];
-      setCourses(fetchedCourses);
-
-      const courseIdFromUrl = searchParams.get('courseId');
-      if (!courseIdFromUrl && fetchedCourses.length > 0) {
-        setSelectedCourse(fetchedCourses[0].id);
+    if (selectedCourse && courses.length > 0) {
+      const course = courses.find(c => c.id === selectedCourse);
+      if (course) {
+        setCourseName(course.courseName);
       }
-    } catch (error) {
-      console.error("خطأ في جلب الحلقات:", error);
     }
-  }
+  }, [selectedCourse, courses]);
 
-  async function fetchMonthlyGrades() {
-    if (!selectedCourse) return;
-    
-    try {
-      const res = await fetch(`/api/grades/monthly?courseId=${selectedCourse}`);
-      if (!res.ok) throw new Error("فشل في جلب البيانات");
-
-      const data = await res.json();
-      setStudents(data.students || []);
-      setCourseName(data.course?.courseName || "");
-
-      // تعبئة editedGrades بالدرجات الكاملة كافتراضي
+  // تهيئة editedGrades عند تحميل البيانات أو تغيير الشهر
+  useEffect(() => {
+    if (students.length > 0) {
       const initialGrades: typeof editedGrades = {};
-      data.students.forEach((student: StudentGrade) => {
+      students.forEach((student: StudentGrade) => {
         const monthData = student.grades[selectedMonth];
         initialGrades[student.studentId] = {
           quranForgetfulness: monthData ? monthData.quranForgetfulness : 5,
@@ -133,13 +116,8 @@ function MonthlyGradesContent() {
         };
       });
       setEditedGrades(initialGrades);
-    } catch (error) {
-      console.error("خطأ في جلب الدرجات:", error);
-      setMessage("❌ حدث خطأ في جلب البيانات");
-    } finally {
-      setLoading(false);
     }
-  }
+  }, [students, selectedMonth]);
 
   function handleMonthChange(month: number) {
     setSelectedMonth(month);
@@ -201,7 +179,7 @@ function MonthlyGradesContent() {
 
       if (res.ok) {
         setMessage(`✅ ${data.message}`);
-        await fetchMonthlyGrades();
+        refreshGrades(); // ✅ تحديث SWR cache
       } else {
         setMessage(`❌ ${data.error}`);
       }
@@ -215,8 +193,14 @@ function MonthlyGradesContent() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-xl">جاري التحميل...</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
+            <p className="mt-4 text-gray-600">جاري التحميل...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -260,7 +244,7 @@ function MonthlyGradesContent() {
               {courses.length === 0 && <option value="">جاري التحميل...</option>}
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>
-                  {course.courseName} ({course._count.enrollments} طالبة)
+                  {course.courseName}
                 </option>
               ))}
             </select>

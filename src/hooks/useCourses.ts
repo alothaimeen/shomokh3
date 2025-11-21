@@ -76,10 +76,10 @@ export function useCourses(programId?: string) {
 }
 
 // Hook لجلب حلقات المعلمة
-export function useTeacherCourses(teacherId?: string) {
-  const url = teacherId ? `/api/courses/teacher-courses?teacherId=${teacherId}` : null;
+export function useTeacherCourses(shouldFetch?: boolean) {
+  const url = shouldFetch ? `/api/courses/teacher-courses` : null;
   
-  const { data, error, isLoading, mutate } = useSWR<CoursesResponse>(
+  const { data, error, isLoading, mutate } = useSWR<{ courses: any[] }>(
     url,
     fetcher,
     {
@@ -91,7 +91,7 @@ export function useTeacherCourses(teacherId?: string) {
   );
   
   return {
-    courses: data?.data || [],
+    courses: data?.courses || [],
     isLoading,
     error,
     refresh: mutate,

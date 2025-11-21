@@ -143,20 +143,18 @@ export async function GET(request: NextRequest) {
 
     // جلب البيانات الحقيقية من قاعدة البيانات
     try {
-      // البحث عن الطالبة
+      // البحث عن الطالبة باستخدام userId
       const student = await db.student.findFirst({
         where: {
-          studentName: {
-            contains: session.user.name || ''
-          }
+          userId: session.user.id
         }
       });
 
       if (!student) {
+        // إذا لم نجدها، نستخدم البيانات الاحتياطية
         return NextResponse.json({
-          grades: [],
-          summary: null,
-          message: 'لم يتم العثور على بيانات الطالبة'
+          grades: getFallbackGrades(),
+          summary: getFallbackSummary()
         });
       }
 

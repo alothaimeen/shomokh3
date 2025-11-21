@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Sidebar from "@/components/shared/Sidebar";
 import AppHeader from "@/components/shared/AppHeader";
 import HijriDateDisplay from "@/components/shared/HijriDateDisplay";
 import { Users, BookOpen, GraduationCap, UserCheck, Calendar, FileText, BarChart3, ClipboardCheck, Star, Award, ListChecks } from 'lucide-react';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
+import { useTeacherCourses } from '@/hooks/useCourses';
+import { useMyEnrollments } from '@/hooks/useEnrollments';
 
 interface TeacherCourse {
   id: string;
@@ -28,12 +32,24 @@ interface StudentEnrollment {
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [stats, setStats] = useState<any>(null);
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [teacherCourses, setTeacherCourses] = useState<TeacherCourse[]>([]);
-  const [loadingCourses, setLoadingCourses] = useState(true);
-  const [studentEnrollments, setStudentEnrollments] = useState<StudentEnrollment[]>([]);
-  const [loadingEnrollments, setLoadingEnrollments] = useState(true);
+  
+  // ✅ SWR للإحصائيات
+  const { data: statsData, isLoading: loadingStats } = useSWR(
+    session ? '/api/dashboard/stats' : null,
+    fetcher,
+    { revalidateOnFocus: true, dedupingInterval: 2000 }
+  );
+  const stats = statsData || null;
+  
+  // ✅ SWR لحلقات المعلمة
+  const { courses: teacherCourses, isLoading: loadingCourses } = useTeacherCourses(
+    session?.user?.role === 'TEACHER'
+  );
+  
+  // ✅ SWR لتسجيلات الطالبة (فقط للطالبات)
+  const { enrollments: studentEnrollments, isLoading: loadingEnrollments } = useMyEnrollments(
+    session?.user?.role === 'STUDENT'
+  );
 
   useEffect(() => {
     if (status === "loading") return;
@@ -41,68 +57,6 @@ export default function DashboardPage() {
       router.push('/login');
     }
   }, [session, status, router]);
-
-  // ✅ Parallel Fetching - جلب جميع البيانات دفعة واحدة
-  useEffect(() => {
-    const fetchAllData = async () => {
-      if (!session) return;
-
-      const userRole = session.user?.role;
-      
-      try {
-        // تحديد الاستعلامات المطلوبة
-        const requests = [];
-        
-        // الإحصائيات (للجميع)
-        requests.push(
-          fetch('/api/dashboard/stats')
-            .then(res => res.ok ? res.json() : null)
-            .catch(() => null)
-        );
-        
-        // حلقات المعلمة
-        if (userRole === 'TEACHER') {
-          requests.push(
-            fetch('/api/courses/teacher-courses')
-              .then(res => res.ok ? res.json() : null)
-              .catch(() => null)
-          );
-        }
-        
-        // تسجيلات الطالبة
-        if (userRole === 'STUDENT') {
-          requests.push(
-            fetch('/api/enrollment/my-enrollments')
-              .then(res => res.ok ? res.json() : null)
-              .catch(() => null)
-          );
-        }
-        
-        // تنفيذ موازي
-        const results = await Promise.all(requests);
-        
-        // معالجة النتائج
-        if (results[0]) setStats(results[0]);
-        
-        if (userRole === 'TEACHER' && results[1]) {
-          setTeacherCourses(results[1].courses || []);
-        }
-        
-        if (userRole === 'STUDENT' && results[1]) {
-          setStudentEnrollments(results[1].enrollments || []);
-        }
-        
-      } catch (error) {
-        console.error('خطأ في جلب البيانات:', error);
-      } finally {
-        setLoadingStats(false);
-        setLoadingCourses(false);
-        setLoadingEnrollments(false);
-      }
-    };
-
-    fetchAllData();
-  }, [session]);
 
   if (status === "loading") {
     return (
@@ -120,7 +74,7 @@ export default function DashboardPage() {
   }
 
   const userRole = session.user?.role;
-  const currentStats = stats || {
+  const currentStats: any = stats || {
     totalUsers: 0,
     totalPrograms: 0,
     totalCourses: 0,
@@ -246,7 +200,7 @@ export default function DashboardPage() {
                 <p className="text-gray-500 text-center py-8">لا توجد حلقات مسندة لك حالياً</p>
               ) : (
                 <div className="space-y-4">
-                  {teacherCourses.map((course) => (
+                  {teacherCourses.map((course: any) => (
                     <div key={course.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="mb-3">
                         <h4 className="text-lg font-semibold text-gray-900">{course.courseName}</h4>
@@ -323,7 +277,7 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {studentEnrollments.map((enrollment) => (
+                    {studentEnrollments.map((enrollment: any) => (
                       <div key={enrollment.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="mb-3">
                           <h4 className="text-lg font-semibold text-gray-900">{enrollment.courseName}</h4>

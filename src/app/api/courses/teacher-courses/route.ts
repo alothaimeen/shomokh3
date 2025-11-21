@@ -23,9 +23,7 @@ export async function GET(request: NextRequest) {
       courses = await db.course.findMany({
         where: {
           isActive: true,
-          teacher: {
-            userEmail: session.user.email || ''
-          }
+          teacherId: session.user.id
         },
         include: {
           program: {

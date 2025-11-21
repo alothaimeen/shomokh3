@@ -7,6 +7,9 @@ import { useSearchParams } from "next/navigation";
 import Sidebar from '@/components/shared/Sidebar';
 import BackButton from '@/components/shared/BackButton';
 import AppHeader from '@/components/shared/AppHeader';
+import { useMyEnrollments } from '@/hooks/useEnrollments';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
 interface Enrollment {
   id: string;
@@ -28,7 +31,6 @@ function DailyTasksContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [taskData, setTaskData] = useState<DailyTask>({
     date: new Date().toISOString().split('T')[0],
@@ -37,9 +39,21 @@ function DailyTasksContent() {
     recitedToPeer: false,
     notes: ''
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+
+  // ✅ استخدام SWR hooks
+  const { enrollments, isLoading: loadingEnrollments } = useMyEnrollments();
+  const { data: taskDataFromAPI, mutate: refreshTask } = useSWR<{ task: DailyTask | null }>(
+    selectedCourseId && taskData.date ? `/api/points/daily-tasks?courseId=${selectedCourseId}&date=${taskData.date}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+    }
+  );
+
+  const loading = loadingEnrollments;
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -48,66 +62,33 @@ function DailyTasksContent() {
   }, [status, router]);
 
   useEffect(() => {
-    const fetchEnrollments = async () => {
-      try {
-        const response = await fetch('/api/enrollment/my-enrollments');
-        const data = await response.json();
-        
-        if (data.enrollments) {
-          setEnrollments(data.enrollments);
-          
-          const courseId = searchParams.get('courseId');
-          if (courseId && data.enrollments.some((e: Enrollment) => e.id === courseId)) {
-            setSelectedCourseId(courseId);
-          } else if (data.enrollments.length > 0) {
-            setSelectedCourseId(data.enrollments[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching enrollments:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (status === "authenticated") {
-      fetchEnrollments();
+    const courseId = searchParams.get('courseId');
+    if (courseId && enrollments.some((e: any) => e.id === courseId)) {
+      setSelectedCourseId(courseId);
+    } else if (enrollments.length > 0 && !selectedCourseId) {
+      setSelectedCourseId(enrollments[0].id);
     }
-  }, [status, searchParams]);
+  }, [enrollments, searchParams, selectedCourseId]);
 
   useEffect(() => {
-    const fetchTask = async () => {
-      if (!selectedCourseId || !taskData.date) return;
-
-      try {
-        const response = await fetch(`/api/points/daily-tasks?courseId=${selectedCourseId}&date=${taskData.date}`);
-        const data = await response.json();
-        
-        if (data.task) {
-          setTaskData({
-            date: taskData.date,
-            listening5Times: data.task.listening5Times || false,
-            repetition10Times: data.task.repetition10Times || false,
-            recitedToPeer: data.task.recitedToPeer || false,
-            notes: data.task.notes || ''
-          });
-        } else {
-          // إعادة تعيين للقيم الافتراضية إذا لم توجد بيانات
-          setTaskData({
-            date: taskData.date,
-            listening5Times: false,
-            repetition10Times: false,
-            recitedToPeer: false,
-            notes: ''
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching task:', error);
-      }
-    };
-
-    fetchTask();
-  }, [selectedCourseId, taskData.date]);
+    if (taskDataFromAPI?.task) {
+      setTaskData({
+        date: taskData.date,
+        listening5Times: taskDataFromAPI.task.listening5Times || false,
+        repetition10Times: taskDataFromAPI.task.repetition10Times || false,
+        recitedToPeer: taskDataFromAPI.task.recitedToPeer || false,
+        notes: taskDataFromAPI.task.notes || ''
+      });
+    } else if (taskDataFromAPI && !taskDataFromAPI.task) {
+      setTaskData({
+        date: taskData.date,
+        listening5Times: false,
+        repetition10Times: false,
+        recitedToPeer: false,
+        notes: ''
+      });
+    }
+  }, [taskDataFromAPI, taskData.date]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,6 +118,7 @@ function DailyTasksContent() {
       }
 
       setMessage('✅ تم حفظ المهام بنجاح!');
+      refreshTask(); // ✅ تحديث SWR cache
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       setMessage('❌ حدث خطأ أثناء الحفظ');
@@ -154,8 +136,14 @@ function DailyTasksContent() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-xl">جاري التحميل...</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
+            <p className="mt-4 text-gray-600">جاري التحميل...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -198,7 +186,7 @@ function DailyTasksContent() {
               onChange={(e) => setSelectedCourseId(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
             >
-              {enrollments.map((enrollment) => (
+              {enrollments.map((enrollment: any) => (
                 <option key={enrollment.id} value={enrollment.id}>
                   {enrollment.courseName} - {enrollment.programName}
                 </option>

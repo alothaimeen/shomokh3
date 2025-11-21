@@ -6,6 +6,9 @@ import { useEffect, useState, Suspense } from "react";
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
+import { useTeacherCourses } from '@/hooks/useCourses';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
 interface Enrollment {
   id: string;
@@ -34,13 +37,32 @@ function BehaviorPointsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [students, setStudents] = useState<StudentPoints[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+
+  // ✅ استخدام SWR hooks
+  const { data: coursesData, isLoading: loadingCourses } = useSWR<{ courses: any[] }>(
+    session?.user ? '/api/courses/teacher-courses' : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 3000,
+    }
+  );
+  const { data: pointsData, isLoading: loadingPoints, mutate: refreshPoints } = useSWR<{ students: StudentPoints[] }>(
+    selectedCourseId && selectedDate ? `/api/points/behavior?courseId=${selectedCourseId}&date=${selectedDate}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+    }
+  );
+
+  const courses = coursesData?.courses || [];
+  const loading = loadingCourses || loadingPoints;
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -49,51 +71,19 @@ function BehaviorPointsContent() {
   }, [status, router]);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const response = await fetch('/api/courses/teacher-courses');
-        const data = await response.json();
-        
-        if (data.courses) {
-          setCourses(data.courses);
-          
-          const courseId = searchParams.get('courseId');
-          if (courseId && data.courses.some((c: any) => c.id === courseId)) {
-            setSelectedCourseId(courseId);
-          } else if (data.courses.length > 0) {
-            setSelectedCourseId(data.courses[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('خطأ في جلب الحلقات:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (session?.user) {
-      fetchCourses();
+    const courseId = searchParams.get('courseId');
+    if (courseId && courses.some((c: any) => c.id === courseId)) {
+      setSelectedCourseId(courseId);
+    } else if (courses.length > 0 && !selectedCourseId) {
+      setSelectedCourseId(courses[0].id);
     }
-  }, [session, searchParams]);
+  }, [courses, searchParams, selectedCourseId]);
 
   useEffect(() => {
-    const fetchStudentsPoints = async () => {
-      if (!selectedCourseId || !selectedDate) return;
-
-      try {
-        const response = await fetch(`/api/points/behavior?courseId=${selectedCourseId}&date=${selectedDate}`);
-        const data = await response.json();
-        
-        if (data.students) {
-          setStudents(data.students);
-        }
-      } catch (error) {
-        console.error('خطأ في جلب النقاط:', error);
-      }
-    };
-
-    fetchStudentsPoints();
-  }, [selectedCourseId, selectedDate]);
+    if (pointsData?.students) {
+      setStudents(pointsData.students);
+    }
+  }, [pointsData]);
 
   const handleCheckboxChange = (studentId: string, field: keyof BehaviorPoint) => {
     setStudents(prev => prev.map(student => 
@@ -151,6 +141,7 @@ function BehaviorPointsContent() {
 
       if (response.ok) {
         setMessage(`✅ تم حفظ النقاط لـ ${students.length} طالبة`);
+        refreshPoints(); // ✅ تحديث SWR cache
       } else {
         setMessage(`❌ ${data.error}`);
       }
@@ -164,8 +155,14 @@ function BehaviorPointsContent() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-xl">جاري التحميل...</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
+            <p className="mt-4 text-gray-600">جاري التحميل...</p>
+          </div>
+        </div>
       </div>
     );
   }

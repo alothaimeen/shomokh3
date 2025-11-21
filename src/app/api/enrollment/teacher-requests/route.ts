@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || !session.user.email || session.user.userRole !== 'TEACHER') {
+    if (!session || !session.user.email || (session.user.userRole !== 'TEACHER' && session.user.userRole !== 'ADMIN')) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
 
@@ -17,13 +17,17 @@ export async function GET(request: NextRequest) {
     const courseId = searchParams.get('courseId');
 
     // بناء شرط WHERE
-    let whereCondition: any = {
-      course: {
+    let whereCondition: any = {};
+    
+    // إذا كان المستخدم معلمة، نعرض فقط طلباتها
+    if (session.user.userRole === 'TEACHER') {
+      whereCondition.course = {
         teacher: {
           userEmail: session.user.email,
         }
-      }
-    };
+      };
+    }
+    // إذا كان أدمن، نعرض جميع الطلبات
 
     // إضافة فلتر الحلقة إذا تم تحديدها
     if (courseId) {

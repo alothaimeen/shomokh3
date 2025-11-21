@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
+import { useEnrolledStudents } from '@/hooks/useEnrollments';
+import { useTeacherCourses } from '@/hooks/useCourses';
 
 interface Student {
   id: string;
@@ -68,10 +70,7 @@ interface TeacherCourse {
 export default function EnrolledStudentsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [enrollmentData, setEnrollmentData] = useState<EnrollmentData | null>(null);
-  const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [preSelectedCourse, setPreSelectedCourse] = useState<string>('');
-  const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [viewMode, setViewMode] = useState<'byCourse' | 'list'>('byCourse');
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
@@ -84,12 +83,9 @@ export default function EnrolledStudentsPage() {
   const [newStudentName, setNewStudentName] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // جلب الحلقات للمعلمة
-  useEffect(() => {
-    if (session && status === 'authenticated') {
-      fetchTeacherCourses();
-    }
-  }, [session, status]);
+  // ✅ استخدام SWR hooks بدلاً من useState + useEffect
+  const { courses, isLoading: loadingCourses } = useTeacherCourses(session?.user?.role === 'TEACHER');
+  const { enrollmentData, isLoading: loadingEnrollments, refresh } = useEnrolledStudents(preSelectedCourse);
 
   // التحقق من وجود courseId في URL أو اختيار أول حلقة
   useEffect(() => {
@@ -98,98 +94,16 @@ export default function EnrolledStudentsPage() {
     if (courseIdFromUrl) {
       setPreSelectedCourse(courseIdFromUrl);
     } else if (courses.length > 0 && !preSelectedCourse) {
-      // اختيار أول حلقة تلقائياً
       setPreSelectedCourse(courses[0].id);
     }
-  }, [courses]);
-
-  const fetchTeacherCourses = async () => {
-    try {
-      const response = await fetch('/api/attendance/teacher-courses');
-      if (!response.ok) return;
-      
-      const data = await response.json();
-      const fetchedCourses = data.courses || [];
-      setCourses(fetchedCourses);
-      
-      // اختيار أول حلقة تلقائياً إذا لم يكن هناك courseId في URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const courseIdFromUrl = urlParams.get('courseId');
-      if (!courseIdFromUrl && fetchedCourses.length > 0) {
-        setPreSelectedCourse(fetchedCourses[0].id);
-      }
-    } catch (error) {
-      console.error('خطأ في جلب الحلقات:', error);
-    }
-  };
-
-  const fetchEnrolledStudents = useCallback(async () => {
-    try {
-      const url = preSelectedCourse
-        ? `/api/enrollment/enrolled-students?courseId=${preSelectedCourse}`
-        : '/api/enrollment/enrolled-students';
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        console.error('خطأ في API:', response.status, response.statusText);
-        setNotification({
-          type: 'error',
-          message: `خطأ في الخادم: ${response.status}`
-        });
-        return;
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('خطأ: الاستجابة ليست JSON:', contentType);
-        const text = await response.text();
-        console.error('محتوى الاستجابة:', text);
-        setNotification({
-          type: 'error',
-          message: 'خطأ في تنسيق الاستجابة'
-        });
-        return;
-      }
-
-      const data = await response.json();
-      setEnrollmentData(data);
-      setSelectedEnrollments([]);
-
-      // إذا كانت القوائم فارغة، اعرض رسالة مناسبة
-      if (data.enrollments && data.enrollments.length === 0) {
-        setNotification({
-          type: 'error',
-          message: 'لا توجد طالبات مسجلات حالياً'
-        });
-      }
-    } catch (error) {
-      console.error('خطأ في جلب البيانات:', error);
-      setNotification({
-        type: 'error',
-        message: 'خطأ في الاتصال بالخادم'
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [preSelectedCourse]);
+  }, [courses, preSelectedCourse]);
 
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session || !['TEACHER', 'ADMIN'].includes(session.user.userRole)) {
       router.push('/dashboard');
-      return;
     }
-
-    fetchEnrolledStudents();
-  }, [session, status, router, fetchEnrolledStudents]);
-
-  // إعادة جلب البيانات عند تغيير الحلقة المختارة
-  useEffect(() => {
-    if (session && status === 'authenticated') {
-      fetchEnrolledStudents();
-    }
-  }, [preSelectedCourse, session, status, fetchEnrolledStudents]);
+  }, [session, status, router]);
 
   const handleCancelEnrollment = async (enrollmentId: string) => {
     if (processing) return;
@@ -213,7 +127,7 @@ export default function EnrolledStudentsPage() {
           type: 'success',
           message: data.message
         });
-        fetchEnrolledStudents();
+        refresh(); // ✅ تحديث SWR cache
       } else {
         setNotification({
           type: 'error',
@@ -252,7 +166,7 @@ export default function EnrolledStudentsPage() {
           type: 'success',
           message: data.message
         });
-        fetchEnrolledStudents();
+        refresh(); // ✅ تحديث SWR cache
       } else {
         setNotification({
           type: 'error',
@@ -330,7 +244,7 @@ export default function EnrolledStudentsPage() {
           message: data.message || 'تم تحديث اسم الطالبة بنجاح'
         });
         closeEditNameModal();
-        fetchEnrolledStudents(); // إعادة تحميل البيانات
+        refresh(); // ✅ تحديث SWR cache
       } else {
         setNotification({
           type: 'error',
@@ -402,18 +316,27 @@ export default function EnrolledStudentsPage() {
       }
     : null;
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || loadingCourses || loadingEnrollments) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">جاري التحميل...</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
+            <p className="mt-4 text-gray-600">جاري التحميل...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!enrollmentData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg text-red-600">خطأ في تحميل البيانات</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-lg text-red-600">خطأ في تحميل البيانات</div>
+        </div>
       </div>
     );
   }

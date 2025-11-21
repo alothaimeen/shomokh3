@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
 // أنواع البيانات (محدثة - الجلسة 10.6)
 type AttendanceStatus = 'PRESENT' | 'EXCUSED' | 'ABSENT' | 'REVIEWED' | 'LEFT_EARLY';
@@ -79,20 +81,17 @@ const statusConfig = {
 };
 
 export default function MyAttendancePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
-
-  const [attendanceData, setAttendanceData] = useState<StudentAttendanceResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [studentId, setStudentId] = useState<string | null>(null);
 
   // التحقق من أن المستخدم طالبة
   useEffect(() => {
-    if (session && session.user.userRole !== 'STUDENT') {
+    if (status === 'loading') return;
+    if (!session || session.user.userRole !== 'STUDENT') {
       router.push('/dashboard');
     }
-  }, [session, router]);
+  }, [session, status, router]);
 
   // جلب معرف الطالبة
   useEffect(() => {
@@ -113,49 +112,60 @@ export default function MyAttendancePage() {
     fetchStudentId();
   }, [session]);
 
-  // جلب سجل الحضور
-  useEffect(() => {
-    const fetchAttendance = async () => {
-      if (!studentId) return;
+  // ✅ استخدام SWR لجلب سجل الحضور
+  const { data: attendanceData, isLoading: loading, error } = useSWR<StudentAttendanceResponse>(
+    studentId ? `/api/attendance/student-record?studentId=${studentId}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 3000,
+    }
+  );
 
-      setLoading(true);
-      setError('');
-
-      try {
-        const response = await fetch(`/api/attendance/student-record?studentId=${studentId}`);
-        if (!response.ok) {
-          throw new Error('فشل في جلب سجل الحضور');
-        }
-        const data = await response.json();
-        setAttendanceData(data);
-      } catch (err) {
-        setError('حدث خطأ في تحميل البيانات');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAttendance();
-  }, [studentId]);
-
-  if (!session) {
-    return <div>جاري التحميل...</div>;
+  if (status === 'loading' || !session) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto mb-4"></div>
+            <p className="text-gray-600">جاري التحميل...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6" dir="rtl">
-        <div className="text-center">جاري تحميل البيانات...</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72">
+          <AppHeader title="حضوري" />
+          <div className="p-8">
+            <BackButton />
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto mb-4"></div>
+              <p className="text-gray-600">جاري تحميل البيانات...</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-6" dir="rtl">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-          {error}
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72">
+          <AppHeader title="حضوري" />
+          <div className="p-8">
+            <BackButton />
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+              حدث خطأ في تحميل البيانات
+            </div>
+          </div>
         </div>
       </div>
     );

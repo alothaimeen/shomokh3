@@ -7,6 +7,9 @@ import { generateQuarterStepValues } from "@/lib/grading-formulas";
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
+import { useTeacherCourses } from '@/hooks/useCourses';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
 interface StudentGrade {
   enrollmentId: string;
@@ -35,11 +38,8 @@ function WeeklyGradesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
-  const [students, setStudents] = useState<StudentGrade[]>([]);
   const [courseName, setCourseName] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [editedGrades, setEditedGrades] = useState<{
@@ -50,17 +50,25 @@ function WeeklyGradesContent() {
   // قيم الدرجات (5، 4.75، 4.5، ... 0)
   const gradeValues = generateQuarterStepValues(5, 0.25);
 
+  // ✅ استخدام SWR hooks
+  const { courses, isLoading: loadingCourses } = useTeacherCourses(session?.user?.role === 'TEACHER');
+  const { data: gradesData, isLoading: loadingGrades, mutate: refreshGrades } = useSWR<{ students: StudentGrade[] }>(
+    selectedCourse ? `/api/grades/weekly?courseId=${selectedCourse}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+    }
+  );
+
+  const students = gradesData?.students || [];
+  const loading = loadingCourses || loadingGrades;
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     }
   }, [status, router]);
-
-  useEffect(() => {
-    if (session) {
-      fetchCourses();
-    }
-  }, [session]);
 
   useEffect(() => {
     const courseIdFromUrl = searchParams.get('courseId');
@@ -69,67 +77,31 @@ function WeeklyGradesContent() {
     } else if (courses.length > 0 && !selectedCourse) {
       setSelectedCourse(courses[0].id);
     }
-  }, [searchParams, courses]);
+  }, [searchParams, courses, selectedCourse]);
 
   useEffect(() => {
-    if (selectedCourse) {
-      fetchWeeklyGrades();
-    }
-  }, [selectedCourse]);
-
-  async function fetchCourses() {
-    try {
-      const res = await fetch('/api/attendance/teacher-courses');
-      if (!res.ok) return;
-      
-      const data = await res.json();
-      const fetchedCourses = data.courses || [];
-      setCourses(fetchedCourses);
-
-      const courseIdFromUrl = searchParams.get('courseId');
-      if (!courseIdFromUrl && fetchedCourses.length > 0) {
-        setSelectedCourse(fetchedCourses[0].id);
+    if (selectedCourse && courses.length > 0) {
+      const course = courses.find(c => c.id === selectedCourse);
+      if (course) {
+        setCourseName(course.courseName);
       }
-    } catch (error) {
-      console.error("خطأ في جلب الحلقات:", error);
     }
-  }
+  }, [selectedCourse, courses]);
 
-  async function fetchWeeklyGrades() {
-    if (!selectedCourse) return;
-    
-    try {
-      const res = await fetch(`/api/grades/weekly?courseId=${selectedCourse}`);
-      if (!res.ok) throw new Error("فشل في جلب البيانات");
-
-      const data = await res.json();
-      setStudents(data.students || []);
-      setCourseName(data.course?.courseName || "");
-
-      // تعبئة editedGrades بالقيم الموجودة أو 5 (الدرجة الافتراضية)
+  // تهيئة editedGrades عند تحميل البيانات أو تغيير الأسبوع
+  useEffect(() => {
+    if (students.length > 0) {
       const initialGrades: { [studentId: string]: number } = {};
-      data.students.forEach((student: StudentGrade) => {
+      students.forEach((student: StudentGrade) => {
         initialGrades[student.studentId] = student.grades[selectedWeek] ?? 5;
       });
       setEditedGrades(initialGrades);
-    } catch (error) {
-      console.error("خطأ في جلب الدرجات:", error);
-      setMessage("❌ حدث خطأ في جلب البيانات");
-    } finally {
-      setLoading(false);
     }
-  }
+  }, [students, selectedWeek]);
 
   function handleWeekChange(week: number) {
     setSelectedWeek(week);
-    setMessage(""); // مسح الرسالة عند تغيير الأسبوع
-    
-    // تحديث editedGrades بقيم الأسبوع الجديد (5 افتراضي)
-    const newGrades: { [studentId: string]: number } = {};
-    students.forEach((student) => {
-      newGrades[student.studentId] = student.grades[week] ?? 5;
-    });
-    setEditedGrades(newGrades);
+    setMessage("");
   }
 
   function handleGradeChange(studentId: string, value: number) {
@@ -167,7 +139,7 @@ function WeeklyGradesContent() {
 
       if (res.ok) {
         setMessage(`✅ ${data.message}`);
-        await fetchWeeklyGrades(); // إعادة تحميل البيانات
+        refreshGrades(); // ✅ تحديث SWR cache
       } else {
         setMessage(`❌ ${data.error}`);
       }
@@ -181,8 +153,14 @@ function WeeklyGradesContent() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-xl">جاري التحميل...</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
+            <p className="mt-4 text-gray-600">جاري التحميل...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -226,7 +204,7 @@ function WeeklyGradesContent() {
               {courses.length === 0 && <option value="">جاري التحميل...</option>}
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>
-                  {course.courseName} ({course._count.enrollments} طالبة)
+                  {course.courseName}
                 </option>
               ))}
             </select>

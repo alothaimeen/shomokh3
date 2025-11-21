@@ -25,14 +25,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'غير مصرح - خاص بالطالبات فقط' }, { status: 403 });
     }
 
-    // الحصول على الطالبة من خلال البريد الإلكتروني أو الاسم
-    // ملاحظة: حالياً لا يوجد ربط مباشر بين User و Student في Schema
-    // سنستخدم البريد الإلكتروني للبحث
-    const student = await prisma.student.findFirst({
+    // الحصول على الطالبة من خلال userId (الربط الصحيح)
+    const student = await prisma.student.findUnique({
       where: { 
-        OR: [
-          { studentName: { contains: user.userName } }
-        ]
+        userId: user.id
       }
     });
 

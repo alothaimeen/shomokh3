@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
 interface Grade {
   id: string;
@@ -31,113 +33,106 @@ interface GradeSummary {
   behaviorPoints?: number;
 }
 
+const getFallbackGrades = (): Grade[] => {
+  return [
+    {
+      id: "1",
+      type: "daily",
+      category: "الحفظ اليومي",
+      score: 9,
+      maxScore: 10,
+      date: "2025-01-05",
+      courseName: "حلقة الفجر",
+      teacherName: "المعلمة سارة"
+    },
+    {
+      id: "2",
+      type: "weekly",
+      category: "المراجعة الأسبوعية",
+      score: 23,
+      maxScore: 25,
+      date: "2025-01-12",
+      courseName: "حلقة الفجر",
+      teacherName: "المعلمة سارة"
+    },
+    {
+      id: "3",
+      type: "weekly",
+      category: "الاختبار الأسبوعي",
+      score: 22,
+      maxScore: 25,
+      date: "2025-01-08",
+      courseName: "حلقة الفجر",
+      teacherName: "المعلمة سارة"
+    },
+    {
+      id: "4",
+      type: "monthly",
+      category: "الاختبار الشهري",
+      score: 28,
+      maxScore: 30,
+      date: "2025-01-10",
+      courseName: "حلقة الفجر",
+      teacherName: "المعلمة سارة"
+    },
+    {
+      id: "5",
+      type: "behavior",
+      category: "السلوك والمواظبة",
+      score: 9,
+      maxScore: 10,
+      date: "2025-01-15",
+      courseName: "حلقة الفجر",
+      teacherName: "المعلمة سارة"
+    }
+  ];
+};
+
+const getFallbackSummary = (): GradeSummary => {
+  return {
+    totalDailyGrades: 315,
+    totalWeeklyGrades: 45,
+    totalMonthlyGrades: 85,
+    finalExamGrade: 55,
+    behaviorGrade: 63,
+    totalPoints: 563,
+    finalPercentage: 87.2
+  };
+};
+
 export default function MyGradesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [summary, setSummary] = useState<GradeSummary | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'summary' | 'daily' | 'weekly' | 'monthly' | 'final' | 'behavior'>('summary');
 
-  const fetchMyGrades = useCallback(async () => {
-    try {
-      const response = await fetch('/api/grades/my-grades');
-      if (!response.ok) {
-        throw new Error('فشل في تحميل الدرجات');
+  // ✅ استخدام SWR
+  const { data: gradesData, error: swrError } = useSWR<{ grades: Grade[]; summary: GradeSummary }>(
+    session?.user?.userRole === 'STUDENT' ? '/api/grades/my-grades' : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+      fallbackData: {
+        grades: getFallbackGrades(),
+        summary: getFallbackSummary()
+      },
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : 'خطأ غير متوقع');
       }
-      const data = await response.json();
-      setGrades(data.grades);
-      setSummary(data.summary);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطأ غير متوقع');
-      // بيانات احتياطية
-      setGrades(getFallbackGrades());
-      setSummary(getFallbackSummary());
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  );
+
+  const grades = gradesData?.grades || getFallbackGrades();
+  const summary = gradesData?.summary || getFallbackSummary();
+  const loading = !gradesData && !swrError;
 
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session || session.user.userRole !== 'STUDENT') {
       router.push('/dashboard');
-      return;
     }
-
-    fetchMyGrades();
-  }, [session, status, router, fetchMyGrades]);
-
-  const getFallbackGrades = (): Grade[] => {
-    return [
-      {
-        id: "1",
-        type: "daily",
-        category: "حفظ القرآن",
-        score: 2.5,
-        maxScore: 2.5,
-        date: "2025-01-15",
-        courseName: "حلقة الفجر",
-        teacherName: "المعلمة سارة",
-        notes: "ممتاز"
-      },
-      {
-        id: "2",
-        type: "daily",
-        category: "التجويد",
-        score: 2.0,
-        maxScore: 2.5,
-        date: "2025-01-15",
-        courseName: "حلقة الفجر",
-        teacherName: "المعلمة سارة",
-        notes: "يحتاج تحسن"
-      },
-      {
-        id: "3",
-        type: "weekly",
-        category: "المراجعة الأسبوعية",
-        score: 4.5,
-        maxScore: 5.0,
-        date: "2025-01-14",
-        courseName: "حلقة الفجر",
-        teacherName: "المعلمة سارة"
-      },
-      {
-        id: "4",
-        type: "monthly",
-        category: "الاختبار الشهري",
-        score: 28,
-        maxScore: 30,
-        date: "2025-01-10",
-        courseName: "حلقة الفجر",
-        teacherName: "المعلمة سارة"
-      },
-      {
-        id: "5",
-        type: "behavior",
-        category: "السلوك والمواظبة",
-        score: 9,
-        maxScore: 10,
-        date: "2025-01-15",
-        courseName: "حلقة الفجر",
-        teacherName: "المعلمة سارة"
-      }
-    ];
-  };
-
-  const getFallbackSummary = (): GradeSummary => {
-    return {
-      totalDailyGrades: 315, // من أصل 700
-      totalWeeklyGrades: 45, // من أصل 50
-      totalMonthlyGrades: 85, // من أصل 90
-      finalExamGrade: 55, // من أصل 60
-      behaviorGrade: 63, // من أصل 70
-      totalPoints: 563, // من أصل 970
-      finalPercentage: 87.2 // النسبة المئوية
-    };
-  };
+  }, [session, status, router]);
 
   const filterGradesByType = (type: string) => {
     return grades.filter(grade => grade.type === type);
@@ -153,8 +148,14 @@ export default function MyGradesPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">جاري تحميل الدرجات...</div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 lg:mr-72 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
+            <p className="mt-4 text-gray-600">جاري تحميل الدرجات...</p>
+          </div>
+        </div>
       </div>
     );
   }
