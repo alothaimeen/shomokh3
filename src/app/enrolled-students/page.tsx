@@ -52,10 +52,24 @@ interface EnrollmentData {
   };
 }
 
+interface TeacherCourse {
+  id: string;
+  courseName: string;
+  level: number;
+  program: {
+    id: string;
+    programName: string;
+  };
+  _count: {
+    enrollments: number;
+  };
+}
+
 export default function EnrolledStudentsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [enrollmentData, setEnrollmentData] = useState<EnrollmentData | null>(null);
+  const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [preSelectedCourse, setPreSelectedCourse] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -70,14 +84,44 @@ export default function EnrolledStudentsPage() {
   const [newStudentName, setNewStudentName] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // التحقق من وجود courseId في URL
+  // جلب الحلقات للمعلمة
+  useEffect(() => {
+    if (session && status === 'authenticated') {
+      fetchTeacherCourses();
+    }
+  }, [session, status]);
+
+  // التحقق من وجود courseId في URL أو اختيار أول حلقة
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const courseIdFromUrl = urlParams.get('courseId');
     if (courseIdFromUrl) {
       setPreSelectedCourse(courseIdFromUrl);
+    } else if (courses.length > 0 && !preSelectedCourse) {
+      // اختيار أول حلقة تلقائياً
+      setPreSelectedCourse(courses[0].id);
     }
-  }, []);
+  }, [courses]);
+
+  const fetchTeacherCourses = async () => {
+    try {
+      const response = await fetch('/api/attendance/teacher-courses');
+      if (!response.ok) return;
+      
+      const data = await response.json();
+      const fetchedCourses = data.courses || [];
+      setCourses(fetchedCourses);
+      
+      // اختيار أول حلقة تلقائياً إذا لم يكن هناك courseId في URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const courseIdFromUrl = urlParams.get('courseId');
+      if (!courseIdFromUrl && fetchedCourses.length > 0) {
+        setPreSelectedCourse(fetchedCourses[0].id);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الحلقات:', error);
+    }
+  };
 
   const fetchEnrolledStudents = useCallback(async () => {
     try {

@@ -3,6 +3,9 @@
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 function BehaviorGradesContent() {
   const { data: session, status } = useSession();
@@ -31,8 +34,11 @@ function BehaviorGradesContent() {
 
   useEffect(() => {
     const courseId = searchParams.get('courseId');
-    if (courseId && courses.length > 0) {
+    if (courseId) {
       setSelectedCourse(courseId);
+    } else if (courses.length > 0 && !selectedCourse) {
+      // اختيار أول حلقة تلقائياً
+      setSelectedCourse(courses[0].id);
     }
   }, [searchParams, courses]);
 
@@ -44,17 +50,17 @@ function BehaviorGradesContent() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/programs');
+      const response = await fetch('/api/attendance/teacher-courses');
       const data = await response.json();
       
-      if (data.programs) {
-        const allCourses = data.programs.flatMap((program: any) => 
-          program.courses.map((course: any) => ({
-            ...course,
-            programName: program.programName
-          }))
-        );
-        setCourses(allCourses);
+      if (data.courses && data.courses.length > 0) {
+        setCourses(data.courses);
+        
+        // إذا لم يكن هناك courseId في URL، اختر أول حلقة
+        const courseIdFromUrl = searchParams.get('courseId');
+        if (!courseIdFromUrl) {
+          setSelectedCourse(data.courses[0].id);
+        }
       }
     } catch (error) {
       console.error('خطأ في جلب الحلقات:', error);
@@ -157,7 +163,7 @@ function BehaviorGradesContent() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-xl">جاري التحميل...</div>
       </div>
     );
@@ -170,13 +176,19 @@ function BehaviorGradesContent() {
   const selectedCourseData = courses.find(c => c.id === selectedCourse);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-green-800 mb-2">⭐ السلوك والمواظبة</h1>
-          <p className="text-gray-600">إدخال درجات السلوك اليومية (70 درجة خام = 70 يوم)</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 flex flex-col lg:mr-72">
+        <AppHeader title="السلوك والمواظبة" />
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-7xl mx-auto">
+            <BackButton />
+            
+            {/* Header */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent mb-2">⭐ السلوك والمواظبة</h1>
+              <p className="text-gray-600">إدخال درجات السلوك اليومية (70 درجة خام = 70 يوم)</p>
+            </div>
 
         {/* Course and Date Selection */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -311,17 +323,19 @@ function BehaviorGradesContent() {
           </div>
         )}
 
-        {/* Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-          <h3 className="font-bold text-blue-800 mb-2">📋 تعليمات:</h3>
-          <ul className="text-sm text-blue-700 space-y-1">
-            <li>• درجة السلوك اليومية: من 0 إلى 1</li>
-            <li>• يتم تسجيل الدرجة لكل يوم على مدار 70 يوماً</li>
-            <li>• المجموع النهائي: 70 درجة خام (سيتم قسمتها على 7 = 10 درجات نهائية)</li>
-            <li>• يمكن اختيار الدرجة من القائمة أو إدخالها يدوياً</li>
-            <li>• الدرجات تُحفظ لكل طالبة في كل حلقة في كل يوم</li>
-          </ul>
-        </div>
+            {/* Instructions */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+              <h3 className="font-bold text-blue-800 mb-2">📋 تعليمات:</h3>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• درجة السلوك اليومية: من 0 إلى 1</li>
+                <li>• يتم تسجيل الدرجة لكل يوم على مدار 70 يوماً</li>
+                <li>• المجموع النهائي: 70 درجة خام (سيتم قسمتها على 7 = 10 درجات نهائية)</li>
+                <li>• يمكن اختيار الدرجة من القائمة أو إدخالها يدوياً</li>
+                <li>• الدرجات تُحفظ لكل طالبة في كل حلقة في كل يوم</li>
+              </ul>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

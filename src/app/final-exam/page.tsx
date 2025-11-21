@@ -3,6 +3,9 @@
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import Sidebar from '@/components/shared/Sidebar';
+import AppHeader from '@/components/shared/AppHeader';
+import BackButton from '@/components/shared/BackButton';
 
 function FinalExamContent() {
   const { data: session, status } = useSession();
@@ -30,8 +33,11 @@ function FinalExamContent() {
 
   useEffect(() => {
     const courseId = searchParams.get('courseId');
-    if (courseId && courses.length > 0) {
+    if (courseId) {
       setSelectedCourse(courseId);
+    } else if (courses.length > 0 && !selectedCourse) {
+      // اختيار أول حلقة تلقائياً
+      setSelectedCourse(courses[0].id);
     }
   }, [searchParams, courses]);
 
@@ -43,17 +49,17 @@ function FinalExamContent() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/programs');
+      const response = await fetch('/api/attendance/teacher-courses');
       const data = await response.json();
       
-      if (data.programs) {
-        const allCourses = data.programs.flatMap((program: any) => 
-          program.courses.map((course: any) => ({
-            ...course,
-            programName: program.programName
-          }))
-        );
-        setCourses(allCourses);
+      if (data.courses && data.courses.length > 0) {
+        setCourses(data.courses);
+        
+        // إذا لم يكن هناك courseId في URL، اختر أول حلقة
+        const courseIdFromUrl = searchParams.get('courseId');
+        if (!courseIdFromUrl) {
+          setSelectedCourse(data.courses[0].id);
+        }
       }
     } catch (error) {
       console.error('خطأ في جلب الحلقات:', error);
@@ -162,7 +168,7 @@ function FinalExamContent() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-xl">جاري التحميل...</div>
       </div>
     );
@@ -175,13 +181,19 @@ function FinalExamContent() {
   const selectedCourseData = courses.find(c => c.id === selectedCourse);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-purple-800 mb-2">📝 الاختبار النهائي</h1>
-          <p className="text-gray-600">إدخال درجات الاختبار النهائي (60 درجة)</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 flex flex-col lg:mr-72">
+        <AppHeader title="الاختبار النهائي" />
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-7xl mx-auto">
+            <BackButton />
+            
+            {/* Header */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent mb-2">🎓 الاختبار النهائي</h1>
+              <p className="text-gray-600">إدخال درجات الاختبار النهائي (60 درجة)</p>
+            </div>
 
         {/* Course Selection */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -320,17 +332,19 @@ function FinalExamContent() {
           </div>
         )}
 
-        {/* Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-          <h3 className="font-bold text-blue-800 mb-2">📋 تعليمات:</h3>
-          <ul className="text-sm text-blue-700 space-y-1">
-            <li>• اختبار القرآن: من 0 إلى 40 درجة (4 مقاطع × 10 درجات)</li>
-            <li>• اختبار التجويد: من 0 إلى 20 درجة</li>
-            <li>• المجموع النهائي: 60 درجة</li>
-            <li>• يمكن استخدام ربع الدرجة (0.25)</li>
-            <li>• الدرجات تُحفظ لكل طالبة في كل حلقة</li>
-          </ul>
-        </div>
+            {/* Instructions */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+              <h3 className="font-bold text-blue-800 mb-2">📋 تعليمات:</h3>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• اختبار القرآن: من 0 إلى 40 درجة (4 مقاطع × 10 درجات)</li>
+                <li>• اختبار التجويد: من 0 إلى 20 درجة</li>
+                <li>• المجموع النهائي: 60 درجة</li>
+                <li>• يمكن استخدام ربع الدرجة (0.25)</li>
+                <li>• الدرجات تُحفظ لكل طالبة في كل حلقة</li>
+              </ul>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

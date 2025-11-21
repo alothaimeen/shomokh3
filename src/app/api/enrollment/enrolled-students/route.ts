@@ -58,23 +58,22 @@ export async function GET(request: NextRequest) {
       whereCondition.courseId = courseId;
     }
 
+    // ✅ Prisma Select Optimization - جلب الحقول المطلوبة فقط
     const enrollments = await db.enrollment.findMany({
       where: {
         isActive: true,
         ...whereCondition
       },
-      include: {
+      select: {
+        id: true,
+        enrolledAt: true,
         student: {
           select: {
             id: true,
             studentNumber: true,
             studentName: true,
             studentPhone: true,
-            qualification: true,
-            nationality: true,
-            memorizedAmount: true,
-            paymentStatus: true,
-            memorizationPlan: true,
+            // حذف الحقول غير المستخدمة: qualification, nationality, memorizedAmount, paymentStatus, memorizationPlan
           }
         },
         course: {

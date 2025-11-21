@@ -25,12 +25,26 @@ interface StudentGrade {
   total: number;
 }
 
+interface Course {
+  id: string;
+  courseName: string;
+  level: number;
+  program: {
+    id: string;
+    programName: string;
+  };
+  _count: {
+    enrollments: number;
+  };
+}
+
 function MonthlyGradesContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseId = searchParams.get("courseId");
 
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [students, setStudents] = useState<StudentGrade[]>([]);
   const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -57,15 +71,50 @@ function MonthlyGradesContent() {
   }, [status, router]);
 
   useEffect(() => {
-    if (session && courseId) {
+    if (session) {
+      fetchCourses();
+    }
+  }, [session]);
+
+  useEffect(() => {
+    const courseIdFromUrl = searchParams.get('courseId');
+    if (courseIdFromUrl) {
+      setSelectedCourse(courseIdFromUrl);
+    } else if (courses.length > 0 && !selectedCourse) {
+      setSelectedCourse(courses[0].id);
+    }
+  }, [searchParams, courses]);
+
+  useEffect(() => {
+    if (selectedCourse) {
       fetchMonthlyGrades();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, courseId]);
+  }, [selectedCourse]);
+
+  async function fetchCourses() {
+    try {
+      const res = await fetch('/api/attendance/teacher-courses');
+      if (!res.ok) return;
+      
+      const data = await res.json();
+      const fetchedCourses = data.courses || [];
+      setCourses(fetchedCourses);
+
+      const courseIdFromUrl = searchParams.get('courseId');
+      if (!courseIdFromUrl && fetchedCourses.length > 0) {
+        setSelectedCourse(fetchedCourses[0].id);
+      }
+    } catch (error) {
+      console.error("خطأ في جلب الحلقات:", error);
+    }
+  }
 
   async function fetchMonthlyGrades() {
+    if (!selectedCourse) return;
+    
     try {
-      const res = await fetch(`/api/grades/monthly?courseId=${courseId}`);
+      const res = await fetch(`/api/grades/monthly?courseId=${selectedCourse}`);
       if (!res.ok) throw new Error("فشل في جلب البيانات");
 
       const data = await res.json();
@@ -125,7 +174,7 @@ function MonthlyGradesContent() {
   }
 
   async function handleSave() {
-    if (!courseId) return;
+    if (!selectedCourse) return;
 
     setSaving(true);
     setMessage("");
@@ -142,7 +191,7 @@ function MonthlyGradesContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          courseId,
+          courseId: selectedCourse,
           month: selectedMonth,
           grades: gradesArray,
         }),
@@ -185,47 +234,52 @@ function MonthlyGradesContent() {
     );
   }
 
-  if (!courseId) {
-    return (
-      <div className="p-8 text-center">
-        <h1 className="text-2xl text-red-600">معرف الحلقة مفقود</h1>
-        <button
-          onClick={() => router.push("/teacher")}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          العودة للحلقات
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
-      <div className="flex-1 lg:mr-72">
+      <div className="flex-1 flex flex-col lg:mr-72">
         <AppHeader title="الدرجات الشهرية" />
-        <div className="p-8">
-          <BackButton />
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">📆 التقييم الشهري</h1>
-          <p className="text-gray-600">الحلقة: {courseName}</p>
-          <p className="text-sm text-gray-500 mb-6">
-            القرآن: 15 درجة (نسيان، لحن جلي، لحن خفي) + التجويد النظري: 15 درجة = 30 درجة شهرياً × 3 أشهر = 90 درجة (الدرجات الافتراضية: كاملة)
-          </p>
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-7xl mx-auto">
+            <BackButton />
+            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">📆 التقييم الشهري</h1>
+            <p className="text-gray-600">الحلقة: {courseName}</p>
+            <p className="text-sm text-gray-500 mb-6">
+              القرآن: 15 درجة (نسيان، لحن جلي، لحن خفي) + التجويد النظري: 15 درجة = 30 درجة شهرياً × 3 أشهر = 90 درجة (الدرجات الافتراضية: كاملة)
+            </p>
 
-        {/* اختيار الشهر */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <label className="block text-lg font-semibold text-gray-700 mb-2">اختر الشهر:</label>
-          <select
-            value={selectedMonth}
-            onChange={(e) => handleMonthChange(Number(e.target.value))}
-            className="border-2 border-gray-300 rounded-lg px-4 py-2 text-lg"
-          >
-            {[1, 2, 3].map((month) => (
-              <option key={month} value={month}>
-                الشهر {month}
-              </option>
-            ))}
-          </select>
+            {/* اختيار الحلقة والشهر */}
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-lg font-semibold text-gray-700 mb-2">الحلقة:</label>
+            <select
+              value={selectedCourse}
+              onChange={(e) => setSelectedCourse(e.target.value)}
+              className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent"
+            >
+              {courses.length === 0 && <option value="">جاري التحميل...</option>}
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.courseName} ({course._count.enrollments} طالبة)
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-lg font-semibold text-gray-700 mb-2">الشهر:</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => handleMonthChange(Number(e.target.value))}
+              className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg"
+            >
+              {[1, 2, 3].map((month) => (
+                <option key={month} value={month}>
+                  الشهر {month}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* رسالة النجاح/الخطأ */}
@@ -426,15 +480,14 @@ function MonthlyGradesContent() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
-        </div>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );
-}
-
-export default function MonthlyGradesPage() {
+}export default function MonthlyGradesPage() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="text-xl">جاري التحميل...</div></div>}>
       <MonthlyGradesContent />

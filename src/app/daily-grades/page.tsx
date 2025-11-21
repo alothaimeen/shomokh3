@@ -21,12 +21,26 @@ interface GradeEntry {
   notes?: string;
 }
 
+interface Course {
+  id: string;
+  courseName: string;
+  level: number;
+  program: {
+    id: string;
+    programName: string;
+  };
+  _count: {
+    enrollments: number;
+  };
+}
+
 function DailyGradesContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseId = searchParams.get('courseId');
-
+  
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [students, setStudents] = useState<Student[]>([]);
   const [grades, setGrades] = useState<Record<string, GradeEntry>>({});
   const [selectedDate, setSelectedDate] = useState(
@@ -45,24 +59,59 @@ function DailyGradesContent() {
     }
   }, [status, router]);
 
+  // جلب الحلقات
   useEffect(() => {
-    if (!courseId) {
-      setMessage('⚠️ يجب اختيار الحلقة أولاً من /teacher');
-      return;
+    if (session) {
+      fetchCourses();
     }
+  }, [session]);
 
-    fetchStudents();
-    fetchExistingGrades();
+  // التعامل مع courseId من URL
+  useEffect(() => {
+    const courseIdFromUrl = searchParams.get('courseId');
+    if (courseIdFromUrl) {
+      setSelectedCourse(courseIdFromUrl);
+    } else if (courses.length > 0 && !selectedCourse) {
+      // اختيار أول حلقة تلقائياً
+      setSelectedCourse(courses[0].id);
+    }
+  }, [searchParams, courses]);
+
+  // جلب البيانات عند تغيير الحلقة أو التاريخ
+  useEffect(() => {
+    if (selectedCourse && selectedDate) {
+      fetchStudents();
+      fetchExistingGrades();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseId, selectedDate]);
+  }, [selectedCourse, selectedDate]);
+
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch('/api/attendance/teacher-courses');
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const fetchedCourses = data.courses || [];
+      setCourses(fetchedCourses);
+
+      // اختيار أول حلقة تلقائياً إذا لم يكن هناك courseId في URL
+      const courseIdFromUrl = searchParams.get('courseId');
+      if (!courseIdFromUrl && fetchedCourses.length > 0) {
+        setSelectedCourse(fetchedCourses[0].id);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الحلقات:', error);
+    }
+  };
 
   const fetchStudents = async () => {
-    if (!courseId) return;
+    if (!selectedCourse) return;
 
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/enrollment/enrolled-students?courseId=${courseId}`
+        `/api/enrollment/enrolled-students?courseId=${selectedCourse}`
       );
       const data = await res.json();
 
@@ -86,7 +135,7 @@ function DailyGradesContent() {
   };
 
   const fetchExistingGrades = async () => {
-    if (!courseId || !selectedDate) return;
+    if (!selectedCourse || !selectedDate) return;
 
     try {
       // تحويل التاريخ إلى بداية اليوم ونهايته (UTC)
@@ -97,7 +146,7 @@ function DailyGradesContent() {
       endOfDay.setHours(23, 59, 59, 999);
 
       const res = await fetch(
-        `/api/grades/daily?courseId=${courseId}&startDate=${startOfDay.toISOString()}&endDate=${endOfDay.toISOString()}`
+        `/api/grades/daily?courseId=${selectedCourse}&startDate=${startOfDay.toISOString()}&endDate=${endOfDay.toISOString()}`
       );
       const data = await res.json();
 
@@ -139,8 +188,8 @@ function DailyGradesContent() {
   };
 
   const handleSaveAll = async () => {
-    if (!courseId) {
-      setMessage('⚠️ courseId مفقود');
+    if (!selectedCourse) {
+      setMessage('⚠️ يجب اختيار الحلقة');
       return;
     }
 
@@ -177,7 +226,7 @@ function DailyGradesContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          courseId,
+          courseId: selectedCourse,
           grades: gradesToSave,
         }),
       });
@@ -215,22 +264,7 @@ function DailyGradesContent() {
     );
   }
 
-  if (!courseId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-8">
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
-          <h1 className="text-3xl font-bold mb-4 text-gray-800">التقييم اليومي</h1>
-          <p className="text-lg text-amber-600 mb-6">⚠️ يجب اختيار الحلقة أولاً</p>
-          <button
-            onClick={() => router.push('/teacher')}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
-          >
-            اختر الحلقة من صفحة المعلمة
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const selectedCourseData = courses.find(c => c.id === selectedCourse);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -242,15 +276,33 @@ function DailyGradesContent() {
           <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">📊 التقييم اليومي</h1>
           <p className="text-gray-600 mb-6">إدخال درجات التقييم اليومي للطالبات (حفظ وتجويد + مراجعة وتجويد)</p>
 
-        {/* اختيار التاريخ */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <label className="block text-lg font-semibold text-gray-700 mb-2">تاريخ التقييم:</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="border-2 border-gray-300 rounded-lg px-4 py-2 text-lg"
-          />
+        {/* اختيار الحلقة والتاريخ */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-lg font-semibold text-gray-700 mb-2">الحلقة:</label>
+            <select
+              value={selectedCourse}
+              onChange={(e) => setSelectedCourse(e.target.value)}
+              className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent"
+            >
+              {courses.length === 0 && <option value="">جاري التحميل...</option>}
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.courseName} ({course._count.enrollments} طالبة)
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-lg font-semibold text-gray-700 mb-2">تاريخ التقييم:</label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg"
+            />
+          </div>
         </div>
 
         {/* رسالة الحالة */}

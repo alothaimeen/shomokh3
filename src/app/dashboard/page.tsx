@@ -42,70 +42,66 @@ export default function DashboardPage() {
     }
   }, [session, status, router]);
 
+  // ✅ Parallel Fetching - جلب جميع البيانات دفعة واحدة
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchAllData = async () => {
       if (!session) return;
 
+      const userRole = session.user?.role;
+      
       try {
-        const response = await fetch('/api/dashboard/stats');
-        if (response.ok) {
-          const data = await response.json();
-          setStats(data);
+        // تحديد الاستعلامات المطلوبة
+        const requests = [];
+        
+        // الإحصائيات (للجميع)
+        requests.push(
+          fetch('/api/dashboard/stats')
+            .then(res => res.ok ? res.json() : null)
+            .catch(() => null)
+        );
+        
+        // حلقات المعلمة
+        if (userRole === 'TEACHER') {
+          requests.push(
+            fetch('/api/courses/teacher-courses')
+              .then(res => res.ok ? res.json() : null)
+              .catch(() => null)
+          );
         }
+        
+        // تسجيلات الطالبة
+        if (userRole === 'STUDENT') {
+          requests.push(
+            fetch('/api/enrollment/my-enrollments')
+              .then(res => res.ok ? res.json() : null)
+              .catch(() => null)
+          );
+        }
+        
+        // تنفيذ موازي
+        const results = await Promise.all(requests);
+        
+        // معالجة النتائج
+        if (results[0]) setStats(results[0]);
+        
+        if (userRole === 'TEACHER' && results[1]) {
+          setTeacherCourses(results[1].courses || []);
+        }
+        
+        if (userRole === 'STUDENT' && results[1]) {
+          setStudentEnrollments(results[1].enrollments || []);
+        }
+        
       } catch (error) {
-        console.error('خطأ في جلب الإحصائيات:', error);
+        console.error('خطأ في جلب البيانات:', error);
       } finally {
         setLoadingStats(false);
-      }
-    };
-
-    fetchStats();
-  }, [session]);
-
-  useEffect(() => {
-    const fetchTeacherCourses = async () => {
-      if (!session || session.user?.role !== 'TEACHER') {
         setLoadingCourses(false);
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/courses/teacher-courses');
-        if (response.ok) {
-          const data = await response.json();
-          setTeacherCourses(data.courses || []);
-        }
-      } catch (error) {
-        console.error('خطأ في جلب الحلقات:', error);
-      } finally {
-        setLoadingCourses(false);
-      }
-    };
-
-    fetchTeacherCourses();
-  }, [session]);
-
-  useEffect(() => {
-    const fetchStudentEnrollments = async () => {
-      if (!session || session.user?.role !== 'STUDENT') {
-        setLoadingEnrollments(false);
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/enrollment/my-enrollments');
-        if (response.ok) {
-          const data = await response.json();
-          setStudentEnrollments(data.enrollments || []);
-        }
-      } catch (error) {
-        console.error('خطأ في جلب التسجيلات:', error);
-      } finally {
         setLoadingEnrollments(false);
       }
     };
 
-    fetchStudentEnrollments();
+    fetchAllData();
   }, [session]);
 
   if (status === "loading") {

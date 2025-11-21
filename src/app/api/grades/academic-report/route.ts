@@ -35,26 +35,50 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch all enrolled students with their grades
+    // ✅ Prisma Select Optimization - جلب الحقول المطلوبة فقط
     const enrollments = await db.enrollment.findMany({
       where: { courseId },
-      include: {
+      select: {
+        id: true,
         student: {
-          include: {
+          select: {
+            id: true,
+            studentName: true,
+            studentNumber: true,
             dailyGrades: {
               where: { courseId },
+              select: {
+                memorization: true,
+                review: true,
+              }
             },
             weeklyGrades: {
               where: { courseId },
+              select: {
+                grade: true,
+              }
             },
             monthlyGrades: {
               where: { courseId },
+              select: {
+                quranForgetfulness: true,
+                quranMajorMistakes: true,
+                quranMinorMistakes: true,
+                tajweedTheory: true,
+              }
             },
             behaviorGrades: {
               where: { courseId },
+              select: {
+                dailyScore: true,
+              }
             },
             finalExams: {
               where: { courseId },
+              select: {
+                quranTest: true,
+                tajweedTest: true,
+              }
             },
           },
         },
