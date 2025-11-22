@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function PUT(
   request: NextRequest,
@@ -38,7 +38,7 @@ export async function PUT(
     const studentId = resolvedParams.id;
 
     // 3. التحقق من وجود الطالبة
-    const student = await prisma.student.findUnique({
+    const student = await db.student.findUnique({
       where: { id: studentId },
       include: {
         enrollments: {
@@ -88,7 +88,7 @@ export async function PUT(
     }
 
     // 5. تحديث اسم الطالبة
-    const updatedStudent = await prisma.student.update({
+    const updatedStudent = await db.student.update({
       where: { id: studentId },
       data: {
         studentName: studentName.trim(),

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 // GET - جلب جميع البرامج
 export async function GET(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // جلب البرامج من قاعدة البيانات
-    const programs = await prisma.program.findMany({
+    const programs = await db.program.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         courses: {
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     // إنشاء البرنامج الجديد
-    const newProgram = await prisma.program.create({
+    const newProgram = await db.program.create({
       data: {
         programName: programName.trim(),
         programDescription: programDescription?.trim() || '',
@@ -132,7 +132,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // تحديث حالة البرنامج
-    const updatedProgram = await prisma.program.update({
+    const updatedProgram = await db.program.update({
       where: { id: programId },
       data: { isActive: Boolean(isActive) }
     });

@@ -13,11 +13,10 @@ export async function DELETE(request: NextRequest) {
 
     // إذا كان المستخدم طالبة، احذف طلباتها فقط
     if (session.user.userRole === 'STUDENT') {
-      // البحث عن الطالبة
-      const student = await db.student.findFirst({
+      // البحث عن الطالبة باستخدام userId
+      const student = await db.student.findUnique({
         where: {
-          studentName: session.user.name || 'غير محدد',
-          isActive: true
+          userId: session.user.id
         }
       });
 

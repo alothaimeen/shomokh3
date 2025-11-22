@@ -70,7 +70,7 @@ export default function AcademicReportsPage() {
 
   const fetchCourses = async () => {
     try {
-      const res = await fetch('/api/attendance/teacher-courses');
+      const res = await fetch('/api/courses/teacher-courses');
       const data = await res.json();
       if (res.ok) {
         setCourses(data.courses || []);

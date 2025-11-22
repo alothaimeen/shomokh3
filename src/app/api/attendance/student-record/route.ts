@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // للطالبة: يمكنها رؤية سجلها فقط
     if (session.user.userRole === 'STUDENT') {
-      const studentUser = await prisma.student.findFirst({
+      const studentUser = await db.student.findFirst({
         where: { userId: session.user.id },
       });
 
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     // للمعلمة: يمكنها رؤية سجل طالباتها فقط
     if (session.user.userRole === 'TEACHER' && courseId) {
-      const course = await prisma.course.findFirst({
+      const course = await db.course.findFirst({
         where: {
           id: courseId,
           teacherId: session.user.id,
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     }
 
     // الحصول على سجلات الحضور
-    const attendanceRecords = await prisma.attendance.findMany({
+    const attendanceRecords = await db.attendance.findMany({
       where: whereConditions,
       include: {
         course: {
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     });
 
     // الحصول على معلومات الطالبة
-    const student = await prisma.student.findUnique({
+    const student = await db.student.findUnique({
       where: { id: studentId },
       select: {
         id: true,

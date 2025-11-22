@@ -83,7 +83,7 @@ export default function AttendanceReportPage() {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/attendance/teacher-courses');
+      const response = await fetch('/api/courses/teacher-courses');
 
       if (!response.ok) {
         console.error('خطأ في API:', response.status, response.statusText);

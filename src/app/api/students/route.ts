@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 // GET - جلب جميع الطالبات
 export async function GET(request: NextRequest) {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     // جلب الطالبات من قاعدة البيانات
-    const students = await prisma.student.findMany({
+    const students = await db.student.findMany({
       where: whereConditions,
       orderBy: { studentNumber: 'asc' }
     });
@@ -84,14 +84,14 @@ export async function POST(request: NextRequest) {
     }
 
     // الحصول على أعلى رقم تسلسلي
-    const lastStudent = await prisma.student.findFirst({
+    const lastStudent = await db.student.findFirst({
       orderBy: { studentNumber: 'desc' }
     });
 
     const nextStudentNumber = (lastStudent?.studentNumber || 0) + 1;
 
     // إنشاء الطالبة الجديدة
-    const newStudent = await prisma.student.create({
+    const newStudent = await db.student.create({
       data: {
         studentNumber: nextStudentNumber,
         studentName: studentName.trim(),
@@ -137,7 +137,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // تحديث بيانات الطالبة
-    const updatedStudent = await prisma.student.update({
+    const updatedStudent = await db.student.update({
       where: { id: studentId },
       data: {
         ...updateData,
@@ -183,7 +183,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // تحديث حالة الطالبة
-    const updatedStudent = await prisma.student.update({
+    const updatedStudent = await db.student.update({
       where: { id: studentId },
       data: { isActive }
     });

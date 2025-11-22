@@ -113,7 +113,7 @@ export default function AttendancePage() {
   // تعريف الدوال أولاً
   const fetchCourses = useCallback(async () => {
     try {
-      const response = await fetch('/api/attendance/teacher-courses');
+      const response = await fetch('/api/courses/teacher-courses');
 
       if (!response.ok) {
         console.error('خطأ في API:', response.status, response.statusText);

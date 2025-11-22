@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 // PATCH - تغيير دور المستخدم
 export async function PATCH(
@@ -43,7 +43,7 @@ export async function PATCH(
 
     try {
       // تحديث دور المستخدم في قاعدة البيانات
-      const updatedUser = await prisma.user.update({
+      const updatedUser = await db.user.update({
         where: { id: userId },
         data: { userRole: newRole },
         select: {

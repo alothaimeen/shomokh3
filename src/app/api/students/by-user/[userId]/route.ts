@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -27,7 +27,7 @@ export async function GET(
       );
     }
 
-    const student = await prisma.student.findFirst({
+    const student = await db.student.findFirst({
       where: { userId },
       select: {
         id: true,

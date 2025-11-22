@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         searchDate.setHours(0, 0, 0, 0); // ضبط التاريخ بدون وقت
         console.log(`Searching for attendance on date: ${searchDate.toISOString()}`);
 
-        const existingAttendance = await prisma.attendance.findFirst({
+        const existingAttendance = await db.attendance.findFirst({
           where: {
             studentId,
             courseId,
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
         if (existingAttendance) {
           // تحديث السجل الموجود
-          attendanceRecord = await prisma.attendance.update({
+          attendanceRecord = await db.attendance.update({
             where: { id: existingAttendance.id },
             data: {
               status,
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           const attendanceDate = new Date(date);
           attendanceDate.setHours(0, 0, 0, 0); // ضبط التاريخ بدون وقت
 
-          attendanceRecord = await prisma.attendance.create({
+          attendanceRecord = await db.attendance.create({
             data: {
               studentId,
               courseId,

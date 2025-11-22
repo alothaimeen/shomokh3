@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 // GET - جلب جميع المستخدمين
 export async function GET(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     // محاولة جلب المستخدمين من قاعدة البيانات
     try {
-      const users = await prisma.user.findMany({
+      const users = await db.user.findMany({
         select: {
           id: true,
           userName: true,
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // محاولة إضافة المستخدم إلى قاعدة البيانات
-      const newUser = await prisma.user.create({
+      const newUser = await db.user.create({
         data: {
           userName: userName.trim(),
           userEmail: userEmail.trim().toLowerCase(),
@@ -167,7 +167,7 @@ export async function PUT(request: NextRequest) {
 
     try {
       // محاولة تحديث المستخدم في قاعدة البيانات
-      const updatedUser = await prisma.user.update({
+      const updatedUser = await db.user.update({
         where: { id: userId },
         data: {
           ...updateData,
@@ -233,7 +233,7 @@ export async function DELETE(request: NextRequest) {
 
     try {
       // محاولة تحديث حالة المستخدم في قاعدة البيانات
-      const updatedUser = await prisma.user.update({
+      const updatedUser = await db.user.update({
         where: { id: userId },
         data: { isActive }
       });

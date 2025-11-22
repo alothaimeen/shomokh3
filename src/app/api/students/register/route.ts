@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     if (process.env.DATABASE_URL) {
       try {
         // التحقق من وجود البريد الإلكتروني مسبقاً
-        const existingUser = await prisma.user.findUnique({
+        const existingUser = await db.user.findUnique({
           where: { userEmail: userData.userEmail }
         });
 
@@ -78,14 +78,14 @@ export async function POST(request: NextRequest) {
         const hashedPassword = await bcrypt.hash(userData.password, 12);
 
         // الحصول على آخر رقم تسلسلي وزيادته
-        const lastStudent = await prisma.student.findFirst({
+        const lastStudent = await db.student.findFirst({
           orderBy: { studentNumber: 'desc' }
         });
 
         const nextStudentNumber = lastStudent ? lastStudent.studentNumber + 1 : 1;
 
         // إنشاء المستخدم أولاً في جدول Users
-        const newUser = await prisma.user.create({
+        const newUser = await db.user.create({
           data: {
             userName: studentData.studentName, // نستخدم اسم الطالبة كاسم المستخدم
             userEmail: userData.userEmail,
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         });
 
         // ثم إنشاء الطالبة في جدول Students ومربوطة بالمستخدم
-        const newStudent = await prisma.student.create({
+        const newStudent = await db.student.create({
           data: {
             studentNumber: nextStudentNumber,
             studentName: studentData.studentName, // نفس الاسم في كلا الجدولين

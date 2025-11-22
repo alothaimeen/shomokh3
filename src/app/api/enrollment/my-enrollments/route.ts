@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     // الحصول على معلومات المستخدم
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { userEmail: session.user.email }
     });
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // الحصول على الطالبة من خلال userId (الربط الصحيح)
-    const student = await prisma.student.findUnique({
+    const student = await db.student.findUnique({
       where: { 
         userId: user.id
       }
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     // جلب الحلقات المسجلة فيها الطالبة
-    const enrollments = await prisma.enrollment.findMany({
+    const enrollments = await db.enrollment.findMany({
       where: {
         studentId: student.id,
         isActive: true

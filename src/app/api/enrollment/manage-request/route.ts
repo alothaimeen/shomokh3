@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { checkCourseOwnership } from '@/lib/course-ownership';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,12 +21,12 @@ export async function POST(request: NextRequest) {
 
     // للإجراءات الفردية
     if (requestId && !requestIds) {
-      return handleSingleRequest(requestId, action);
+      return handleSingleRequest(requestId, action, session.user.id, session.user.userRole);
     }
 
     // للإجراءات الجماعية
     if (requestIds && Array.isArray(requestIds) && requestIds.length > 0) {
-      return handleMultipleRequests(requestIds, action);
+      return handleMultipleRequests(requestIds, action, session.user.id, session.user.userRole);
     }
 
     return NextResponse.json({ error: 'بيانات الطلب غير صحيحة' }, { status: 400 });
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleSingleRequest(requestId: string, action: string) {
+async function handleSingleRequest(requestId: string, action: string, userId: string, userRole: string) {
   // البحث عن الطلب
   const enrollmentRequest = await db.enrollmentRequest.findUnique({
     where: { id: requestId },
@@ -52,6 +53,7 @@ async function handleSingleRequest(requestId: string, action: string) {
           id: true,
           courseName: true,
           maxStudents: true,
+          teacherId: true,
           _count: {
             select: {
               enrollments: true,
@@ -64,6 +66,12 @@ async function handleSingleRequest(requestId: string, action: string) {
 
   if (!enrollmentRequest) {
     return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 });
+  }
+
+  // التحقق من الصلاحيات - التحقق من ملكية الحلقة
+  const isAuthorized = await checkCourseOwnership(userId, enrollmentRequest.course.id, userRole);
+  if (!isAuthorized) {
+    return NextResponse.json({ error: 'غير مصرح - لا يمكنك إدارة طلبات هذه الحلقة' }, { status: 403 });
   }
 
   if (enrollmentRequest.status !== 'PENDING') {
@@ -128,13 +136,13 @@ async function handleSingleRequest(requestId: string, action: string) {
   }
 }
 
-async function handleMultipleRequests(requestIds: string[], action: string) {
+async function handleMultipleRequests(requestIds: string[], action: string, userId: string, userRole: string) {
   const results = [];
   const errors = [];
 
   for (const requestId of requestIds) {
     try {
-      const response = await handleSingleRequest(requestId, action);
+      const response = await handleSingleRequest(requestId, action, userId, userRole);
       const responseData = await response.json();
 
       if (response.ok) {

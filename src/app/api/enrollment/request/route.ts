@@ -38,15 +38,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'الحلقة مكتملة العدد' }, { status: 400 });
     }
 
-    // البحث عن الطالبة المرتبطة بالمستخدم الحالي
-    console.log('🔍 Searching for student with name:', session.user.name);
+    // البحث عن الطالبة المرتبطة بالمستخدم الحالي باستخدام userId
+    console.log('🔍 Searching for student with userId:', session.user.id);
 
-    let student = await db.student.findFirst({
+    let student = await db.student.findUnique({
       where: {
-        studentName: {
-          contains: session.user.name || 'غير محدد'
-        },
-        isActive: true
+        userId: session.user.id
       }
     });
 
@@ -58,6 +55,7 @@ export async function POST(request: NextRequest) {
       const nextSequenceNumber = await db.student.count() + 1;
       student = await db.student.create({
         data: {
+          userId: session.user.id,
           studentNumber: nextSequenceNumber,
           studentName: session.user.name || 'طالبة جديدة',
           qualification: 'غير محدد',
