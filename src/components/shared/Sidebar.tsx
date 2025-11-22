@@ -19,7 +19,8 @@ import {
   Star,
   BarChart3,
   ClipboardCheck,
-  X
+  X,
+  Menu
 } from 'lucide-react';
 
 interface NavItem {
@@ -183,10 +184,10 @@ export default function Sidebar() {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 right-0 h-full bg-white shadow-lg z-50
+          fixed top-0 h-full bg-white shadow-lg z-50
           transition-all duration-300 ease-in-out
           ${isCollapsed ? 'w-20' : 'w-72'}
-          ${isMobileOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
+          ${isMobileOpen ? 'right-0' : '-right-full lg:right-0'}
         `}
       >
         {/* Header */}
@@ -274,9 +275,9 @@ export default function Sidebar() {
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed bottom-6 left-6 w-14 h-14 bg-gradient-to-br from-primary-purple to-primary-blue text-white rounded-full shadow-lg flex items-center justify-center z-40"
+        className="lg:hidden fixed top-4 right-4 w-12 h-12 bg-white border-2 border-gray-200 text-gray-700 rounded-lg shadow-md flex items-center justify-center z-40 hover:bg-gray-50 transition-colors"
       >
-        <LayoutDashboard size={24} />
+        <Menu size={24} />
       </button>
     </>
   );

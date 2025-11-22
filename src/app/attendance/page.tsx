@@ -21,18 +21,9 @@ interface Student {
 interface Course {
   id: string;
   courseName: string;
+  programName: string;
   level: number;
-  program: {
-    id: string;
-    programName: string;
-  };
-  teacher?: {
-    id: string;
-    userName: string;
-  };
-  _count: {
-    enrollments: number;
-  };
+  studentsCount: number;
 }
 
 interface AttendanceRecord {
@@ -325,8 +316,7 @@ export default function AttendancePage() {
               <option value="">اختر الحلقة</option>
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>
-                  {course.courseName} - {course.program.programName} (المستوى {course.level})
-                  {course.teacher && ` - ${course.teacher.userName}`}
+                  {course.courseName} - {course.programName} (المستوى {course.level})
                 </option>
               ))}
             </select>
@@ -387,7 +377,7 @@ export default function AttendancePage() {
       {courseInfo && summary && (
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h2 className="text-xl font-semibold mb-4">
-            {courseInfo.courseName} - {courseInfo.program.programName}
+            {courseInfo.courseName} - {courseInfo.programName}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 text-center">
             <div className="bg-gray-50 p-3 rounded">
