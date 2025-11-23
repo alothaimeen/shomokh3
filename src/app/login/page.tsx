@@ -17,7 +17,7 @@ export default function LoginPage() {
 
     try {
       const result = await signIn('credentials', {
-        userEmail,
+        email: userEmail,
         password,
         redirect: false,
       });
@@ -49,7 +49,7 @@ export default function LoginPage() {
 
     try {
       const result = await signIn('credentials', {
-        userEmail: email,
+        email: email,
         password: pass,
         redirect: false,
       });
