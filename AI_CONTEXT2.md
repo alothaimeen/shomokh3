@@ -1,7 +1,7 @@
 # 🤖 AI Context - منصة شموخ v3 (الإصدار 2.0)
 
-**آخر تحديث:** 23 نوفمبر 2025  
-**الحالة:** الجلسة 18 - الترقية إلى Next.js 15 و React 19  
+**آخر تحديث:** 24 نوفمبر 2025  
+**الحالة:** الجلسة 19 مكتملة - Server Components Migration  
 **البروتوكول:** Code Gear Protocol (ترس الشفرة)
 
 ---
@@ -11,7 +11,7 @@
 **Stack:** Next.js 15, React 19, TypeScript, Prisma, Supabase PostgreSQL  
 **Roles:** ADMIN, TEACHER, STUDENT  
 **Model:** Multi-Tenant (قاعدة بيانات منفصلة لكل جمعية)  
-**Progress:** 17.5/36 (~55%)
+**Progress:** 19/36 (~55%)
 
 ---
 
@@ -104,42 +104,86 @@ User (teachers) ──< Course >── Program
 
 ---
 
-## 🎯 الأنماط الأساسية
+## 🎯 الأنماط الأساسية (Session 19)
 
-### Server Action (Session 18)
+### Server Action Pattern
 ```typescript
 'use server';
-import { z } from 'zod';
-import { requireAuth } from '@/lib/auth-helpers';
+import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { db } from '@/lib/db';
 
-export async function action(prevState: any, formData: FormData) {
-  const session = await requireAuth();
-  const parsed = schema.safeParse(data);
-  // Check ownership
+export async function saveAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user || !['ADMIN', 'TEACHER'].includes(session.user.role)) {
+    return { success: false, error: 'غير مصرح' };
+  }
+  
+  // Extract and validate data
+  const data = formData.get('field') as string;
+  
+  // Database operation
   await db.model.create({ data });
+  
+  // Revalidate paths
   revalidatePath('/path');
-  return { success: true };
+  return { success: true, message: 'تم الحفظ' };
 }
 ```
 
-### Client Component
+### Server Component Pattern
+```typescript
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { getDataFromDB } from '@/lib/data/queries';
+
+export default async function Page({ searchParams }: { searchParams: Promise<{...}> }) {
+  const session = await auth();
+  if (!session?.user) redirect('/login');
+  
+  const params = await searchParams;
+  const data = await getDataFromDB(params.id);
+  
+  return <ClientForm data={data} />;
+}
+```
+
+### Client Form with useTransition
 ```typescript
 'use client';
-import { useActionState } from 'react';
+import { useState, useTransition } from 'react';
+import { saveAction } from '@/actions/example';
 
-const [state, formAction, isPending] = useActionState(action, {});
-return <form action={formAction}>...</form>;
+export default function Form({ data }) {
+  const [message, setMessage] = useState('');
+  const [isPending, startTransition] = useTransition();
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    
+    startTransition(async () => {
+      const result = await saveAction(formData);
+      setMessage(result.success ? result.message : result.error);
+    });
+  };
+  
+  return <form onSubmit={handleSubmit}>...</form>;
+}
 ```
 
-### Server Component
+### Data Query with React.cache
 ```typescript
-export default async function Page() {
-  const session = await requireAuth();
-  const data = await db.model.findMany();
-  return <UI data={data} />;
-}
-export const revalidate = 3600;
+import { cache } from 'react';
+import { db } from '@/lib/db';
+
+export const getData = cache(async (id: string) => {
+  return await db.model.findMany({
+    where: { id },
+    include: { relation: true },
+    orderBy: { field: 'asc' }
+  });
+});
 ```
 
 ---

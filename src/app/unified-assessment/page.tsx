@@ -36,15 +36,15 @@ function UnifiedAssessmentContent() {
     !isStudent
   );
   const { enrollments, isLoading: loadingEnrollments } = useMyEnrollments();
-  
-  const courses = isStudent 
+
+  const courses = isStudent
     ? enrollments.map((e: any) => ({
-        id: e.id,
-        courseName: e.courseName,
-        programName: e.programName
-      }))
+      id: e.id,
+      courseName: e.courseName,
+      programName: e.programName
+    }))
     : teacherCourses;
-  
+
   const loading = isStudent ? loadingEnrollments : loadingTeacherCourses;
 
   // تحذير عند المغادرة بدون حفظ
@@ -74,7 +74,7 @@ function UnifiedAssessmentContent() {
 
   const updateURL = (updates: Partial<{ tab: TabType; courseId: string; date: string; week: number; month: number }>) => {
     const params = new URLSearchParams(searchParams.toString());
-    
+
     if (updates.courseId !== undefined) params.set('courseId', updates.courseId);
     if (updates.tab) params.set('tab', updates.tab);
     if (updates.date) params.set('date', updates.date);
@@ -91,7 +91,7 @@ function UnifiedAssessmentContent() {
       }
       setHasUnsavedChanges(false);
     }
-    
+
     setActiveTab(tab);
     updateURL({ tab });
   };
@@ -103,7 +103,7 @@ function UnifiedAssessmentContent() {
       }
       setHasUnsavedChanges(false);
     }
-    
+
     setSelectedCourse(courseId);
     updateURL({ courseId });
   };
@@ -139,140 +139,139 @@ function UnifiedAssessmentContent() {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent mb-2">
               الصفحة الموحدة للتقييم
             </h1>
-          <p className="text-gray-600">
-            {isTeacherOrAdmin 
-              ? 'إدارة جميع أنواع التقييم من صفحة واحدة' 
-              : 'عرض جميع درجاتك ومهامك من صفحة واحدة'
-            }
-          </p>
-        </div>
-
-        {/* Course Selection */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-              اختر الحلقة:
-            </label>
-            <select
-              value={selectedCourse}
-              onChange={(e) => handleCourseChange(e.target.value)}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">-- اختر الحلقة --</option>
-              {courses.map((course: any) => (
-                <option key={course.id} value={course.id}>
-                  {course.courseName} {course.programName ? `(${course.programName})` : ''}
-                </option>
-              ))}
-            </select>
+            <p className="text-gray-600">
+              {isTeacherOrAdmin
+                ? 'إدارة جميع أنواع التقييم من صفحة واحدة'
+                : 'عرض جميع درجاتك ومهامك من صفحة واحدة'
+              }
+            </p>
           </div>
-          
-          {selectedCourseData && (
-            <div className="mt-4 p-4 bg-indigo-50 rounded-md">
-              <p className="text-sm text-indigo-700">
-                <strong>الحلقة المختارة:</strong> {selectedCourseData.courseName}
+
+          {/* Course Selection */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                اختر الحلقة:
+              </label>
+              <select
+                value={selectedCourse}
+                onChange={(e) => handleCourseChange(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">-- اختر الحلقة --</option>
+                {courses.map((course: any) => (
+                  <option key={course.id} value={course.id}>
+                    {course.courseName} {course.programName ? `(${course.programName})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedCourseData && (
+              <div className="mt-4 p-4 bg-indigo-50 rounded-md">
+                <p className="text-sm text-indigo-700">
+                  <strong>الحلقة المختارة:</strong> {selectedCourseData.courseName}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {selectedCourse ? (
+            <>
+              {/* Tabs Navigation - 4 tabs only */}
+              <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div className="flex flex-wrap gap-2">
+                  {TAB_CONFIGS.map((tab) => {
+                    // Show only 4 main tabs: daily, weekly, monthly, final
+                    if (!['daily', 'weekly', 'monthly', 'final'].includes(tab.id)) {
+                      return null;
+                    }
+
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleTabChange(tab.id)}
+                        className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
+                            ? 'bg-gradient-to-r from-primary-purple to-primary-blue text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                      >
+                        {tab.label}
+                        {hasUnsavedChanges && activeTab === tab.id && (
+                          <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Date Selector for Daily Tab */}
+              {activeTab === 'daily' && (
+                <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    التاريخ:
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => {
+                      setSelectedDate(e.target.value);
+                      updateURL({ date: e.target.value });
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+              )}
+
+              {/* Tab Content - 4 tabs only */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <Suspense fallback={<AssessmentSkeleton />}>
+                  {activeTab === 'daily' && (
+                    <DailyGradesTab
+                      courseId={selectedCourse}
+                      date={selectedDate}
+                      onUnsavedChanges={setHasUnsavedChanges}
+                    />
+                  )}
+                  {activeTab === 'weekly' && (
+                    <WeeklyGradesTab
+                      courseId={selectedCourse}
+                      week={selectedWeek}
+                      onWeekChange={(week) => {
+                        setSelectedWeek(week);
+                        updateURL({ week });
+                      }}
+                      onUnsavedChanges={setHasUnsavedChanges}
+                    />
+                  )}
+                  {activeTab === 'monthly' && (
+                    <MonthlyGradesTab
+                      courseId={selectedCourse}
+                      month={selectedMonth}
+                      onMonthChange={(month) => {
+                        setSelectedMonth(month);
+                        updateURL({ month });
+                      }}
+                      onUnsavedChanges={setHasUnsavedChanges}
+                    />
+                  )}
+                  {activeTab === 'final' && (
+                    <FinalExamTab
+                      courseId={selectedCourse}
+                      onUnsavedChanges={setHasUnsavedChanges}
+                    />
+                  )}
+                </Suspense>
+              </div>
+            </>
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+              <p className="text-yellow-800">
+                الرجاء اختيار الحلقة أولاً للبدء في التقييم
               </p>
             </div>
           )}
-        </div>
-
-        {selectedCourse ? (
-          <>
-            {/* Tabs Navigation - 4 tabs only */}
-            <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-              <div className="flex flex-wrap gap-2">
-                {TAB_CONFIGS.map((tab) => {
-                  // Show only 4 main tabs: daily, weekly, monthly, final
-                  if (!['daily', 'weekly', 'monthly', 'final'].includes(tab.id)) {
-                    return null;
-                  }
-
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => handleTabChange(tab.id)}
-                      className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        activeTab === tab.id
-                          ? 'bg-gradient-to-r from-primary-purple to-primary-blue text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {tab.label}
-                      {hasUnsavedChanges && activeTab === tab.id && (
-                        <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Date Selector for Daily Tab */}
-            {activeTab === 'daily' && (
-              <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  التاريخ:
-                </label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => {
-                    setSelectedDate(e.target.value);
-                    updateURL({ date: e.target.value });
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-            )}
-
-            {/* Tab Content - 4 tabs only */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <Suspense fallback={<AssessmentSkeleton />}>
-                {activeTab === 'daily' && (
-                  <DailyGradesTab
-                    courseId={selectedCourse}
-                    date={selectedDate}
-                    onUnsavedChanges={setHasUnsavedChanges}
-                  />
-                )}
-                {activeTab === 'weekly' && (
-                  <WeeklyGradesTab
-                    courseId={selectedCourse}
-                    week={selectedWeek}
-                    onWeekChange={(week) => {
-                      setSelectedWeek(week);
-                      updateURL({ week });
-                    }}
-                    onUnsavedChanges={setHasUnsavedChanges}
-                  />
-                )}
-                {activeTab === 'monthly' && (
-                  <MonthlyGradesTab
-                    courseId={selectedCourse}
-                    month={selectedMonth}
-                    onMonthChange={(month) => {
-                      setSelectedMonth(month);
-                      updateURL({ month });
-                    }}
-                    onUnsavedChanges={setHasUnsavedChanges}
-                  />
-                )}
-                {activeTab === 'final' && (
-                  <FinalExamTab
-                    courseId={selectedCourse}
-                    onUnsavedChanges={setHasUnsavedChanges}
-                  />
-                )}
-              </Suspense>
-            </div>
-          </>
-        ) : (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-            <p className="text-yellow-800">
-              الرجاء اختيار الحلقة أولاً للبدء في التقييم
-            </p>
-          </div>
-        )}
         </div>
       </div>
     </div>

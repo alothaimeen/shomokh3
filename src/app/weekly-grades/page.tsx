@@ -1,356 +1,129 @@
-"use client";
-
-import { useSession } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
-import { generateQuarterStepValues } from "@/lib/grading-formulas";
+import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
+import { getTeacherCourses, getWeeklyGrades } from '@/lib/data/queries';
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
-import { useTeacherCourses } from '@/hooks/useCourses';
-import useSWR from 'swr';
-import { fetcher } from '@/lib/fetcher';
+import WeeklyGradesForm from '@/components/grades/WeeklyGradesForm';
 
-interface StudentGrade {
-  enrollmentId: string;
-  studentId: string;
-  studentName: string;
-  studentNumber: number;
-  grades: { [week: number]: number };
-  total: number;
+interface PageProps {
+  searchParams: Promise<{ courseId?: string; week?: string }>;
 }
 
-interface Course {
-  id: string;
-  courseName: string;
-  level: number;
-  program: {
-    id: string;
-    programName: string;
-  };
-  _count: {
-    enrollments: number;
-  };
-}
-
-function WeeklyGradesContent() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
-  const [courseName, setCourseName] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [selectedWeek, setSelectedWeek] = useState<number>(1);
-  const [editedGrades, setEditedGrades] = useState<{
-    [studentId: string]: number;
-  }>({});
-  const [message, setMessage] = useState("");
-
-  // قيم الدرجات (5، 4.75، 4.5، ... 0)
-  const gradeValues = generateQuarterStepValues(5, 0.25);
-
-  // ✅ استخدام SWR hooks
-  const { courses, isLoading: loadingCourses } = useTeacherCourses(session?.user?.role === 'TEACHER');
-  const { data: gradesData, isLoading: loadingGrades, mutate: refreshGrades } = useSWR<{ students: StudentGrade[] }>(
-    selectedCourse ? `/api/grades/weekly?courseId=${selectedCourse}` : null,
-    fetcher,
-    {
-      revalidateOnFocus: true,
-      dedupingInterval: 2000,
-    }
-  );
-
-  const students = gradesData?.students || [];
-  const loading = loadingCourses || loadingGrades;
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-
-  useEffect(() => {
-    const courseIdFromUrl = searchParams.get('courseId');
-    if (courseIdFromUrl) {
-      setSelectedCourse(courseIdFromUrl);
-    } else if (courses.length > 0 && !selectedCourse) {
-      setSelectedCourse(courses[0].id);
-    }
-  }, [searchParams, courses, selectedCourse]);
-
-  useEffect(() => {
-    if (selectedCourse && courses.length > 0) {
-      const course = courses.find(c => c.id === selectedCourse);
-      if (course) {
-        setCourseName(course.courseName);
-      }
-    }
-  }, [selectedCourse, courses]);
-
-  // تهيئة editedGrades عند تحميل البيانات أو تغيير الأسبوع
-  useEffect(() => {
-    if (students.length > 0) {
-      const initialGrades: { [studentId: string]: number } = {};
-      students.forEach((student: StudentGrade) => {
-        initialGrades[student.studentId] = student.grades[selectedWeek] ?? 5;
-      });
-      setEditedGrades(initialGrades);
-    }
-  }, [students, selectedWeek]);
-
-  function handleWeekChange(week: number) {
-    setSelectedWeek(week);
-    setMessage("");
+async function WeeklyGradesContent({ searchParams }: PageProps) {
+  const session = await auth();
+  if (!session?.user || !['ADMIN', 'TEACHER'].includes(session.user.role)) {
+    redirect('/login');
   }
 
-  function handleGradeChange(studentId: string, value: number) {
-    setEditedGrades((prev) => ({
-      ...prev,
-      [studentId]: value,
-    }));
-  }
+  const params = await searchParams;
+  const teacherId = session.user.role === 'TEACHER' ? session.user.id : undefined;
+  const courses = teacherId ? await getTeacherCourses(teacherId) : [];
 
-  async function handleSave() {
-    if (!selectedCourse) return;
+  const selectedCourseId = params.courseId || (courses[0]?.id ?? '');
+  const selectedWeek = parseInt(params.week || '1');
 
-    setSaving(true);
-    setMessage("");
-    
-    try {
-      const gradesArray = Object.entries(editedGrades).map(
-        ([studentId, grade]) => ({
-          studentId,
-          grade,
-        })
-      );
+  let students: any[] = [];
+  let courseName = '';
 
-      const res = await fetch("/api/grades/weekly", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          courseId: selectedCourse,
-          week: selectedWeek,
-          grades: gradesArray,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setMessage(`✅ ${data.message}`);
-        refreshGrades(); // ✅ تحديث SWR cache
-      } else {
-        setMessage(`❌ ${data.error}`);
-      }
-    } catch (error) {
-      console.error("خطأ في حفظ الدرجات:", error);
-      setMessage("❌ حدث خطأ في حفظ البيانات");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (status === "loading" || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar />
-        <div className="flex-1 lg:mr-72 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
-            <p className="mt-4 text-gray-600">جاري التحميل...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) return null;
-
-  if (
-    session.user.role !== "ADMIN" &&
-    session.user.role !== "TEACHER"
-  ) {
-    return (
-      <div className="p-8 text-center">
-        <h1 className="text-2xl text-red-600">غير مصرح لك بالوصول</h1>
-      </div>
-    );
+  if (selectedCourseId) {
+    students = await getWeeklyGrades(selectedCourseId);
+    const course = courses.find((c) => c.id === selectedCourseId);
+    courseName = course?.courseName || '';
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
-      <div className="flex-1 flex flex-col lg:mr-72">
+      <div className="flex-1 lg:mr-72">
         <AppHeader title="الدرجات الأسبوعية" />
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-7xl mx-auto">
-            <BackButton />
-            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">📅 التقييم الأسبوعي</h1>
-            <p className="text-gray-600">الحلقة: {courseName}</p>
-            <p className="text-sm text-gray-500 mb-6">
-              كل أسبوع: 5 درجات × 10 أسابيع = 50 درجة (الدرجة الافتراضية: 5)
-            </p>
+        <div className="p-8">
+          <BackButton />
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">
+            📊 الدرجات الأسبوعية
+          </h1>
+          <p className="text-gray-600 mb-6">إدخال درجات الأسبوع (0-5 لكل أسبوع)</p>
 
-            {/* اختيار الحلقة والأسبوع */}
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-lg font-semibold text-gray-700 mb-2">الحلقة:</label>
-            <select
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent"
-            >
-              {courses.length === 0 && <option value="">جاري التحميل...</option>}
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.courseName}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-lg font-semibold text-gray-700 mb-2">الأسبوع:</label>
-            <select
-              value={selectedWeek}
-              onChange={(e) => handleWeekChange(Number(e.target.value))}
-              className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg"
-            >
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((week) => (
-                <option key={week} value={week}>
-                  الأسبوع {week}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* رسالة النجاح/الخطأ */}
-        {message && (
-          <div className={`rounded-lg p-4 mb-6 ${
-            message.includes('✅') 
-              ? 'bg-green-100 text-green-800 border-2 border-green-300' 
-              : 'bg-red-100 text-red-800 border-2 border-red-300'
-          }`}>
-            <p className="text-lg font-semibold">{message}</p>
-          </div>
-        )}
-
-        {/* جدول الدرجات */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
-                <tr>
-                  <th className="px-6 py-4 text-right text-sm font-semibold">#</th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold">اسم الطالبة</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold">الدرجة (0 - 5)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {students.map((student, idx) => (
-                  <tr key={student.studentId} className="hover:bg-indigo-50 transition-colors">
-                    <td className="px-6 py-4 text-gray-700 font-medium">{idx + 1}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <span className="font-semibold text-gray-800">{student.studentName}</span>
-                        <span className="mr-2 text-sm text-gray-500">(م{student.studentNumber})</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <select
-                        value={editedGrades[student.studentId] || 0}
-                        onChange={(e) =>
-                          handleGradeChange(student.studentId, Number(e.target.value))
-                        }
-                        className="border-2 border-gray-300 rounded-lg px-4 py-2 text-center focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                      >
-                        {gradeValues.map((val) => (
-                          <option key={val} value={val}>
-                            {val.toFixed(2)}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* أزرار الإجراءات */}
-        <div className="flex gap-4">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-500 transition-all shadow-lg"
-          >
-            {saving ? "⏳ جاري الحفظ..." : `💾 حفظ درجات الأسبوع ${selectedWeek}`}
-          </button>
-          <button
-            onClick={() => router.back()}
-            className="bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 transition-all shadow-lg"
-          >
-            ↩️ رجوع
-          </button>
-        </div>
-
-        {/* عرض جميع الأسابيع (للمراجعة) */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mt-8">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800">📋 عرض جميع الأسابيع</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-3 py-2 border sticky right-0 bg-gray-100 font-semibold">
-                    الطالبة
-                  </th>
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((week) => (
-                    <th key={week} className="px-3 py-2 border text-center font-semibold">
-                      أ{week}
-                    </th>
-                  ))}
-                  <th className="px-3 py-2 border text-center bg-indigo-50 font-semibold">
-                    المجموع
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {students.map((student) => (
-                  <tr key={student.studentId} className="hover:bg-indigo-50">
-                    <td className="px-3 py-2 border sticky right-0 bg-white font-medium">
-                      {student.studentName}
-                    </td>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((week) => (
-                      <td
-                        key={week}
-                        className="px-3 py-2 border text-center"
-                      >
-                        {student.grades[week]?.toFixed(2) || "5.00"}
-                      </td>
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-lg font-semibold text-gray-700 mb-2">الحلقة:</label>
+                <form action="/weekly-grades">
+                  <input type="hidden" name="week" value={selectedWeek} />
+                  <select
+                    name="courseId"
+                    defaultValue={selectedCourseId}
+                    onChange={(e) => e.target.form?.requestSubmit()}
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg"
+                  >
+                    {courses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.courseName} ({course._count?.enrollments || 0} طالبة)
+                      </option>
                     ))}
-                    <td className="px-3 py-2 border text-center font-bold bg-indigo-50">
-                      {student.total.toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  </select>
+                </form>
+              </div>
+
+              <div>
+                <label className="block text-lg font-semibold text-gray-700 mb-2">الأسبوع:</label>
+                <form action="/weekly-grades">
+                  <input type="hidden" name="courseId" value={selectedCourseId} />
+                  <select
+                    name="week"
+                    defaultValue={selectedWeek}
+                    onChange={(e) => e.target.form?.requestSubmit()}
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg"
+                  >
+                    {[...Array(10)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        الأسبوع {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                </form>
+              </div>
+            </div>
+
+            {courseName && (
+              <div className="mt-4 p-4 bg-indigo-50 rounded-md">
+                <p className="text-sm text-indigo-700">
+                  <strong>الحلقة:</strong> {courseName} | <strong>الأسبوع:</strong> {selectedWeek}
+                </p>
+              </div>
+            )}
           </div>
+
+          {students.length > 0 ? (
+            <WeeklyGradesForm students={students} selectedWeek={selectedWeek} />
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+              <p className="text-yellow-800">لا توجد طالبات مسجلات</p>
+            </div>
+          )}
+
+          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+            <p className="text-sm text-blue-800">
+              💡 درجة كل أسبوع: 5 | المجموع الكامل لـ 10 أسابيع: 50 درجة
+            </p>
           </div>
-          </div>
-        </main>
+        </div>
       </div>
     </div>
   );
 }
 
-export default function WeeklyGradesPage() {
+export default async function WeeklyGradesPage(props: PageProps) {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="text-xl">جاري التحميل...</div></div>}>
-      <WeeklyGradesContent />
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-xl">جاري التحميل...</div>
+        </div>
+      }
+    >
+      <WeeklyGradesContent searchParams={props.searchParams} />
     </Suspense>
   );
 }

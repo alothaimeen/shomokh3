@@ -67,3 +67,9 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET || "shamokh-v3-development-secret",
 };
+
+// Helper for Server Components
+import { getServerSession } from "next-auth";
+export async function auth() {
+  return await getServerSession(authOptions);
+}
