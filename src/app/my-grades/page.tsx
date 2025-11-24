@@ -1,13 +1,10 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
-import useSWR from 'swr';
-import { fetcher } from '@/lib/fetcher';
+import GradesTabs from '@/components/grades/GradesTabs';
 
 interface Grade {
   id: string;
@@ -33,335 +30,158 @@ interface GradeSummary {
   behaviorPoints?: number;
 }
 
-const getFallbackGrades = (): Grade[] => {
-  return [
-    {
-      id: "1",
-      type: "daily",
-      category: "الحفظ اليومي",
-      score: 9,
-      maxScore: 10,
-      date: "2025-01-05",
-      courseName: "حلقة الفجر",
-      teacherName: "المعلمة سارة"
-    },
-    {
-      id: "2",
-      type: "weekly",
-      category: "المراجعة الأسبوعية",
-      score: 23,
-      maxScore: 25,
-      date: "2025-01-12",
-      courseName: "حلقة الفجر",
-      teacherName: "المعلمة سارة"
-    },
-    {
-      id: "3",
-      type: "weekly",
-      category: "الاختبار الأسبوعي",
-      score: 22,
-      maxScore: 25,
-      date: "2025-01-08",
-      courseName: "حلقة الفجر",
-      teacherName: "المعلمة سارة"
-    },
-    {
-      id: "4",
-      type: "monthly",
-      category: "الاختبار الشهري",
-      score: 28,
-      maxScore: 30,
-      date: "2025-01-10",
-      courseName: "حلقة الفجر",
-      teacherName: "المعلمة سارة"
-    },
-    {
-      id: "5",
-      type: "behavior",
-      category: "السلوك والمواظبة",
-      score: 9,
-      maxScore: 10,
-      date: "2025-01-15",
-      courseName: "حلقة الفجر",
-      teacherName: "المعلمة سارة"
-    }
-  ];
-};
-
-const getFallbackSummary = (): GradeSummary => {
-  return {
-    totalDailyGrades: 315,
-    totalWeeklyGrades: 45,
-    totalMonthlyGrades: 85,
-    finalExamGrade: 55,
-    behaviorGrade: 63,
-    totalPoints: 563,
-    finalPercentage: 87.2
-  };
-};
-
-export default function MyGradesPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'summary' | 'daily' | 'weekly' | 'monthly' | 'final' | 'behavior'>('summary');
-
-  // ✅ استخدام SWR
-  const { data: gradesData, error: swrError } = useSWR<{ grades: Grade[]; summary: GradeSummary }>(
-    session?.user?.userRole === 'STUDENT' ? '/api/grades/my-grades' : null,
-    fetcher,
-    {
-      revalidateOnFocus: true,
-      dedupingInterval: 2000,
-      fallbackData: {
-        grades: getFallbackGrades(),
-        summary: getFallbackSummary()
-      },
-      onError: (err) => {
-        setError(err instanceof Error ? err.message : 'خطأ غير متوقع');
+async function getStudentGrades(userId: string): Promise<{ grades: Grade[], summary: GradeSummary }> {
+  const student = await db.student.findFirst({
+    where: { userId },
+    include: {
+      enrollments: {
+        include: {
+          course: {
+            include: {
+              teacher: { select: { userName: true } },
+              program: { select: { programName: true } }
+            }
+          }
+        }
       }
     }
-  );
+  });
 
-  const grades = gradesData?.grades || getFallbackGrades();
-  const summary = gradesData?.summary || getFallbackSummary();
-  const loading = !gradesData && !swrError;
-
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (!session || session.user.userRole !== 'STUDENT') {
-      router.push('/dashboard');
-    }
-  }, [session, status, router]);
-
-  const filterGradesByType = (type: string) => {
-    return grades.filter(grade => grade.type === type);
-  };
-
-  const getGradeColor = (score: number, maxScore: number) => {
-    const percentage = (score / maxScore) * 100;
-    if (percentage >= 90) return 'text-green-600';
-    if (percentage >= 80) return 'text-blue-600';
-    if (percentage >= 70) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  if (status === 'loading' || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar />
-        <div className="flex-1 lg:mr-72 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto"></div>
-            <p className="mt-4 text-gray-600">جاري تحميل الدرجات...</p>
-          </div>
-        </div>
-      </div>
-    );
+  if (!student) {
+    return { grades: [], summary: {
+      totalDailyGrades: 0,
+      totalWeeklyGrades: 0,
+      totalMonthlyGrades: 0,
+      finalExamGrade: 0,
+      behaviorGrade: 0,
+      totalPoints: 0,
+      finalPercentage: 0
+    }};
   }
 
+  const [dailyGrades, weeklyGrades, monthlyGrades, finalGrades, behaviorGrades] = await Promise.all([
+    db.dailyGrade.findMany({
+      where: { studentId: student.id },
+      include: { course: { include: { teacher: true } } },
+      orderBy: { date: 'desc' }
+    }),
+    db.weeklyGrade.findMany({
+      where: { studentId: student.id },
+      include: { course: { include: { teacher: true } } },
+      orderBy: { week: 'desc' }
+    }),
+    db.monthlyGrade.findMany({
+      where: { studentId: student.id },
+      include: { course: { include: { teacher: true } } },
+      orderBy: { month: 'desc' }
+    }),
+    db.finalExam.findMany({
+      where: { studentId: student.id },
+      include: { course: { include: { teacher: true } } }
+    }),
+    db.behaviorGrade.findMany({
+      where: { studentId: student.id },
+      include: { course: { include: { teacher: true } } },
+      orderBy: { date: 'desc' }
+    })
+  ]);
+
+  const grades: Grade[] = [
+    ...dailyGrades.map(g => ({
+      id: g.id,
+      type: 'daily' as const,
+      category: 'الحفظ اليومي',
+      score: Number(g.memorization) + Number(g.review),
+      maxScore: 20,
+      date: g.date.toISOString().split('T')[0],
+      courseName: g.course.courseName,
+      teacherName: g.course.teacher?.userName || 'غير محدد',
+      notes: g.notes || undefined
+    })),
+    ...weeklyGrades.map(g => ({
+      id: g.id,
+      type: 'weekly' as const,
+      category: `الأسبوع ${g.week}`,
+      score: Number(g.grade),
+      maxScore: 25,
+      date: new Date().toISOString().split('T')[0],
+      courseName: g.course.courseName,
+      teacherName: g.course.teacher?.userName || 'غير محدد'
+    })),
+    ...monthlyGrades.map(g => ({
+      id: g.id,
+      type: 'monthly' as const,
+      category: `الشهر ${g.month}`,
+      score: Number(g.quranForgetfulness) + Number(g.quranMajorMistakes) + Number(g.quranMinorMistakes) + Number(g.tajweedTheory),
+      maxScore: 30,
+      date: new Date().toISOString().split('T')[0],
+      courseName: g.course.courseName,
+      teacherName: g.course.teacher?.userName || 'غير محدد'
+    })),
+    ...finalGrades.map(g => ({
+      id: g.id,
+      type: 'final' as const,
+      category: 'الاختبار النهائي',
+      score: Number(g.quranTest) + Number(g.tajweedTest),
+      maxScore: 60,
+      date: new Date().toISOString().split('T')[0],
+      courseName: g.course.courseName,
+      teacherName: g.course.teacher?.userName || 'غير محدد'
+    })),
+    ...behaviorGrades.map(g => ({
+      id: g.id,
+      type: 'behavior' as const,
+      category: 'السلوك',
+      score: Number(g.dailyScore),
+      maxScore: 1,
+      date: g.date.toISOString().split('T')[0],
+      courseName: g.course.courseName,
+      teacherName: g.course.teacher?.userName || 'غير محدد',
+      notes: g.notes || undefined
+    }))
+  ];
+
+  const summary: GradeSummary = {
+    totalDailyGrades: dailyGrades.reduce((sum, g) => sum + Number(g.memorization) + Number(g.review), 0),
+    totalWeeklyGrades: weeklyGrades.reduce((sum, g) => sum + Number(g.grade), 0),
+    totalMonthlyGrades: monthlyGrades.reduce((sum, g) => 
+      sum + Number(g.quranForgetfulness) + Number(g.quranMajorMistakes) + 
+      Number(g.quranMinorMistakes) + Number(g.tajweedTheory), 0),
+    finalExamGrade: finalGrades.reduce((sum, g) => sum + Number(g.quranTest) + Number(g.tajweedTest), 0),
+    behaviorGrade: behaviorGrades.reduce((sum, g) => sum + Number(g.dailyScore), 0),
+    totalPoints: 0,
+    finalPercentage: 0
+  };
+
+  summary.totalPoints = summary.totalDailyGrades + summary.totalWeeklyGrades + 
+                        summary.totalMonthlyGrades + summary.finalExamGrade + summary.behaviorGrade;
+  summary.finalPercentage = summary.totalPoints > 0 ? (summary.totalPoints / 600) * 100 : 0;
+
+  return { grades, summary };
+}
+
+export default async function MyGradesPage() {
+  const session = await auth();
+  if (!session || session.user.role !== 'STUDENT') {
+    redirect('/dashboard');
+  }
+
+  const { grades, summary } = await getStudentGrades(session.user.id);
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen flex bg-gray-50" dir="rtl">
       <Sidebar />
-      <div className="flex-1 lg:mr-72">
+      <div className="flex-1 flex flex-col">
         <AppHeader title="درجاتي" />
-        <div className="p-8">
+        <main className="flex-1 overflow-auto p-6">
           <BackButton />
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">درجاتي</h1>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">
+            درجاتي
+          </h1>
           <p className="text-gray-600 mb-6">عرض تفصيلي لجميع درجاتك ونقاطك التحفيزية</p>
 
-        {error && (
-          <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
-            {error} - يتم عرض بيانات تجريبية
-          </div>
-        )}
-
-        {/* ملخص الدرجات */}
-        {summary && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">ملخص الدرجات</h2>
-            <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{summary.totalDailyGrades}</div>
-                <div className="text-sm text-gray-600">درجات يومية</div>
-                <div className="text-xs text-gray-500">من 700</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{summary.totalWeeklyGrades}</div>
-                <div className="text-sm text-gray-600">درجات أسبوعية</div>
-                <div className="text-xs text-gray-500">من 50</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{summary.totalMonthlyGrades}</div>
-                <div className="text-sm text-gray-600">درجات شهرية</div>
-                <div className="text-xs text-gray-500">من 90</div>
-              </div>
-              <div className="text-center p-4 bg-red-50 rounded-lg">
-                <div className="text-2xl font-bold text-red-600">{summary.finalExamGrade}</div>
-                <div className="text-sm text-gray-600">الاختبار النهائي</div>
-                <div className="text-xs text-gray-500">من 60</div>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">{summary.behaviorGrade}</div>
-                <div className="text-sm text-gray-600">السلوك</div>
-                <div className="text-xs text-gray-500">من 70</div>
-              </div>
-              <div className="text-center p-4 bg-indigo-50 rounded-lg">
-                <div className="text-2xl font-bold text-indigo-600">{summary.finalPercentage}%</div>
-                <div className="text-sm text-gray-600">النسبة النهائية</div>
-                <div className="text-xs text-gray-500">{summary.totalPoints} من 970</div>
-              </div>
-            </div>
-            
-            {/* النقاط التحفيزية */}
-            <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
-              <h3 className="text-lg font-bold text-purple-800 mb-3">🌟 النقاط التحفيزية</h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="text-center p-3 bg-white rounded-lg shadow">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {summary.taskPoints || 0}
-                  </div>
-                  <div className="text-sm text-gray-600">نقاط المهام اليومية</div>
-                  <div className="text-xs text-gray-500">من 1050 نقطة</div>
-                  <div className="text-xs text-purple-600 mt-1">
-                    السماع + التكرار + السرد
-                  </div>
-                </div>
-                <div className="text-center p-3 bg-white rounded-lg shadow">
-                  <div className="text-2xl font-bold text-pink-600">
-                    {summary.behaviorPoints || 0}
-                  </div>
-                  <div className="text-sm text-gray-600">النقاط السلوكية</div>
-                  <div className="text-xs text-gray-500">من 1400 نقطة</div>
-                  <div className="text-xs text-pink-600 mt-1">
-                    الحضور + الحفظ + المشاركة + الالتزام
-                  </div>
-                </div>
-                <div className="text-center p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg shadow">
-                  <div className="text-3xl font-bold text-purple-700">
-                    {(summary.taskPoints || 0) + (summary.behaviorPoints || 0)}
-                  </div>
-                  <div className="text-sm font-semibold text-purple-800">إجمالي النقاط</div>
-                  <div className="text-xs text-purple-600">من 2450 نقطة</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* التبويبات */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="border-b border-gray-200 mb-6">
-            <nav className="-mb-px flex space-x-8">
-              {[
-                { key: 'summary', label: 'الملخص' },
-                { key: 'daily', label: 'الدرجات اليومية' },
-                { key: 'weekly', label: 'الدرجات الأسبوعية' },
-                { key: 'monthly', label: 'الدرجات الشهرية' },
-                { key: 'final', label: 'الاختبار النهائي' },
-                { key: 'behavior', label: 'السلوك والمواظبة' }
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key as any)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.key
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          {/* محتوى التبويبات */}
-          {activeTab === 'summary' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">آخر الدرجات المسجلة</h3>
-              <div className="grid gap-4">
-                {grades.slice(0, 5).map((grade) => (
-                  <div key={grade.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">{grade.category}</div>
-                      <div className="text-sm text-gray-600">{grade.courseName} - {new Date(grade.date).toLocaleDateString('ar-SA')}</div>
-                    </div>
-                    <div className={`text-lg font-bold ${getGradeColor(grade.score, grade.maxScore)}`}>
-                      {grade.score}/{grade.maxScore}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab !== 'summary' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">
-                {activeTab === 'daily' && 'الدرجات اليومية'}
-                {activeTab === 'weekly' && 'الدرجات الأسبوعية'}
-                {activeTab === 'monthly' && 'الدرجات الشهرية'}
-                {activeTab === 'final' && 'الاختبار النهائي'}
-                {activeTab === 'behavior' && 'السلوك والمواظبة'}
-              </h3>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التاريخ</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الفئة</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الدرجة</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحلقة</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المعلمة</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ملاحظات</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filterGradesByType(activeTab).length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                          لا توجد درجات مسجلة في هذا القسم
-                        </td>
-                      </tr>
-                    ) : filterGradesByType(activeTab).map((grade) => (
-                      <tr key={grade.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(grade.date).toLocaleDateString('ar-SA')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{grade.category}</td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${getGradeColor(grade.score, grade.maxScore)}`}>
-                          {grade.score}/{grade.maxScore}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{grade.courseName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{grade.teacherName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{grade.notes || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {filterGradesByType(activeTab).length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    لا توجد درجات مسجلة لهذه الفئة بعد
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* زر العودة */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded font-medium transition-colors"
-            >
-              العودة للوحة التحكم
-            </button>
-          </div>
-        </div>
-        </div>
+          <GradesTabs grades={grades} summary={summary} />
+        </main>
       </div>
     </div>
   );

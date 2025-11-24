@@ -1,15 +1,10 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
-import useSWR from 'swr';
-import { fetcher } from '@/lib/fetcher';
 
-// أنواع البيانات (محدثة - الجلسة 10.6)
 type AttendanceStatus = 'PRESENT' | 'EXCUSED' | 'ABSENT' | 'REVIEWED' | 'LEFT_EARLY';
 
 interface AttendanceRecord {
@@ -39,7 +34,6 @@ interface AttendanceStatistics {
   totalDays: number;
   presentDays: number;
   absentDays: number;
-  lateDays: number;
   excusedDays: number;
   leftEarlyDays: number;
   attendancePercentage: number;
@@ -51,7 +45,6 @@ interface StudentAttendanceResponse {
   statistics: AttendanceStatistics;
 }
 
-// خريطة الرموز والألوان (محدثة - الجلسة 10.6)
 const statusConfig = {
   PRESENT: {
     label: 'حاضرة',
@@ -80,116 +73,114 @@ const statusConfig = {
   },
 };
 
-export default function MyAttendancePage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [studentId, setStudentId] = useState<string | null>(null);
-
-  // التحقق من أن المستخدم طالبة
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (!session || session.user.userRole !== 'STUDENT') {
-      router.push('/dashboard');
+async function getStudentAttendance(userId: string): Promise<StudentAttendanceResponse | null> {
+  const student = await db.student.findFirst({
+    where: { userId },
+    select: {
+      id: true,
+      studentName: true,
+      studentNumber: true,
+      studentPhone: true
     }
-  }, [session, status, router]);
+  });
 
-  // جلب معرف الطالبة
-  useEffect(() => {
-    const fetchStudentId = async () => {
-      if (!session?.user.id) return;
-      
-      try {
-        const response = await fetch(`/api/students/by-user/${session.user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setStudentId(data.id);
+  if (!student) return null;
+
+  const attendanceRecords = await db.attendance.findMany({
+    where: { studentId: student.id },
+    include: {
+      course: {
+        include: {
+          program: {
+            select: {
+              id: true,
+              programName: true
+            }
+          }
         }
-      } catch (err) {
-        console.error('خطأ في جلب معرف الطالبة:', err);
       }
-    };
+    },
+    orderBy: { date: 'desc' }
+  });
 
-    fetchStudentId();
-  }, [session]);
+  const totalDays = attendanceRecords.length;
+  const presentDays = attendanceRecords.filter(r => r.status === 'PRESENT').length;
+  const absentDays = attendanceRecords.filter(r => r.status === 'ABSENT').length;
+  const excusedDays = attendanceRecords.filter(r => r.status === 'EXCUSED').length;
+  const leftEarlyDays = attendanceRecords.filter(r => r.status === 'LEFT_EARLY').length;
 
-  // ✅ استخدام SWR لجلب سجل الحضور
-  const { data: attendanceData, isLoading: loading, error } = useSWR<StudentAttendanceResponse>(
-    studentId ? `/api/attendance/student-record?studentId=${studentId}` : null,
-    fetcher,
-    {
-      revalidateOnFocus: true,
-      dedupingInterval: 3000,
+  return {
+    student,
+    attendanceRecords: attendanceRecords.map(r => ({
+      id: r.id,
+      date: r.date.toISOString().split('T')[0],
+      status: r.status as AttendanceStatus,
+      notes: r.notes || undefined,
+      course: {
+        id: r.course.id,
+        courseName: r.course.courseName,
+        level: r.course.level,
+        program: r.course.program
+      }
+    })),
+    statistics: {
+      totalDays,
+      presentDays,
+      absentDays,
+      excusedDays,
+      leftEarlyDays,
+      attendancePercentage: totalDays > 0 ? (presentDays / totalDays) * 100 : 0
     }
-  );
+  };
+}
 
-  if (status === 'loading' || !session) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar />
-        <div className="flex-1 lg:mr-72 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto mb-4"></div>
-            <p className="text-gray-600">جاري التحميل...</p>
-          </div>
-        </div>
-      </div>
-    );
+export default async function MyAttendancePage() {
+  const session = await auth();
+  if (!session || session.user.role !== 'STUDENT') {
+    redirect('/dashboard');
   }
 
-  if (loading) {
+  const attendanceData = await getStudentAttendance(session.user.id);
+
+  if (!attendanceData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="min-h-screen flex bg-gray-50" dir="rtl">
         <Sidebar />
-        <div className="flex-1 lg:mr-72">
+        <div className="flex-1 flex flex-col">
           <AppHeader title="حضوري" />
-          <div className="p-8">
+          <main className="flex-1 overflow-auto p-6">
             <BackButton />
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-purple mx-auto mb-4"></div>
-              <p className="text-gray-600">جاري تحميل البيانات...</p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+              لم يتم العثور على سجل طالبة
             </div>
-          </div>
+          </main>
         </div>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar />
-        <div className="flex-1 lg:mr-72">
-          <AppHeader title="حضوري" />
-          <div className="p-8">
-            <BackButton />
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-              حدث خطأ في تحميل البيانات
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const { student, attendanceRecords, statistics } = attendanceData;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen flex bg-gray-50" dir="rtl">
       <Sidebar />
-      <div className="flex-1 lg:mr-72">
+      <div className="flex-1 flex flex-col">
         <AppHeader title="حضوري" />
-        <div className="p-8">
+        <main className="flex-1 overflow-auto p-6">
           <BackButton />
-          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">سجل حضوري</h1>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent">
+            حضوري
+          </h1>
+          <p className="text-gray-600 mb-6">عرض سجل حضورك وإحصائياتك</p>
 
-      {attendanceData && (
-        <>
           {/* معلومات الطالبة */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">معلومات الطالبة</h2>
             <p className="text-gray-700">
-              <strong>الاسم:</strong> {attendanceData.student.studentName}
+              <strong>الاسم:</strong> {student.studentName}
             </p>
             <p className="text-gray-700">
-              <strong>الرقم التسلسلي:</strong> {attendanceData.student.studentNumber}
+              <strong>الرقم التسلسلي:</strong> {student.studentNumber}
             </p>
           </div>
 
@@ -199,25 +190,25 @@ export default function MyAttendancePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-gray-50 rounded">
                 <div className="text-2xl font-bold text-gray-800">
-                  {attendanceData.statistics.totalDays}
+                  {statistics.totalDays}
                 </div>
                 <div className="text-sm text-gray-600">إجمالي الأيام</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded">
                 <div className="text-2xl font-bold text-green-800">
-                  {attendanceData.statistics.presentDays}
+                  {statistics.presentDays}
                 </div>
                 <div className="text-sm text-green-600">أيام الحضور</div>
               </div>
               <div className="text-center p-4 bg-red-50 rounded">
                 <div className="text-2xl font-bold text-red-800">
-                  {attendanceData.statistics.absentDays}
+                  {statistics.absentDays}
                 </div>
                 <div className="text-sm text-red-600">أيام الغياب</div>
               </div>
               <div className="text-center p-4 bg-blue-50 rounded">
                 <div className="text-2xl font-bold text-blue-800">
-                  {attendanceData.statistics.attendancePercentage}%
+                  {statistics.attendancePercentage.toFixed(1)}%
                 </div>
                 <div className="text-sm text-blue-600">نسبة الحضور</div>
               </div>
@@ -227,7 +218,7 @@ export default function MyAttendancePage() {
           {/* سجل الحضور */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">سجل الحضور التفصيلي</h2>
-            {attendanceData.attendanceRecords.length === 0 ? (
+            {attendanceRecords.length === 0 ? (
               <p className="text-gray-500 text-center py-4">لا توجد سجلات حضور بعد</p>
             ) : (
               <div className="overflow-x-auto">
@@ -241,7 +232,7 @@ export default function MyAttendancePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {attendanceData.attendanceRecords.map((record) => {
+                    {attendanceRecords.map((record) => {
                       const date = new Date(record.date);
                       const hijriDate = date.toLocaleDateString('ar-SA-u-ca-islamic-umalqura');
                       const gregorianDate = date.toLocaleDateString('en-GB');
@@ -271,34 +262,22 @@ export default function MyAttendancePage() {
               </div>
             )}
           </div>
-        </>
-      )}
 
-      {/* معلومات أساسية عن الحضور */}
-      <div className="mt-6 bg-gray-50 p-6 rounded-lg">
-        <h3 className="text-lg font-medium mb-3">رموز الحضور:</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {Object.entries(statusConfig).map(([status, config]) => (
-            <div key={status} className="flex items-center gap-2">
-              <span className={`px-2 py-1 text-sm font-medium rounded border ${config.color}`}>
-                {config.symbol}
-              </span>
-              <span className="text-sm">{config.label}</span>
+          {/* معلومات أساسية عن الحضور */}
+          <div className="mt-6 bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-lg font-medium mb-3">رموز الحضور:</h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {Object.entries(statusConfig).map(([status, config]) => (
+                <div key={status} className="flex items-center gap-2">
+                  <span className={`px-2 py-1 text-sm font-medium rounded border ${config.color}`}>
+                    {config.symbol}
+                  </span>
+                  <span className="text-sm">{config.label}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* رابط العودة */}
-      <div className="mt-6 text-center">
-        <a
-          href="/dashboard"
-          className="text-blue-600 hover:text-blue-800 font-medium"
-        >
-          العودة للوحة التحكم
-        </a>
-      </div>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

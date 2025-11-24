@@ -6,6 +6,8 @@ import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
 import DailyGradesForm from '@/components/grades/DailyGradesForm';
+import CourseSelector from '@/components/grades/CourseSelector';
+import DateSelector from '@/components/grades/DateSelector';
 
 interface PageProps {
   searchParams: Promise<{ courseId?: string; date?: string }>;
@@ -69,38 +71,17 @@ async function DailyGradesContent({ searchParams }: PageProps) {
           </p>
 
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-lg font-semibold text-gray-700 mb-2">الحلقة:</label>
-              <form action="/daily-grades">
-                <input type="hidden" name="date" value={selectedDate} />
-                <select
-                  name="courseId"
-                  defaultValue={selectedCourseId}
-                  onChange={(e) => e.target.form?.requestSubmit()}
-                  className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent"
-                >
-                  {courses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {course.courseName} ({course._count?.enrollments || 0} طالبة)
-                    </option>
-                  ))}
-                </select>
-              </form>
-            </div>
-
-            <div>
-              <label className="block text-lg font-semibold text-gray-700 mb-2">تاريخ التقييم:</label>
-              <form action="/daily-grades">
-                <input type="hidden" name="courseId" value={selectedCourseId} />
-                <input
-                  type="date"
-                  name="date"
-                  defaultValue={selectedDate}
-                  onChange={(e) => e.target.form?.requestSubmit()}
-                  className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg"
-                />
-              </form>
-            </div>
+            <CourseSelector 
+              courses={courses}
+              selectedCourseId={selectedCourseId}
+              currentDate={selectedDate}
+              pageType="daily"
+            />
+            <DateSelector 
+              selectedDate={selectedDate}
+              courseId={selectedCourseId}
+              pageType="daily"
+            />
           </div>
 
           <DailyGradesForm

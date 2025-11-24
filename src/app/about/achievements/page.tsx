@@ -1,5 +1,3 @@
-'use client';
-
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';

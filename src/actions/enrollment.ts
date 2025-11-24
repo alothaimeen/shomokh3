@@ -81,3 +81,181 @@ export async function enrollInCourse(
     return { success: false, error: 'حدث خطأ أثناء إرسال الطلب' };
   }
 }
+
+export async function acceptRequest(requestId: string): Promise<ActionResponse> {
+  try {
+    const session = await requireAuth();
+    
+    if (session.user.role !== 'TEACHER') {
+      return { success: false, error: 'غير مصرح' };
+    }
+
+    const request = await db.enrollmentRequest.findUnique({
+      where: { id: requestId },
+      include: { 
+        course: { select: { teacherId: true, maxStudents: true, _count: { select: { enrollments: true } } } },
+        student: true
+      }
+    });
+
+    if (!request) {
+      return { success: false, error: 'الطلب غير موجود' };
+    }
+
+    if (request.course.teacherId !== session.user.id) {
+      return { success: false, error: 'غير مصرح - ليس من حلقاتك' };
+    }
+
+    if (request.status !== 'PENDING') {
+      return { success: false, error: 'الطلب تمت معالجته مسبقاً' };
+    }
+
+    if (request.course._count.enrollments >= request.course.maxStudents) {
+      return { success: false, error: 'الحلقة ممتلئة' };
+    }
+
+    await db.$transaction([
+      db.enrollmentRequest.update({
+        where: { id: requestId },
+        data: { status: 'ACCEPTED' }
+      }),
+      db.enrollment.create({
+        data: {
+          studentId: request.studentId,
+          courseId: request.courseId
+        }
+      })
+    ]);
+
+    revalidatePath('/teacher-requests');
+    revalidatePath('/enrolled-students');
+
+    return { success: true, data: undefined, message: 'تم قبول الطلب بنجاح' };
+
+  } catch (error) {
+    console.error('Error in acceptRequest:', error);
+    return { success: false, error: 'حدث خطأ أثناء معالجة الطلب' };
+  }
+}
+
+export async function rejectRequest(requestId: string): Promise<ActionResponse> {
+  try {
+    const session = await requireAuth();
+    
+    if (session.user.role !== 'TEACHER') {
+      return { success: false, error: 'غير مصرح' };
+    }
+
+    const request = await db.enrollmentRequest.findUnique({
+      where: { id: requestId },
+      include: { course: { select: { teacherId: true } } }
+    });
+
+    if (!request) {
+      return { success: false, error: 'الطلب غير موجود' };
+    }
+
+    if (request.course.teacherId !== session.user.id) {
+      return { success: false, error: 'غير مصرح - ليس من حلقاتك' };
+    }
+
+    if (request.status !== 'PENDING') {
+      return { success: false, error: 'الطلب تمت معالجته مسبقاً' };
+    }
+
+    await db.enrollmentRequest.update({
+      where: { id: requestId },
+      data: { status: 'REJECTED' }
+    });
+
+    revalidatePath('/teacher-requests');
+
+    return { success: true, data: undefined, message: 'تم رفض الطلب' };
+
+  } catch (error) {
+    console.error('Error in rejectRequest:', error);
+    return { success: false, error: 'حدث خطأ أثناء معالجة الطلب' };
+  }
+}
+
+export async function acceptMultipleRequests(requestIds: string[]): Promise<ActionResponse> {
+  try {
+    const session = await requireAuth();
+    
+    if (session.user.role !== 'TEACHER') {
+      return { success: false, error: 'غير مصرح' };
+    }
+
+    const requests = await db.enrollmentRequest.findMany({
+      where: { 
+        id: { in: requestIds },
+        status: 'PENDING',
+        course: { teacherId: session.user.id }
+      },
+      include: { 
+        course: { select: { maxStudents: true, _count: { select: { enrollments: true } } } }
+      }
+    });
+
+    const validRequests = requests.filter(
+      r => r.course._count.enrollments < r.course.maxStudents
+    );
+
+    if (validRequests.length === 0) {
+      return { success: false, error: 'لا توجد طلبات صالحة للقبول' };
+    }
+
+    await db.$transaction([
+      ...validRequests.map(r => 
+        db.enrollmentRequest.update({
+          where: { id: r.id },
+          data: { status: 'ACCEPTED' }
+        })
+      ),
+      ...validRequests.map(r =>
+        db.enrollment.create({
+          data: {
+            studentId: r.studentId,
+            courseId: r.courseId
+          }
+        })
+      )
+    ]);
+
+    revalidatePath('/teacher-requests');
+    revalidatePath('/enrolled-students');
+
+    return { success: true, data: undefined, message: `تم قبول ${validRequests.length} طلب` };
+
+  } catch (error) {
+    console.error('Error in acceptMultipleRequests:', error);
+    return { success: false, error: 'حدث خطأ أثناء معالجة الطلبات' };
+  }
+}
+
+export async function rejectMultipleRequests(requestIds: string[]): Promise<ActionResponse> {
+  try {
+    const session = await requireAuth();
+    
+    if (session.user.role !== 'TEACHER') {
+      return { success: false, error: 'غير مصرح' };
+    }
+
+    const result = await db.enrollmentRequest.updateMany({
+      where: { 
+        id: { in: requestIds },
+        status: 'PENDING',
+        course: { teacherId: session.user.id }
+      },
+      data: { status: 'REJECTED' }
+    });
+
+    revalidatePath('/teacher-requests');
+
+    return { success: true, data: undefined, message: `تم رفض ${result.count} طلب` };
+
+  } catch (error) {
+    console.error('Error in rejectMultipleRequests:', error);
+    return { success: false, error: 'حدث خطأ أثناء معالجة الطلبات' };
+  }
+}

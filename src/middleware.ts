@@ -8,7 +8,7 @@ export default withAuth({
       if (path === '/' || path === '/login') return true;
       if (!token) return false;
       
-      if (path.startsWith('/teacher') || path.startsWith('/attendance') || path.startsWith('/enrolled-students') || path.startsWith('/teacher-requests')) {
+      if (path.startsWith('/teacher') || path.startsWith('/attendance') || path.startsWith('/enrolled-students')) {
         return token.role === 'TEACHER' || token.role === 'ADMIN';
       }
       
@@ -16,8 +16,12 @@ export default withAuth({
         return token.role === 'STUDENT';
       }
       
-      if (path.startsWith('/programs') || path.startsWith('/users')) {
+      if (path.startsWith('/programs') || path.startsWith('/users') || path.startsWith('/students') || path.startsWith('/teacher-requests') || path.startsWith('/academic-reports')) {
         return token.role === 'ADMIN';
+      }
+      
+      if (path.startsWith('/daily-grades') || path.startsWith('/weekly-grades') || path.startsWith('/monthly-grades') || path.startsWith('/behavior-points') || path.startsWith('/behavior-grades') || path.startsWith('/final-exam') || path.startsWith('/unified-assessment')) {
+        return token.role === 'TEACHER' || token.role === 'ADMIN';
       }
       
       return true;

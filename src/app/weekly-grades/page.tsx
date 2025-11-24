@@ -6,6 +6,8 @@ import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
 import WeeklyGradesForm from '@/components/grades/WeeklyGradesForm';
+import CourseSelector from '@/components/grades/CourseSelector';
+import WeekSelector from '@/components/grades/WeekSelector';
 
 interface PageProps {
   searchParams: Promise<{ courseId?: string; week?: string }>;
@@ -47,43 +49,16 @@ async function WeeklyGradesContent({ searchParams }: PageProps) {
 
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-lg font-semibold text-gray-700 mb-2">الحلقة:</label>
-                <form action="/weekly-grades">
-                  <input type="hidden" name="week" value={selectedWeek} />
-                  <select
-                    name="courseId"
-                    defaultValue={selectedCourseId}
-                    onChange={(e) => e.target.form?.requestSubmit()}
-                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg"
-                  >
-                    {courses.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.courseName} ({course._count?.enrollments || 0} طالبة)
-                      </option>
-                    ))}
-                  </select>
-                </form>
-              </div>
-
-              <div>
-                <label className="block text-lg font-semibold text-gray-700 mb-2">الأسبوع:</label>
-                <form action="/weekly-grades">
-                  <input type="hidden" name="courseId" value={selectedCourseId} />
-                  <select
-                    name="week"
-                    defaultValue={selectedWeek}
-                    onChange={(e) => e.target.form?.requestSubmit()}
-                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 text-lg"
-                  >
-                    {[...Array(10)].map((_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        الأسبوع {i + 1}
-                      </option>
-                    ))}
-                  </select>
-                </form>
-              </div>
+              <CourseSelector 
+                courses={courses}
+                selectedCourseId={selectedCourseId}
+                currentWeek={selectedWeek}
+                pageType="weekly"
+              />
+              <WeekSelector 
+                selectedWeek={selectedWeek}
+                courseId={selectedCourseId}
+              />
             </div>
 
             {courseName && (

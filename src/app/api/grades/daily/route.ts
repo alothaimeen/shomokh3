@@ -47,8 +47,6 @@ export async function GET(request: NextRequest) {
       // إذا محدد studentId معين (للمعلمة/المدير)
       where.studentId = studentId;
     }
-
-    // فلترة التاريخ
     if (startDate || endDate) {
       where.date = {};
       if (startDate) {

@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import Sidebar from '@/components/shared/Sidebar';
 import AppHeader from '@/components/shared/AppHeader';
