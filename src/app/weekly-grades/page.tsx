@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getTeacherCourses, getWeeklyGrades } from '@/lib/data/queries';
@@ -13,7 +12,7 @@ interface PageProps {
   searchParams: Promise<{ courseId?: string; week?: string }>;
 }
 
-async function WeeklyGradesContent({ searchParams }: PageProps) {
+export default async function WeeklyGradesPage({ searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user || !['ADMIN', 'TEACHER'].includes(session.user.role)) {
     redirect('/login');
@@ -86,19 +85,5 @@ async function WeeklyGradesContent({ searchParams }: PageProps) {
         </div>
       </div>
     </div>
-  );
-}
-
-export default async function WeeklyGradesPage(props: PageProps) {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-xl">جاري التحميل...</div>
-        </div>
-      }
-    >
-      <WeeklyGradesContent searchParams={props.searchParams} />
-    </Suspense>
   );
 }

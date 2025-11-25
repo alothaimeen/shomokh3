@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getTeacherCourses, getMonthlyGrades } from '@/lib/data/queries';
@@ -13,7 +12,7 @@ interface PageProps {
   searchParams: Promise<{ courseId?: string; month?: string }>;
 }
 
-async function MonthlyGradesContent({ searchParams }: PageProps) {
+export default async function MonthlyGradesPage({ searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user || !['ADMIN', 'TEACHER'].includes(session.user.role)) {
     redirect('/login');
@@ -86,19 +85,5 @@ async function MonthlyGradesContent({ searchParams }: PageProps) {
         </div>
       </div>
     </div>
-  );
-}
-
-export default async function MonthlyGradesPage(props: PageProps) {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-xl">جاري التحميل...</div>
-        </div>
-      }
-    >
-      <MonthlyGradesContent searchParams={props.searchParams} />
-    </Suspense>
   );
 }

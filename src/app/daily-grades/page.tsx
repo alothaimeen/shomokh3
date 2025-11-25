@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getTeacherCourses, getCourseEnrollments, getDailyGrades } from '@/lib/data/queries';
@@ -13,7 +12,7 @@ interface PageProps {
   searchParams: Promise<{ courseId?: string; date?: string }>;
 }
 
-async function DailyGradesContent({ searchParams }: PageProps) {
+export default async function DailyGradesPage({ searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user || !['ADMIN', 'TEACHER'].includes(session.user.role)) {
     redirect('/login');
@@ -93,19 +92,5 @@ async function DailyGradesContent({ searchParams }: PageProps) {
         </div>
       </div>
     </div>
-  );
-}
-
-export default async function DailyGradesPage(props: PageProps) {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-xl">جاري التحميل...</div>
-        </div>
-      }
-    >
-      <DailyGradesContent searchParams={props.searchParams} />
-    </Suspense>
   );
 }

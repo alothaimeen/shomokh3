@@ -19,7 +19,15 @@ export default async function StudentsPage({
 }) {
   const session = await auth();
 
+  console.log('🔍 Students Page - Session:', {
+    hasSession: !!session,
+    userId: session?.user?.id,
+    userRole: session?.user?.role,
+    userName: session?.user?.name
+  });
+
   if (!session?.user || session.user.role !== 'ADMIN') {
+    console.log('❌ Students Page - Access Denied, redirecting to dashboard');
     redirect('/dashboard');
   }
 
