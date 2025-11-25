@@ -1,8 +1,9 @@
 # 🤖 AI Context - منصة شموخ v3 (الإصدار 2.0)
 
-**آخر تحديث:** 24 نوفمبر 2025  
-**الحالة:** الجلسة 19 مكتملة - Server Components Migration  
-**البروتوكول:** Code Gear Protocol (ترس الشفرة)
+**آخر تحديث:** 25 نوفمبر 2025  
+**الحالة:** الجلسة 19 مكتملة - Navigation Performance (5 مراحل)  
+**البروتوكول:** Code Gear Protocol (ترس الشفرة)  
+**Branch:** feat/route-groups-phase1
 
 ---
 
@@ -11,7 +12,7 @@
 **Stack:** Next.js 15, React 19, TypeScript, Prisma, Supabase PostgreSQL  
 **Roles:** ADMIN, TEACHER, STUDENT  
 **Model:** Multi-Tenant (قاعدة بيانات منفصلة لكل جمعية)  
-**Progress:** 19/36 (~55%)
+**Progress:** 18 + 19/36 (~53%)
 
 ---
 
@@ -104,9 +105,9 @@ User (teachers) ──< Course >── Program
 
 ---
 
-## 🎯 الأنماط الأساسية (Session 19)
+## 🎯 الأنماط الأساسية (Sessions 18-19)
 
-### Server Action Pattern
+### 1. Server Action Pattern
 ```typescript
 'use server';
 import { auth } from '@/lib/auth';
@@ -131,7 +132,7 @@ export async function saveAction(formData: FormData) {
 }
 ```
 
-### Server Component Pattern
+### 2. Server Component Pattern (Basic)
 ```typescript
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
@@ -148,7 +149,78 @@ export default async function Page({ searchParams }: { searchParams: Promise<{..
 }
 ```
 
-### Client Form with useTransition
+### 3. Server Component with Suspense (Session 18.3 - Advanced)
+```typescript
+import { Suspense } from 'react';
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import DataAsync from '@/components/DataAsync';
+import DataSkeleton from '@/components/DataSkeleton';
+
+export default async function Page({ searchParams }: { searchParams: Promise<{...}> }) {
+  const session = await auth();
+  if (!session?.user) redirect('/login');
+  
+  const params = await searchParams;
+  
+  return (
+    <>
+      <Header title="عنوان الصفحة" />
+      <div className="p-8">
+        {/* Progressive Loading مع Suspense */}
+        <Suspense fallback={<DataSkeleton />}>
+          <DataAsync params={params} />
+        </Suspense>
+      </div>
+    </>
+  );
+}
+```
+
+### 4. Async Server Component Pattern
+```typescript
+import { db } from '@/lib/db';
+
+interface Props {
+  params: { id: string };
+}
+
+export default async function DataAsync({ params }: Props) {
+  // جلب البيانات (async operation)
+  const data = await db.model.findMany({
+    where: { id: params.id },
+    include: { relation: true }
+  });
+  
+  return (
+    <div>
+      {/* عرض البيانات */}
+      {data.map(item => <Item key={item.id} data={item} />)}
+    </div>
+  );
+}
+```
+
+### 5. Skeleton Component Pattern
+```typescript
+export default function DataSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="flex gap-4">
+          <div className="h-16 w-16 bg-gray-200 rounded animate-pulse"></div>
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-2/3 bg-gray-100 rounded animate-pulse"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### 6. Client Form with useTransition
 ```typescript
 'use client';
 import { useState, useTransition } from 'react';
@@ -172,7 +244,7 @@ export default function Form({ data }) {
 }
 ```
 
-### Data Query with React.cache
+### 7. Data Query with React.cache
 ```typescript
 import { cache } from 'react';
 import { db } from '@/lib/db';
@@ -220,29 +292,42 @@ export const getData = cache(async (id: string) => {
 ## 📊 ملفات القراءة الإلزامية
 
 1. **AI_CONTEXT2.md** (هذا الملف) - القواعد التقنية
-2. **COMPREHENSIVE_UPGRADE_PLAN4.md** - خطة الجلسة 18
+2. **PROJECT_TIMELINE.md** - تاريخ الجلسات والإنجازات
 3. **بروتوكول ترس الشفرة.md** - قواعد التنفيذ
 
 **مرجعية:**
 - `schema.prisma` - مصدر الحقيقة
 - `src/types/index.ts` - الأنواع
 - `src/lib/data/queries.ts` - الاستعلامات
+- `docs/navigation-improvement/` - معايير الأداء والتنقل
 - `assurance_report.md` - الأمان
 
 ---
 
-## 🚀 الجلسة 18: الترقية
+## 🚀 الجلسات 18-19: الترقية الكاملة
 
-**3 جلسات فرعية:**
+**الجلسة 18 (23-24 نوفمبر - React 19 + Server Components):**
 1. **18.0:** التأسيس + الأمان (ترقية + إزالة testUsers + auth-helpers)
 2. **18.1:** Server Actions للطلاب (enrollment + types + queries)
-3. **18.2:** Optimistic UI للمعلمة (attendance + grades)
+3. **18.2:** Server Components - Admin Pages (users, students, teacher-requests)
+4. **18.3:** Server Components - Grades Pages (daily, weekly, monthly, behavior)
+5. **18.4:** Server Components - Student & Attendance (my-grades, attendance)
+- **النتيجة:** 16 صفحة محولة + 10 Server Actions جديدة
 
-**المرجع:** `COMPREHENSIVE_UPGRADE_PLAN4.md` للتفاصيل الكاملة
+**الجلسة 19 (25 نوفمبر - Navigation Performance):**
+1. **19.1:** Route Groups - Sidebar ثابت (تحسين 80%)
+2. **19.2:** Loading State - loading.tsx فوري
+3. **19.3:** Error Boundary - error.tsx للأخطاء
+4. **19.4:** Sidebar Transition - useTransition للاستجابة الفورية
+5. **19.5:** Suspense - تحميل تدريجي مع Skeleton UI
+
+**المراجع:**
+- `PROJECT_TIMELINE.md` - تاريخ كامل للجلسات
+- `docs/navigation-improvement/` - الجلسة 19 (5 مراحل)
 
 ---
 
-## 💡 دروس v1/v2/17.5
+## 💡 دروس مستفادة
 
 - userId/teacherId > userName/email
 - Response format consistency مهم
@@ -250,6 +335,44 @@ export const getData = cache(async (id: string) => {
 - Server Actions > Client Fetch (أمان + أداء)
 - Ownership Check = إلزامي
 - لا Schema changes في هذه المرحلة
+- Route Groups للصفحات المشتركة (Sidebar واحد)
+- Suspense للصفحات ذات البيانات الكثيرة (progressive loading)
+- useTransition للاستجابة الفورية (< 16ms)
+
+## 🎨 معايير الصفحات الجديدة (Session 19+)
+
+**لكل صفحة محمية جديدة:**
+1. ✅ تكون داخل `(dashboard)` route group
+2. ✅ استخدم Server Component (async function)
+3. ✅ إذا كانت البيانات > 100 سجل → استخدم Suspense
+4. ✅ أنشئ Async Component + Skeleton Component
+5. ✅ لا تضع Sidebar في الصفحة (موجود في Layout)
+
+**مثال التطبيق:**
+```typescript
+// ✅ صفحة جديدة صحيحة
+import { Suspense } from 'react';
+import DataAsync from '@/components/DataAsync';
+import DataSkeleton from '@/components/DataSkeleton';
+
+export default async function NewPage({ searchParams }) {
+  const session = await auth();
+  if (!session?.user) redirect('/login');
+  
+  const params = await searchParams;
+  
+  return (
+    <>
+      <AppHeader title="العنوان" />
+      <div className="p-8">
+        <Suspense fallback={<DataSkeleton />}>
+          <DataAsync params={params} />
+        </Suspense>
+      </div>
+    </>
+  );
+}
+```
 
 ---
 

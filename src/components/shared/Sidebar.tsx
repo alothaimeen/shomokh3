@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useState, useTransition } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
   LayoutDashboard,
@@ -20,7 +19,8 @@ import {
   BarChart3,
   ClipboardCheck,
   X,
-  Menu
+  Menu,
+  Loader2
 } from 'lucide-react';
 
 interface NavItem {
@@ -162,6 +162,11 @@ export default function Sidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const pathname = usePathname();
   const { data: session } = useSession();
+  
+  // useTransition for instant visual feedback
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
 
   const userRole = session?.user?.role as 'ADMIN' | 'TEACHER' | 'STUDENT';
   
@@ -170,6 +175,18 @@ export default function Sidebar() {
   );
 
   const isActive = (href: string) => pathname === href;
+  const isPendingPath = (href: string) => pendingPath === href && isPending;
+
+  const handleNavigation = (href: string) => {
+    if (pathname === href) return; // Don't navigate if already on the page
+    
+    setPendingPath(href);
+    setIsMobileOpen(false); // Close mobile menu
+    
+    startTransition(() => {
+      router.push(href);
+    });
+  };
 
   return (
     <>
@@ -224,31 +241,44 @@ export default function Sidebar() {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1 px-3">
-            {filteredNavItems.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  onClick={() => setIsMobileOpen(false)}
-                  className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-lg
-                    transition-all duration-200
-                    ${isActive(item.href)
-                      ? 'bg-gradient-to-r from-primary-purple to-primary-blue text-white shadow-md'
-                      : 'text-gray-700 hover:bg-gray-100'
-                    }
-                    ${isCollapsed ? 'justify-center' : ''}
-                  `}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <span className={isActive(item.href) ? 'text-white' : 'text-gray-600'}>
-                    {item.icon}
-                  </span>
-                  {!isCollapsed && (
-                    <span className="font-medium">{item.label}</span>
-                  )}
-                </Link>
-              </li>
-            ))}
+            {filteredNavItems.map((item) => {
+              const active = isActive(item.href);
+              const pending = isPendingPath(item.href);
+              
+              return (
+                <li key={item.href}>
+                  <button
+                    onClick={() => handleNavigation(item.href)}
+                    disabled={active}
+                    className={`
+                      w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                      transition-all duration-200
+                      ${active
+                        ? 'bg-gradient-to-r from-primary-purple to-primary-blue text-white shadow-md cursor-default'
+                        : pending
+                        ? 'bg-gradient-to-r from-primary-purple to-primary-blue text-white opacity-75'
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }
+                      ${isCollapsed ? 'justify-center' : ''}
+                      ${active ? '' : 'cursor-pointer'}
+                    `}
+                    title={isCollapsed ? item.label : undefined}
+                  >
+                    <span className={active || pending ? 'text-white' : 'text-gray-600'}>
+                      {item.icon}
+                    </span>
+                    {!isCollapsed && (
+                      <span className="font-medium flex items-center gap-2 flex-1">
+                        {item.label}
+                        {pending && (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        )}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 

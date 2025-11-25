@@ -8,8 +8,8 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { AssessmentSkeleton } from '@/components/assessment/AssessmentSkeleton';
 import AppHeader from '@/components/shared/AppHeader';
 import BackButton from '@/components/shared/BackButton';
-import { useTeacherCourses } from '@/hooks/useCourses';
-import { useMyEnrollments } from '@/hooks/useEnrollments';
+import CourseSelectorAsync from '@/components/unified-assessment/CourseSelectorAsync';
+import HeaderSkeleton from '@/components/unified-assessment/HeaderSkeleton';
 
 // Lazy load all tab components
 const DailyGradesTab = lazy(() => import('@/components/assessment/DailyGradesTab').then(m => ({ default: m.DailyGradesTab })));
@@ -28,23 +28,6 @@ function UnifiedAssessmentContent() {
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [selectedMonth, setSelectedMonth] = useState(1);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-  // ✅ استخدام SWR hooks
-  const isStudent = session?.user?.role === 'STUDENT';
-  const { courses: teacherCourses, isLoading: loadingTeacherCourses } = useTeacherCourses(
-    !isStudent
-  );
-  const { enrollments, isLoading: loadingEnrollments } = useMyEnrollments();
-
-  const courses = isStudent
-    ? enrollments.map((e: any) => ({
-      id: e.id,
-      courseName: e.courseName,
-      programName: e.programName
-    }))
-    : teacherCourses;
-
-  const loading = isStudent ? loadingEnrollments : loadingTeacherCourses;
 
   // تحذير عند المغادرة بدون حفظ
   useUnsavedChanges(hasUnsavedChanges);
@@ -107,7 +90,7 @@ function UnifiedAssessmentContent() {
     updateURL({ courseId });
   };
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -120,7 +103,6 @@ function UnifiedAssessmentContent() {
 
   if (!session) return null;
 
-  const selectedCourseData = courses.find(c => c.id === selectedCourse);
   const isTeacherOrAdmin = session.user.role === 'ADMIN' || session.user.role === 'TEACHER';
 
   return (
@@ -128,7 +110,7 @@ function UnifiedAssessmentContent() {
       <AppHeader title="واجهة الدرجات الموحدة" />
         <div className="p-8">
           <BackButton />
-          {/* Header */}
+          {/* Header - يظهر فوراً */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-purple to-primary-blue bg-clip-text text-transparent mb-2">
               الصفحة الموحدة للتقييم
@@ -141,34 +123,13 @@ function UnifiedAssessmentContent() {
             </p>
           </div>
 
-          {/* Course Selection */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                اختر الحلقة:
-              </label>
-              <select
-                value={selectedCourse}
-                onChange={(e) => handleCourseChange(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="">-- اختر الحلقة --</option>
-                {courses.map((course: any) => (
-                  <option key={course.id} value={course.id}>
-                    {course.courseName} {course.programName ? `(${course.programName})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {selectedCourseData && (
-              <div className="mt-4 p-4 bg-indigo-50 rounded-md">
-                <p className="text-sm text-indigo-700">
-                  <strong>الحلقة المختارة:</strong> {selectedCourseData.courseName}
-                </p>
-              </div>
-            )}
-          </div>
+          {/* Course Selection مع Suspense */}
+          <Suspense fallback={<HeaderSkeleton />}>
+            <CourseSelectorAsync 
+              selectedCourse={selectedCourse}
+              onCourseChange={handleCourseChange}
+            />
+          </Suspense>
 
           {selectedCourse ? (
             <>
