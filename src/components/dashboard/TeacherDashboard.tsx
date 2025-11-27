@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { CalendarCheck, Users, ClipboardCheck, FileText, GraduationCap, Star, Award, BarChart3, Download } from 'lucide-react';
+﻿import Link from 'next/link';
+import { CalendarCheck, Users, ClipboardCheck, FileText, GraduationCap, Award, BarChart3, Trophy, TrendingUp } from 'lucide-react';
 
 interface TeacherCourse {
   id: string;
@@ -22,7 +22,8 @@ export default function TeacherDashboard({ courses }: TeacherDashboardProps) {
     { title: 'نقاط السلوك', href: '/behavior-points', icon: <Award size={20} />, description: 'تسجيل النقاط السلوكية اليومية' },
     { title: 'الطالبات المسجلات', href: '/enrolled-students', icon: <Users size={20} />, description: 'عرض قائمة الطالبات' },
     { title: 'التقارير الأكاديمية', href: '/academic-reports', icon: <BarChart3 size={20} />, description: 'عرض تقارير الدرجات' },
-    { title: 'التقارير التفصيلية', href: '/detailed-reports', icon: <Download size={20} />, description: 'تصدير تقارير الحضور والنقاط' }
+    { title: 'تقارير الحضور', href: '/attendance-report', icon: <TrendingUp size={20} />, description: 'تقارير الحضور الشاملة' },
+    { title: 'النقاط التحفيزية', href: '/behavior-points-report', icon: <Trophy size={20} />, description: 'تقارير النقاط التحفيزية' }
   ];
 
   return (

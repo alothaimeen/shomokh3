@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { Users, BookOpen, GraduationCap, UserCheck, BarChart3, FileText, TrendingUp } from 'lucide-react';
+﻿import Link from 'next/link';
+import { Users, BookOpen, GraduationCap, UserCheck, BarChart3, Trophy, TrendingUp } from 'lucide-react';
 
 interface AdminDashboardProps {
   stats: {
@@ -22,7 +22,7 @@ export default function AdminDashboard({ stats }: AdminDashboardProps) {
     { title: 'إدارة المستخدمين', href: '/users', icon: <Users size={20} />, description: 'إضافة وتعديل حسابات المستخدمين' },
     { title: 'إدارة البرامج', href: '/programs', icon: <BookOpen size={20} />, description: 'إنشاء وإدارة البرامج والحلقات' },
     { title: 'التقارير الأكاديمية', href: '/academic-reports', icon: <BarChart3 size={20} />, description: 'عرض التقارير والإحصائيات' },
-    { title: 'التقارير التفصيلية', href: '/detailed-reports', icon: <FileText size={20} />, description: 'تقارير الحضور والنقاط (CSV Export)' },
+    { title: 'النقاط التحفيزية', href: '/behavior-points-report', icon: <Trophy size={20} />, description: 'تقارير النقاط التحفيزية للطالبات' },
     { title: 'طلبات المعلمات', href: '/teacher-requests', icon: <GraduationCap size={20} />, description: 'مراجعة طلبات الانضمام' },
     { title: 'تقارير الحضور', href: '/attendance-report', icon: <TrendingUp size={20} />, description: 'تقارير الحضور الشاملة' }
   ];
