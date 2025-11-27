@@ -15,10 +15,10 @@ interface DailyTask {
   notes?: string | null;
 }
 
-async function getStudentEnrollments(userId: string) {
+async function getStudentEnrollments(studentId: string) {
   return await db.enrollment.findMany({
     where: {
-      studentId: userId
+      studentId: studentId
     },
     include: {
       course: {
@@ -57,7 +57,26 @@ export default async function DailyTasksPage({
     redirect('/dashboard');
   }
 
-  const enrollments = await getStudentEnrollments(session.user.id);
+  // Fetch student record first to get the correct studentId
+  const student = await db.student.findUnique({
+    where: { userId: session.user.id }
+  });
+
+  if (!student) {
+    return (
+      <>
+        <AppHeader title="مهامي اليومية" />
+        <div className="p-8 max-w-4xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <p className="text-red-800 mb-4">عذراً، لم يتم العثور على سجل الطالبة المرتبط بهذا الحساب.</p>
+            <p className="text-sm text-red-600">يرجى التواصل مع الإدارة لحل المشكلة.</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const enrollments = await getStudentEnrollments(student.id);
 
   if (enrollments.length === 0) {
     return (
@@ -81,7 +100,7 @@ export default async function DailyTasksPage({
   const selectedCourseId = params.courseId || enrollments[0].id;
   const selectedDate = params.date || new Date().toISOString().split('T')[0];
 
-  const existingTask = await getDailyTask(selectedCourseId, selectedDate, session.user.id);
+  const existingTask = await getDailyTask(selectedCourseId, selectedDate, student.id);
 
   const formattedEnrollments = enrollments.map(e => ({
     id: e.id,

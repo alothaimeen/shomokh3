@@ -68,6 +68,18 @@ const navItems: NavItem[] = [
     icon: <BarChart3 size={20} />,
     roles: ['ADMIN']
   },
+  {
+    href: '/detailed-reports',
+    label: 'التقارير التفصيلية',
+    icon: <FileText size={20} />,
+    roles: ['ADMIN', 'TEACHER']
+  },
+  {
+    href: '/attendance-report',
+    label: 'تقارير الحضور',
+    icon: <ClipboardList size={20} />,
+    roles: ['ADMIN', 'TEACHER']
+  },
   // المعلمة
   {
     href: '/attendance',

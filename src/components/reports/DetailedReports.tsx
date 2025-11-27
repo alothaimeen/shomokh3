@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { getAttendanceReport, getBehaviorPointsReport } from '@/actions/reports';
+import { getAttendanceReportData, getBehaviorPointsReportData } from '@/actions/reports';
 import { Download, FileSpreadsheet, Award, Calendar } from 'lucide-react';
 
 interface Course {
@@ -35,7 +35,7 @@ export default function DetailedReports({ courses }: Props) {
 
     startTransition(async () => {
       if (type === 'attendance') {
-        const result = await getAttendanceReport(selectedCourse);
+        const result = await getAttendanceReportData({ courseId: selectedCourse });
         if (result.success && result.data) {
           setReportData(result.data);
           setMessage(`تم جلب ${result.data.length} سجل حضور`);
@@ -43,7 +43,7 @@ export default function DetailedReports({ courses }: Props) {
           setMessage(result.error || 'حدث خطأ');
         }
       } else if (type === 'behavior') {
-        const result = await getBehaviorPointsReport(selectedCourse);
+        const result = await getBehaviorPointsReportData({ courseId: selectedCourse });
         if (result.success && result.data) {
           setReportData(result.data);
           setMessage(`تم جلب بيانات ${result.data.length} طالبة`);
@@ -70,9 +70,9 @@ export default function DetailedReports({ courses }: Props) {
       });
       filename = 'attendance_report.csv';
     } else if (reportType === 'behavior') {
-      csv = 'رقم الطالبة,اسم الطالبة,الحلقة,إجمالي النقاط,نقاط إيجابية,نقاط سلبية,عدد السجلات\n';
+      csv = 'رقم الطالبة,اسم الطالبة,الحلقة,إجمالي النقاط,حضور مبكر,إتقان الحفظ,مشاركة فعالة,التزام بالوقت,عدد السجلات,المعدل\n';
       reportData.forEach((row: any) => {
-        csv += `${row.studentNumber},${row.studentName},${row.courseName},${row.totalPoints},${row.positivePoints},${row.negativePoints},${row.recordsCount}\n`;
+        csv += `${row.studentNumber},${row.studentName},${row.courseName},${row.totalPoints},${row.earlyAttendancePoints},${row.perfectMemorizationPoints},${row.activeParticipationPoints},${row.timeCommitmentPoints},${row.recordsCount},${row.averagePerSession}\n`;
       });
       filename = 'behavior_points_report.csv';
     }
@@ -213,25 +213,37 @@ export default function DetailedReports({ courses }: Props) {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">رقم الطالبة</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">الاسم</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">إجمالي النقاط</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">نقاط إيجابية</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">نقاط سلبية</th>
+                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">رقم الطالبة</th>
+                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">الاسم</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">الإجمالي</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">حضور مبكر</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">إتقان الحفظ</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">مشاركة فعالة</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">التزام بالوقت</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">عدد السجلات</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">المعدل</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {reportData.map((row: any, idx: number) => (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-900">{row.studentNumber}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{row.studentName}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`text-lg font-bold ${row.totalPoints >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <td className="px-3 py-3 text-sm text-gray-900">{row.studentNumber}</td>
+                      <td className="px-3 py-3 text-sm font-medium text-gray-900">{row.studentName}</td>
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-lg font-bold text-green-600">
                           {row.totalPoints}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center text-green-600 font-semibold">+{row.positivePoints}</td>
-                      <td className="px-4 py-3 text-center text-red-600 font-semibold">-{row.negativePoints}</td>
+                      <td className="px-3 py-3 text-center text-blue-600 font-semibold">{row.earlyAttendancePoints}</td>
+                      <td className="px-3 py-3 text-center text-purple-600 font-semibold">{row.perfectMemorizationPoints}</td>
+                      <td className="px-3 py-3 text-center text-orange-600 font-semibold">{row.activeParticipationPoints}</td>
+                      <td className="px-3 py-3 text-center text-teal-600 font-semibold">{row.timeCommitmentPoints}</td>
+                      <td className="px-3 py-3 text-center text-gray-600">{row.recordsCount}</td>
+                      <td className="px-3 py-3 text-center">
+                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm font-semibold">
+                          {row.averagePerSession}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -258,3 +270,5 @@ function getStatusColor(status: string): string {
   };
   return colors[status] || 'bg-gray-100 text-gray-800';
 }
+
+

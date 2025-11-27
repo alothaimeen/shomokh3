@@ -1,0 +1,2270 @@
+[
+  {
+    "name": "تصحيح التلاوة",
+    "description": "برنامج تصحيح التلاوة",
+    "circles": [
+      {
+        "name": "تصحيح جزء عمَّ",
+        "teacher": {
+          "name": "ريدى اليوسف",
+          "email": "rida@shamokh.edu",
+          "password": "password123"
+        },
+        "students": [
+          {
+            "name": "سارة العتيبي",
+            "email": "s1000@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1000
+          },
+          {
+            "name": "نورة العتيبي",
+            "email": "s1001@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1001
+          },
+          {
+            "name": "فاطمة العتيبي",
+            "email": "s1002@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1002
+          },
+          {
+            "name": "عائشة العتيبي",
+            "email": "s1003@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1003
+          },
+          {
+            "name": "ريم العتيبي",
+            "email": "s1004@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1004
+          },
+          {
+            "name": "منى العتيبي",
+            "email": "s1005@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1005
+          },
+          {
+            "name": "هند العتيبي",
+            "email": "s1006@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1006
+          },
+          {
+            "name": "أمل العتيبي",
+            "email": "s1007@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1007
+          },
+          {
+            "name": "زينب العتيبي",
+            "email": "s1008@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1008
+          },
+          {
+            "name": "خديجة العتيبي",
+            "email": "s1009@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1009
+          },
+          {
+            "name": "مريم العتيبي",
+            "email": "s1010@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1010
+          },
+          {
+            "name": "أسماء العتيبي",
+            "email": "s1011@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1011
+          },
+          {
+            "name": "حصة العتيبي",
+            "email": "s1012@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1012
+          },
+          {
+            "name": "جواهر العتيبي",
+            "email": "s1013@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1013
+          },
+          {
+            "name": "لطيفة العتيبي",
+            "email": "s1014@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1014
+          },
+          {
+            "name": "شيخة العتيبي",
+            "email": "s1015@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1015
+          },
+          {
+            "name": "العنود العتيبي",
+            "email": "s1016@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1016
+          },
+          {
+            "name": "نوال العتيبي",
+            "email": "s1017@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1017
+          },
+          {
+            "name": "هدى العتيبي",
+            "email": "s1018@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1018
+          },
+          {
+            "name": "سعاد العتيبي",
+            "email": "s1019@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1019
+          },
+          {
+            "name": "ابتسام العتيبي",
+            "email": "s1020@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1020
+          },
+          {
+            "name": "جميلة العتيبي",
+            "email": "s1021@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1021
+          },
+          {
+            "name": "حنان العتيبي",
+            "email": "s1022@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1022
+          },
+          {
+            "name": "دلال العتيبي",
+            "email": "s1023@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1023
+          },
+          {
+            "name": "رنا العتيبي",
+            "email": "s1024@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1024
+          },
+          {
+            "name": "زهراء العتيبي",
+            "email": "s1025@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1025
+          },
+          {
+            "name": "سلوى العتيبي",
+            "email": "s1026@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1026
+          },
+          {
+            "name": "شروق العتيبي",
+            "email": "s1027@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1027
+          },
+          {
+            "name": "صفية العتيبي",
+            "email": "s1028@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1028
+          },
+          {
+            "name": "طرفة العتيبي",
+            "email": "s1029@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1029
+          }
+        ]
+      },
+      {
+        "name": "تصحيح جزء تبارك",
+        "teacher": {
+          "name": "رحمة أحمد",
+          "email": "rahma@shamokh.edu",
+          "password": "password123"
+        },
+        "students": [
+          {
+            "name": "علياء العتيبي",
+            "email": "s1030@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1030
+          },
+          {
+            "name": "غادة العتيبي",
+            "email": "s1031@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1031
+          },
+          {
+            "name": "فوزية العتيبي",
+            "email": "s1032@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1032
+          },
+          {
+            "name": "كوثر العتيبي",
+            "email": "s1033@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1033
+          },
+          {
+            "name": "ليلى العتيبي",
+            "email": "s1034@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1034
+          },
+          {
+            "name": "مها العتيبي",
+            "email": "s1035@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1035
+          },
+          {
+            "name": "نجلاء العتيبي",
+            "email": "s1036@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1036
+          },
+          {
+            "name": "هياء العتيبي",
+            "email": "s1037@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1037
+          },
+          {
+            "name": "وفاء العتيبي",
+            "email": "s1038@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1038
+          },
+          {
+            "name": "ياسمين العتيبي",
+            "email": "s1039@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1039
+          },
+          {
+            "name": "آمنة العتيبي",
+            "email": "s1040@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1040
+          },
+          {
+            "name": "بشرى العتيبي",
+            "email": "s1041@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1041
+          },
+          {
+            "name": "تهاني العتيبي",
+            "email": "s1042@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1042
+          },
+          {
+            "name": "ثريا العتيبي",
+            "email": "s1043@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1043
+          },
+          {
+            "name": "جمانة العتيبي",
+            "email": "s1044@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1044
+          },
+          {
+            "name": "حليمة العتيبي",
+            "email": "s1045@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1045
+          },
+          {
+            "name": "خولة العتيبي",
+            "email": "s1046@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1046
+          },
+          {
+            "name": "دعاء العتيبي",
+            "email": "s1047@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1047
+          },
+          {
+            "name": "رغد العتيبي",
+            "email": "s1048@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1048
+          },
+          {
+            "name": "زينة العتيبي",
+            "email": "s1049@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1049
+          },
+          {
+            "name": "سارة الشمري",
+            "email": "s1050@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1050
+          },
+          {
+            "name": "نورة الشمري",
+            "email": "s1051@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1051
+          },
+          {
+            "name": "فاطمة الشمري",
+            "email": "s1052@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1052
+          },
+          {
+            "name": "عائشة الشمري",
+            "email": "s1053@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1053
+          },
+          {
+            "name": "ريم الشمري",
+            "email": "s1054@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1054
+          },
+          {
+            "name": "منى الشمري",
+            "email": "s1055@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1055
+          },
+          {
+            "name": "هند الشمري",
+            "email": "s1056@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1056
+          },
+          {
+            "name": "أمل الشمري",
+            "email": "s1057@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1057
+          },
+          {
+            "name": "زينب الشمري",
+            "email": "s1058@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1058
+          },
+          {
+            "name": "خديجة الشمري",
+            "email": "s1059@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1059
+          }
+        ]
+      },
+      {
+        "name": "تصحيح ٥ الأحقاف",
+        "teacher": {
+          "name": "وردة الراشد",
+          "email": "warda@shamokh.edu",
+          "password": "password123"
+        },
+        "students": [
+          {
+            "name": "مريم الشمري",
+            "email": "s1060@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1060
+          },
+          {
+            "name": "أسماء الشمري",
+            "email": "s1061@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1061
+          },
+          {
+            "name": "حصة الشمري",
+            "email": "s1062@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1062
+          },
+          {
+            "name": "جواهر الشمري",
+            "email": "s1063@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1063
+          },
+          {
+            "name": "لطيفة الشمري",
+            "email": "s1064@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1064
+          },
+          {
+            "name": "شيخة الشمري",
+            "email": "s1065@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1065
+          },
+          {
+            "name": "العنود الشمري",
+            "email": "s1066@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1066
+          },
+          {
+            "name": "نوال الشمري",
+            "email": "s1067@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1067
+          },
+          {
+            "name": "هدى الشمري",
+            "email": "s1068@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1068
+          },
+          {
+            "name": "سعاد الشمري",
+            "email": "s1069@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1069
+          },
+          {
+            "name": "ابتسام الشمري",
+            "email": "s1070@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1070
+          },
+          {
+            "name": "جميلة الشمري",
+            "email": "s1071@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1071
+          },
+          {
+            "name": "حنان الشمري",
+            "email": "s1072@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1072
+          },
+          {
+            "name": "دلال الشمري",
+            "email": "s1073@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1073
+          },
+          {
+            "name": "رنا الشمري",
+            "email": "s1074@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1074
+          },
+          {
+            "name": "زهراء الشمري",
+            "email": "s1075@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1075
+          },
+          {
+            "name": "سلوى الشمري",
+            "email": "s1076@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1076
+          },
+          {
+            "name": "شروق الشمري",
+            "email": "s1077@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1077
+          },
+          {
+            "name": "صفية الشمري",
+            "email": "s1078@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1078
+          },
+          {
+            "name": "طرفة الشمري",
+            "email": "s1079@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1079
+          },
+          {
+            "name": "علياء الشمري",
+            "email": "s1080@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1080
+          },
+          {
+            "name": "غادة الشمري",
+            "email": "s1081@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1081
+          },
+          {
+            "name": "فوزية الشمري",
+            "email": "s1082@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1082
+          },
+          {
+            "name": "كوثر الشمري",
+            "email": "s1083@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1083
+          },
+          {
+            "name": "ليلى الشمري",
+            "email": "s1084@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1084
+          },
+          {
+            "name": "مها الشمري",
+            "email": "s1085@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1085
+          },
+          {
+            "name": "نجلاء الشمري",
+            "email": "s1086@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1086
+          },
+          {
+            "name": "هياء الشمري",
+            "email": "s1087@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1087
+          },
+          {
+            "name": "وفاء الشمري",
+            "email": "s1088@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1088
+          },
+          {
+            "name": "ياسمين الشمري",
+            "email": "s1089@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1089
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "المراجعة",
+    "description": "برنامج المراجعة",
+    "circles": [
+      {
+        "name": "مراجعة المصحف كامل",
+        "teacher": {
+          "name": "نجوى الأيوبي",
+          "email": "najwa@shamokh.edu",
+          "password": "password123"
+        },
+        "students": [
+          {
+            "name": "آمنة الشمري",
+            "email": "s1090@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1090
+          },
+          {
+            "name": "بشرى الشمري",
+            "email": "s1091@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1091
+          },
+          {
+            "name": "تهاني الشمري",
+            "email": "s1092@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1092
+          },
+          {
+            "name": "ثريا الشمري",
+            "email": "s1093@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1093
+          },
+          {
+            "name": "جمانة الشمري",
+            "email": "s1094@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1094
+          },
+          {
+            "name": "حليمة الشمري",
+            "email": "s1095@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1095
+          },
+          {
+            "name": "خولة الشمري",
+            "email": "s1096@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1096
+          },
+          {
+            "name": "دعاء الشمري",
+            "email": "s1097@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1097
+          },
+          {
+            "name": "رغد الشمري",
+            "email": "s1098@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1098
+          },
+          {
+            "name": "زينة الشمري",
+            "email": "s1099@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1099
+          },
+          {
+            "name": "سارة القحطاني",
+            "email": "s1100@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1100
+          },
+          {
+            "name": "نورة القحطاني",
+            "email": "s1101@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1101
+          },
+          {
+            "name": "فاطمة القحطاني",
+            "email": "s1102@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1102
+          },
+          {
+            "name": "عائشة القحطاني",
+            "email": "s1103@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1103
+          },
+          {
+            "name": "ريم القحطاني",
+            "email": "s1104@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1104
+          },
+          {
+            "name": "منى القحطاني",
+            "email": "s1105@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1105
+          },
+          {
+            "name": "هند القحطاني",
+            "email": "s1106@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1106
+          },
+          {
+            "name": "أمل القحطاني",
+            "email": "s1107@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1107
+          },
+          {
+            "name": "زينب القحطاني",
+            "email": "s1108@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1108
+          },
+          {
+            "name": "خديجة القحطاني",
+            "email": "s1109@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1109
+          },
+          {
+            "name": "مريم القحطاني",
+            "email": "s1110@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1110
+          },
+          {
+            "name": "أسماء القحطاني",
+            "email": "s1111@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1111
+          },
+          {
+            "name": "حصة القحطاني",
+            "email": "s1112@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1112
+          },
+          {
+            "name": "جواهر القحطاني",
+            "email": "s1113@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1113
+          },
+          {
+            "name": "لطيفة القحطاني",
+            "email": "s1114@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1114
+          },
+          {
+            "name": "شيخة القحطاني",
+            "email": "s1115@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1115
+          },
+          {
+            "name": "العنود القحطاني",
+            "email": "s1116@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1116
+          },
+          {
+            "name": "نوال القحطاني",
+            "email": "s1117@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1117
+          },
+          {
+            "name": "هدى القحطاني",
+            "email": "s1118@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1118
+          },
+          {
+            "name": "سعاد القحطاني",
+            "email": "s1119@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1119
+          }
+        ]
+      },
+      {
+        "name": "مراجعة ٥ من البقرة",
+        "teacher": {
+          "name": "أسماء حميد",
+          "email": "asma@shamokh.edu",
+          "password": "password123"
+        },
+        "students": [
+          {
+            "name": "ابتسام القحطاني",
+            "email": "s1120@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1120
+          },
+          {
+            "name": "جميلة القحطاني",
+            "email": "s1121@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1121
+          },
+          {
+            "name": "حنان القحطاني",
+            "email": "s1122@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1122
+          },
+          {
+            "name": "دلال القحطاني",
+            "email": "s1123@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1123
+          },
+          {
+            "name": "رنا القحطاني",
+            "email": "s1124@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1124
+          },
+          {
+            "name": "زهراء القحطاني",
+            "email": "s1125@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1125
+          },
+          {
+            "name": "سلوى القحطاني",
+            "email": "s1126@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1126
+          },
+          {
+            "name": "شروق القحطاني",
+            "email": "s1127@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1127
+          },
+          {
+            "name": "صفية القحطاني",
+            "email": "s1128@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1128
+          },
+          {
+            "name": "طرفة القحطاني",
+            "email": "s1129@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1129
+          },
+          {
+            "name": "علياء القحطاني",
+            "email": "s1130@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1130
+          },
+          {
+            "name": "غادة القحطاني",
+            "email": "s1131@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1131
+          },
+          {
+            "name": "فوزية القحطاني",
+            "email": "s1132@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1132
+          },
+          {
+            "name": "كوثر القحطاني",
+            "email": "s1133@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1133
+          },
+          {
+            "name": "ليلى القحطاني",
+            "email": "s1134@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1134
+          },
+          {
+            "name": "مها القحطاني",
+            "email": "s1135@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1135
+          },
+          {
+            "name": "نجلاء القحطاني",
+            "email": "s1136@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1136
+          },
+          {
+            "name": "هياء القحطاني",
+            "email": "s1137@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1137
+          },
+          {
+            "name": "وفاء القحطاني",
+            "email": "s1138@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1138
+          },
+          {
+            "name": "ياسمين القحطاني",
+            "email": "s1139@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1139
+          },
+          {
+            "name": "آمنة القحطاني",
+            "email": "s1140@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1140
+          },
+          {
+            "name": "بشرى القحطاني",
+            "email": "s1141@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1141
+          },
+          {
+            "name": "تهاني القحطاني",
+            "email": "s1142@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1142
+          },
+          {
+            "name": "ثريا القحطاني",
+            "email": "s1143@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1143
+          },
+          {
+            "name": "جمانة القحطاني",
+            "email": "s1144@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1144
+          },
+          {
+            "name": "حليمة القحطاني",
+            "email": "s1145@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1145
+          },
+          {
+            "name": "خولة القحطاني",
+            "email": "s1146@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1146
+          },
+          {
+            "name": "دعاء القحطاني",
+            "email": "s1147@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1147
+          },
+          {
+            "name": "رغد القحطاني",
+            "email": "s1148@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1148
+          },
+          {
+            "name": "زينة القحطاني",
+            "email": "s1149@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1149
+          }
+        ]
+      },
+      {
+        "name": "مراجعة ١٠ من البقرة",
+        "teacher": {
+          "name": "إحسان ضبيط",
+          "email": "ihsan@shamokh.edu",
+          "password": "password123"
+        },
+        "students": [
+          {
+            "name": "سارة الدوسري",
+            "email": "s1150@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1150
+          },
+          {
+            "name": "نورة الدوسري",
+            "email": "s1151@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1151
+          },
+          {
+            "name": "فاطمة الدوسري",
+            "email": "s1152@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1152
+          },
+          {
+            "name": "عائشة الدوسري",
+            "email": "s1153@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1153
+          },
+          {
+            "name": "ريم الدوسري",
+            "email": "s1154@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1154
+          },
+          {
+            "name": "منى الدوسري",
+            "email": "s1155@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1155
+          },
+          {
+            "name": "هند الدوسري",
+            "email": "s1156@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1156
+          },
+          {
+            "name": "أمل الدوسري",
+            "email": "s1157@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1157
+          },
+          {
+            "name": "زينب الدوسري",
+            "email": "s1158@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1158
+          },
+          {
+            "name": "خديجة الدوسري",
+            "email": "s1159@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1159
+          },
+          {
+            "name": "مريم الدوسري",
+            "email": "s1160@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1160
+          },
+          {
+            "name": "أسماء الدوسري",
+            "email": "s1161@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1161
+          },
+          {
+            "name": "حصة الدوسري",
+            "email": "s1162@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1162
+          },
+          {
+            "name": "جواهر الدوسري",
+            "email": "s1163@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1163
+          },
+          {
+            "name": "لطيفة الدوسري",
+            "email": "s1164@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1164
+          },
+          {
+            "name": "شيخة الدوسري",
+            "email": "s1165@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1165
+          },
+          {
+            "name": "العنود الدوسري",
+            "email": "s1166@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1166
+          },
+          {
+            "name": "نوال الدوسري",
+            "email": "s1167@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1167
+          },
+          {
+            "name": "هدى الدوسري",
+            "email": "s1168@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1168
+          },
+          {
+            "name": "سعاد الدوسري",
+            "email": "s1169@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1169
+          },
+          {
+            "name": "ابتسام الدوسري",
+            "email": "s1170@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1170
+          },
+          {
+            "name": "جميلة الدوسري",
+            "email": "s1171@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1171
+          },
+          {
+            "name": "حنان الدوسري",
+            "email": "s1172@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1172
+          },
+          {
+            "name": "دلال الدوسري",
+            "email": "s1173@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1173
+          },
+          {
+            "name": "رنا الدوسري",
+            "email": "s1174@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1174
+          },
+          {
+            "name": "زهراء الدوسري",
+            "email": "s1175@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1175
+          },
+          {
+            "name": "سلوى الدوسري",
+            "email": "s1176@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1176
+          },
+          {
+            "name": "شروق الدوسري",
+            "email": "s1177@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1177
+          },
+          {
+            "name": "صفية الدوسري",
+            "email": "s1178@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1178
+          },
+          {
+            "name": "طرفة الدوسري",
+            "email": "s1179@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1179
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "المراحل العليا",
+    "description": "برنامج المراحل العليا",
+    "circles": [
+      {
+        "name": "عليا م١",
+        "teacher": {
+          "name": "ثريا بكر",
+          "email": "thuraya@shamokh.edu",
+          "password": "password123"
+        },
+        "students": [
+          {
+            "name": "علياء الدوسري",
+            "email": "s1180@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1180
+          },
+          {
+            "name": "غادة الدوسري",
+            "email": "s1181@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1181
+          },
+          {
+            "name": "فوزية الدوسري",
+            "email": "s1182@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1182
+          },
+          {
+            "name": "كوثر الدوسري",
+            "email": "s1183@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1183
+          },
+          {
+            "name": "ليلى الدوسري",
+            "email": "s1184@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1184
+          },
+          {
+            "name": "مها الدوسري",
+            "email": "s1185@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1185
+          },
+          {
+            "name": "نجلاء الدوسري",
+            "email": "s1186@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1186
+          },
+          {
+            "name": "هياء الدوسري",
+            "email": "s1187@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1187
+          },
+          {
+            "name": "وفاء الدوسري",
+            "email": "s1188@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1188
+          },
+          {
+            "name": "ياسمين الدوسري",
+            "email": "s1189@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1189
+          },
+          {
+            "name": "آمنة الدوسري",
+            "email": "s1190@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1190
+          },
+          {
+            "name": "بشرى الدوسري",
+            "email": "s1191@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1191
+          },
+          {
+            "name": "تهاني الدوسري",
+            "email": "s1192@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1192
+          },
+          {
+            "name": "ثريا الدوسري",
+            "email": "s1193@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1193
+          },
+          {
+            "name": "جمانة الدوسري",
+            "email": "s1194@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1194
+          },
+          {
+            "name": "حليمة الدوسري",
+            "email": "s1195@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1195
+          },
+          {
+            "name": "خولة الدوسري",
+            "email": "s1196@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1196
+          },
+          {
+            "name": "دعاء الدوسري",
+            "email": "s1197@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1197
+          },
+          {
+            "name": "رغد الدوسري",
+            "email": "s1198@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1198
+          },
+          {
+            "name": "زينة الدوسري",
+            "email": "s1199@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1199
+          },
+          {
+            "name": "سارة المطيري",
+            "email": "s1200@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1200
+          },
+          {
+            "name": "نورة المطيري",
+            "email": "s1201@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1201
+          },
+          {
+            "name": "فاطمة المطيري",
+            "email": "s1202@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1202
+          },
+          {
+            "name": "عائشة المطيري",
+            "email": "s1203@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1203
+          },
+          {
+            "name": "ريم المطيري",
+            "email": "s1204@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1204
+          },
+          {
+            "name": "منى المطيري",
+            "email": "s1205@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1205
+          },
+          {
+            "name": "هند المطيري",
+            "email": "s1206@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1206
+          },
+          {
+            "name": "أمل المطيري",
+            "email": "s1207@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1207
+          },
+          {
+            "name": "زينب المطيري",
+            "email": "s1208@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1208
+          },
+          {
+            "name": "خديجة المطيري",
+            "email": "s1209@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1209
+          }
+        ]
+      },
+      {
+        "name": "عليا م٢",
+        "teacher": {
+          "name": "سمية فتوي",
+          "email": "sumaya@shamokh.edu",
+          "password": "password123"
+        },
+        "students": [
+          {
+            "name": "مريم المطيري",
+            "email": "s1210@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1210
+          },
+          {
+            "name": "أسماء المطيري",
+            "email": "s1211@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1211
+          },
+          {
+            "name": "حصة المطيري",
+            "email": "s1212@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1212
+          },
+          {
+            "name": "جواهر المطيري",
+            "email": "s1213@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1213
+          },
+          {
+            "name": "لطيفة المطيري",
+            "email": "s1214@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1214
+          },
+          {
+            "name": "شيخة المطيري",
+            "email": "s1215@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1215
+          },
+          {
+            "name": "العنود المطيري",
+            "email": "s1216@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1216
+          },
+          {
+            "name": "نوال المطيري",
+            "email": "s1217@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1217
+          },
+          {
+            "name": "هدى المطيري",
+            "email": "s1218@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1218
+          },
+          {
+            "name": "سعاد المطيري",
+            "email": "s1219@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1219
+          },
+          {
+            "name": "ابتسام المطيري",
+            "email": "s1220@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1220
+          },
+          {
+            "name": "جميلة المطيري",
+            "email": "s1221@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1221
+          },
+          {
+            "name": "حنان المطيري",
+            "email": "s1222@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1222
+          },
+          {
+            "name": "دلال المطيري",
+            "email": "s1223@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1223
+          },
+          {
+            "name": "رنا المطيري",
+            "email": "s1224@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1224
+          },
+          {
+            "name": "زهراء المطيري",
+            "email": "s1225@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1225
+          },
+          {
+            "name": "سلوى المطيري",
+            "email": "s1226@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1226
+          },
+          {
+            "name": "شروق المطيري",
+            "email": "s1227@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1227
+          },
+          {
+            "name": "صفية المطيري",
+            "email": "s1228@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1228
+          },
+          {
+            "name": "طرفة المطيري",
+            "email": "s1229@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1229
+          },
+          {
+            "name": "علياء المطيري",
+            "email": "s1230@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1230
+          },
+          {
+            "name": "غادة المطيري",
+            "email": "s1231@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1231
+          },
+          {
+            "name": "فوزية المطيري",
+            "email": "s1232@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1232
+          },
+          {
+            "name": "كوثر المطيري",
+            "email": "s1233@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1233
+          },
+          {
+            "name": "ليلى المطيري",
+            "email": "s1234@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1234
+          },
+          {
+            "name": "مها المطيري",
+            "email": "s1235@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1235
+          },
+          {
+            "name": "نجلاء المطيري",
+            "email": "s1236@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1236
+          },
+          {
+            "name": "هياء المطيري",
+            "email": "s1237@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1237
+          },
+          {
+            "name": "وفاء المطيري",
+            "email": "s1238@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1238
+          },
+          {
+            "name": "ياسمين المطيري",
+            "email": "s1239@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1239
+          }
+        ]
+      },
+      {
+        "name": "عليا م٣",
+        "teacher": {
+          "name": "مشاعل رمضان",
+          "email": "mashael@shamokh.edu",
+          "password": "password123"
+        },
+        "students": [
+          {
+            "name": "آمنة المطيري",
+            "email": "s1240@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1240
+          },
+          {
+            "name": "بشرى المطيري",
+            "email": "s1241@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1241
+          },
+          {
+            "name": "تهاني المطيري",
+            "email": "s1242@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1242
+          },
+          {
+            "name": "ثريا المطيري",
+            "email": "s1243@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1243
+          },
+          {
+            "name": "جمانة المطيري",
+            "email": "s1244@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1244
+          },
+          {
+            "name": "حليمة المطيري",
+            "email": "s1245@shamokh.edu",
+            "password": "password123",
+            "profile": "EXCELLENT",
+            "profileLabel": "ممتازة (95-100%)",
+            "studentNumber": 1245
+          },
+          {
+            "name": "خولة المطيري",
+            "email": "s1246@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1246
+          },
+          {
+            "name": "دعاء المطيري",
+            "email": "s1247@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1247
+          },
+          {
+            "name": "رغد المطيري",
+            "email": "s1248@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1248
+          },
+          {
+            "name": "زينة المطيري",
+            "email": "s1249@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1249
+          },
+          {
+            "name": "سارة الزهراني",
+            "email": "s1250@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1250
+          },
+          {
+            "name": "نورة الزهراني",
+            "email": "s1251@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1251
+          },
+          {
+            "name": "فاطمة الزهراني",
+            "email": "s1252@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1252
+          },
+          {
+            "name": "عائشة الزهراني",
+            "email": "s1253@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1253
+          },
+          {
+            "name": "ريم الزهراني",
+            "email": "s1254@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1254
+          },
+          {
+            "name": "منى الزهراني",
+            "email": "s1255@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1255
+          },
+          {
+            "name": "هند الزهراني",
+            "email": "s1256@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1256
+          },
+          {
+            "name": "أمل الزهراني",
+            "email": "s1257@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1257
+          },
+          {
+            "name": "زينب الزهراني",
+            "email": "s1258@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1258
+          },
+          {
+            "name": "خديجة الزهراني",
+            "email": "s1259@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1259
+          },
+          {
+            "name": "مريم الزهراني",
+            "email": "s1260@shamokh.edu",
+            "password": "password123",
+            "profile": "GOOD",
+            "profileLabel": "جيدة (80-94%)",
+            "studentNumber": 1260
+          },
+          {
+            "name": "أسماء الزهراني",
+            "email": "s1261@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1261
+          },
+          {
+            "name": "حصة الزهراني",
+            "email": "s1262@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1262
+          },
+          {
+            "name": "جواهر الزهراني",
+            "email": "s1263@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1263
+          },
+          {
+            "name": "لطيفة الزهراني",
+            "email": "s1264@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1264
+          },
+          {
+            "name": "شيخة الزهراني",
+            "email": "s1265@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1265
+          },
+          {
+            "name": "العنود الزهراني",
+            "email": "s1266@shamokh.edu",
+            "password": "password123",
+            "profile": "WEAK",
+            "profileLabel": "ضعيفة (60-79%)",
+            "studentNumber": 1266
+          },
+          {
+            "name": "نوال الزهراني",
+            "email": "s1267@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1267
+          },
+          {
+            "name": "هدى الزهراني",
+            "email": "s1268@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1268
+          },
+          {
+            "name": "سعاد الزهراني",
+            "email": "s1269@shamokh.edu",
+            "password": "password123",
+            "profile": "FAILING",
+            "profileLabel": "متعثرة (<60%)",
+            "studentNumber": 1269
+          }
+        ]
+      }
+    ]
+  }
+]

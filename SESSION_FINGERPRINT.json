@@ -38,6 +38,14 @@
   },
   "breaking_changes_since_last_session": [
     {
+      "session": "20.consultation",
+      "date": "2025-11-27",
+      "type": "planning",
+      "description": "AI Models Consultation (Claude, Gemini, GPT) - Unanimous approval for Reports System refactoring",
+      "impact": "Sessions 20.1-20.3 will merge view+export, create 3 unified report pages, and delete /detailed-reports",
+      "ai_action_required": "Follow AI_MODELS_CONSULTATION_REPORTS_SYSTEM.md plan for implementation"
+    },
+    {
       "session": 19,
       "date": "2025-11-25",
       "type": "architecture",
