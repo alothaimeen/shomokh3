@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "last_session": "CURRENT",
+    "last_update": "2025-11-26T14:34:09.804Z",
+    "next_review": "2025-11-27T14:34:09.809Z"
+  },
+  "critical_files": {
+    "prisma/schema.prisma": {
+      "hash": "a398b56b",
+      "last_modified": "2025-11-17T05:08:56.789Z",
+      "changed": false,
+      "last_change": "Manual review required"
+    },
+    "src/lib/auth.ts": {
+      "hash": "c8f39b69",
+      "last_modified": "2025-11-24T02:47:14.075Z",
+      "changed": false,
+      "last_change": "Manual review required"
+    },
+    "src/middleware.ts": {
+      "hash": "e8a91d9b",
+      "last_modified": "2025-11-26T14:16:29.121Z",
+      "changed": true,
+      "last_change": "Manual review required"
+    },
+    ".env": {
+      "hash": "aaea3683",
+      "last_modified": "2025-11-14T13:22:27.013Z",
+      "changed": false,
+      "last_change": "Manual review required"
+    },
+    "package.json": {
+      "hash": "6f8418b7",
+      "last_modified": "2025-11-26T12:53:55.325Z",
+      "changed": false,
+      "last_change": "Manual review required"
+    }
+  },
+  "breaking_changes_since_last_session": [
+    {
+      "session": 19,
+      "date": "2025-11-25",
+      "type": "architecture",
+      "description": "23 pages migrated to (dashboard) Route Group",
+      "impact": "All protected routes now share single layout",
+      "ai_action_required": "Use (dashboard) for all new protected pages"
+    }
+  ],
+  "deprecated_patterns": [
+    {
+      "pattern": "testUsers array",
+      "deprecated_in": "Session 18",
+      "replacement": "Database-only authentication",
+      "reason": "Security vulnerability"
+    },
+    {
+      "pattern": "API Routes for mutations",
+      "deprecated_in": "Session 18",
+      "replacement": "Server Actions",
+      "reason": "Security and performance"
+    }
+  ],
+  "active_constraints": {
+    "database": {
+      "port": 6543,
+      "pooler": "required"
+    },
+    "framework": {
+      "nextjs": "15.x",
+      "react": "19.x"
+    }
+  }
+}

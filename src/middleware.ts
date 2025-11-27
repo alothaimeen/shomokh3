@@ -18,8 +18,7 @@ export default withAuth({
       if (path.startsWith('/programs') || 
           path.startsWith('/users') || 
           path.startsWith('/students') || 
-          path.startsWith('/teacher-requests') || 
-          path.startsWith('/academic-reports')) {
+          path.startsWith('/teacher-requests')) {
         const isAuthorized = token.role === 'ADMIN';
         console.log(`🛡️ Middleware - Admin-only path: ${path}`, {
           tokenRole: token.role,
@@ -38,7 +37,10 @@ export default withAuth({
           path.startsWith('/behavior-points') || 
           path.startsWith('/behavior-grades') || 
           path.startsWith('/final-exam') || 
-          path.startsWith('/unified-assessment')) {
+          path.startsWith('/unified-assessment') ||
+          path.startsWith('/academic-reports') ||
+          path.startsWith('/detailed-reports') ||
+          path.startsWith('/attendance-report')) {
         return token.role === 'TEACHER' || token.role === 'ADMIN';
       }
       

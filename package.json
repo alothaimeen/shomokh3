@@ -10,7 +10,9 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:setup": "prisma generate && prisma db push && node scripts/setup-database.js",
-    "db:seed": "node scripts/setup-database.js"
+    "db:seed": "node scripts/setup-database.js",
+    "fingerprint": "node scripts/generate-fingerprint.js",
+    "start-session": "npm run fingerprint && echo 'Session started - review SESSION_FINGERPRINT.json'"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",

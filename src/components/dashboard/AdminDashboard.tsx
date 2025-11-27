@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Users, BookOpen, GraduationCap, UserCheck, BarChart3 } from 'lucide-react';
+import { Users, BookOpen, GraduationCap, UserCheck, BarChart3, FileText, TrendingUp } from 'lucide-react';
 
 interface AdminDashboardProps {
   stats: {
@@ -22,7 +22,9 @@ export default function AdminDashboard({ stats }: AdminDashboardProps) {
     { title: 'إدارة المستخدمين', href: '/users', icon: <Users size={20} />, description: 'إضافة وتعديل حسابات المستخدمين' },
     { title: 'إدارة البرامج', href: '/programs', icon: <BookOpen size={20} />, description: 'إنشاء وإدارة البرامج والحلقات' },
     { title: 'التقارير الأكاديمية', href: '/academic-reports', icon: <BarChart3 size={20} />, description: 'عرض التقارير والإحصائيات' },
-    { title: 'طلبات المعلمات', href: '/teacher-requests', icon: <GraduationCap size={20} />, description: 'مراجعة طلبات الانضمام' }
+    { title: 'التقارير التفصيلية', href: '/detailed-reports', icon: <FileText size={20} />, description: 'تقارير الحضور والنقاط (CSV Export)' },
+    { title: 'طلبات المعلمات', href: '/teacher-requests', icon: <GraduationCap size={20} />, description: 'مراجعة طلبات الانضمام' },
+    { title: 'تقارير الحضور', href: '/attendance-report', icon: <TrendingUp size={20} />, description: 'تقارير الحضور الشاملة' }
   ];
 
   return (
@@ -43,7 +45,7 @@ export default function AdminDashboard({ stats }: AdminDashboardProps) {
 
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">الوصول السريع</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {quickLinks.map((link, index) => (
             <Link
               key={index}
