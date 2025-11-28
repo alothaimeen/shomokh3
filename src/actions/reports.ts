@@ -421,7 +421,7 @@ export async function getAcademicReportData(
     }
 
     // جلب جميع الدرجات
-    const [dailyGrades, weeklyGrades, monthlyGrades, behaviorGrades] = await Promise.all([
+    const [dailyGrades, weeklyGrades, monthlyGrades, behaviorPoints] = await Promise.all([
       db.dailyGrade.findMany({
         where: whereClause,
         include: {
@@ -443,7 +443,8 @@ export async function getAcademicReportData(
           course: { select: { id: true, courseName: true } }
         }
       }),
-      db.behaviorGrade.findMany({
+      // نقرأ من BehaviorPoint بدلاً من BehaviorGrade
+      db.behaviorPoint.findMany({
         where: whereClause,
         include: {
           student: { select: { id: true, studentNumber: true, studentName: true } },
@@ -520,54 +521,68 @@ export async function getAcademicReportData(
       }
     });
 
-    // معالجة الدرجات السلوكية
-    behaviorGrades.forEach(grade => {
-      const key = `${grade.studentId}-${grade.courseId}`;
+    // معالجة الدرجات السلوكية (من BehaviorPoint)
+    behaviorPoints.forEach(point => {
+      const key = `${point.studentId}-${point.courseId}`;
       const item = studentsMap.get(key);
       if (item) {
-        item.behaviorGrades.total += Number(grade.dailyScore) || 0;
+        // كل معيار = 5 نقاط (max 20 per session)
+        const sessionPoints = 
+          (point.earlyAttendance ? 5 : 0) +
+          (point.perfectMemorization ? 5 : 0) +
+          (point.activeParticipation ? 5 : 0) +
+          (point.timeCommitment ? 5 : 0);
+        item.behaviorGrades.total += sessionPoints;
         item.behaviorGrades.count++;
       }
     });
 
     // حساب المعدلات والنسب المئوية
+    // نظام الدرجات:
+    // - اليومية: memorization (0-5) + review (0-5) = max 10 per day
+    // - الأسبوعية: grade (0-5) = max 5 per week, 10 weeks = max 50
+    // - الشهرية: quranForgetfulness(0-5) + quranMajorMistakes(0-5) + quranMinorMistakes(0-5) + tajweedTheory(0-15) = max 30 per month, 3 months = max 90
+    // - السلوك: max 20 per session (4 × 5 points)
+    
     const report = Array.from(studentsMap.values()).map(item => {
-      // حساب المعدلات
+      // حساب المعدلات (متوسط الدرجة لكل وحدة)
       item.dailyGrades.average = item.dailyGrades.count > 0
-        ? Math.round(item.dailyGrades.total / item.dailyGrades.count)
+        ? parseFloat((item.dailyGrades.total / item.dailyGrades.count).toFixed(2))
         : 0;
 
       item.weeklyGrades.average = item.weeklyGrades.count > 0
-        ? Math.round(item.weeklyGrades.total / item.weeklyGrades.count)
+        ? parseFloat((item.weeklyGrades.total / item.weeklyGrades.count).toFixed(2))
         : 0;
 
       item.monthlyGrades.average = item.monthlyGrades.count > 0
-        ? Math.round(item.monthlyGrades.total / item.monthlyGrades.count)
+        ? parseFloat((item.monthlyGrades.total / item.monthlyGrades.count).toFixed(2))
         : 0;
 
       item.behaviorGrades.average = item.behaviorGrades.count > 0
-        ? Math.round(item.behaviorGrades.total / item.behaviorGrades.count)
+        ? parseFloat((item.behaviorGrades.total / item.behaviorGrades.count).toFixed(2))
         : 0;
 
-      // الإجمالي
-      item.overallTotal =
+      // الإجمالي (مجموع كل الدرجات)
+      item.overallTotal = parseFloat((
         item.dailyGrades.total +
         item.weeklyGrades.total +
         item.monthlyGrades.total +
-        item.behaviorGrades.total;
+        item.behaviorGrades.total
+      ).toFixed(2));
 
-      const totalCount =
-        item.dailyGrades.count +
-        item.weeklyGrades.count +
-        item.monthlyGrades.count +
-        item.behaviorGrades.count;
+      // حساب الدرجة القصوى الممكنة
+      const maxDaily = item.dailyGrades.count * 10; // max 10 per day
+      const maxWeekly = item.weeklyGrades.count * 5; // max 5 per week
+      const maxMonthly = item.monthlyGrades.count * 30; // max 30 per month
+      const maxBehavior = item.behaviorGrades.count * 20; // max 20 per session
+      const maxPossible = maxDaily + maxWeekly + maxMonthly + maxBehavior;
 
-      item.overallAverage = totalCount > 0
-        ? Math.round(item.overallTotal / totalCount)
+      item.overallAverage = maxPossible > 0
+        ? parseFloat((item.overallTotal / maxPossible * 100).toFixed(2))
         : 0;
 
-      // النسبة المئوية (افتراض أن المجموع الكلي 100)
-      item.percentage = Math.min(100, item.overallAverage);
+      // النسبة المئوية
+      item.percentage = Math.min(100, Math.round(item.overallAverage));
 
       // الحالة
       if (item.percentage >= 90) item.status = 'ممتاز';

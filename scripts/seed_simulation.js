@@ -49,8 +49,10 @@ const HOLIDAYS = [
     '2025-12-11', '2025-12-14' // Extra Holidays
 ];
 
-const WEEKLY_EXAM_WEEKS = [2, 3, 4, 6, 7, 8, 10, 11, 12, 15];
-const MONTHLY_EXAM_WEEKS = [5, 9, 14];
+// Week values must be 1-10 per schema constraint
+const WEEKLY_EXAM_WEEKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+// Month values must be 1-3 per schema constraint  
+const MONTHLY_EXAM_WEEKS = [1, 2, 3];
 const FINAL_EXAM_WEEK = 16;
 
 function isHoliday(date) {
@@ -70,6 +72,7 @@ function getRandomScore(min, max, decimals = 2) {
 
 function shouldAttend(profile) {
     const rates = {
+        'PERFECT': 1.0,    // 100% حضور
         'EXCELLENT': 0.98,
         'GOOD': 0.90,
         'WEAK': 0.80,
@@ -258,27 +261,28 @@ async function main() {
 
                 if (isPresent) {
                     let dailyScore = 0;
-                    if (s.profile === 'EXCELLENT') dailyScore = getRandomScore(9.5, 10);
+                    if (s.profile === 'PERFECT') dailyScore = 10; // درجة كاملة
+                    else if (s.profile === 'EXCELLENT') dailyScore = getRandomScore(9.5, 10);
                     else if (s.profile === 'GOOD') dailyScore = getRandomScore(8, 9.5);
                     else if (s.profile === 'WEAK') dailyScore = getRandomScore(6, 8);
                     else dailyScore = getRandomScore(0, 6);
 
-                    // Daily Grade
+                    // Daily Grade (memorization + review = 10 max)
                     dailyGrades.push({
                         studentId: sId,
                         courseId: cId,
                         date: dateIso,
-                        memorization: dailyScore * 0.5,
-                        review: dailyScore * 0.5
+                        memorization: s.profile === 'PERFECT' ? 5 : dailyScore * 0.5,
+                        review: s.profile === 'PERFECT' ? 5 : dailyScore * 0.5
                     });
 
-                    // Behavior
+                    // Behavior (4 criteria × true = 20 points max)
                     behaviorPoints.push({
                         studentId: sId,
                         courseId: cId,
                         date: dateIso,
-                        earlyAttendance: Math.random() > 0.5,
-                        perfectMemorization: dailyScore > 9,
+                        earlyAttendance: s.profile === 'PERFECT' ? true : Math.random() > 0.5,
+                        perfectMemorization: s.profile === 'PERFECT' ? true : dailyScore > 9,
                         activeParticipation: true,
                         timeCommitment: true
                     });
@@ -287,10 +291,11 @@ async function main() {
             currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        // Weekly
+        // Weekly (max 5 per week)
         for (const week of WEEKLY_EXAM_WEEKS) {
             let score = 0;
-            if (s.profile === 'EXCELLENT') score = getRandomScore(4.5, 5);
+            if (s.profile === 'PERFECT') score = 5; // درجة كاملة
+            else if (s.profile === 'EXCELLENT') score = getRandomScore(4.5, 5);
             else if (s.profile === 'GOOD') score = getRandomScore(4, 4.5);
             else if (s.profile === 'WEAK') score = getRandomScore(3, 4);
             else score = getRandomScore(0, 3);
@@ -303,37 +308,73 @@ async function main() {
             });
         }
 
-        // Monthly
+        // Monthly - scores must fit schema constraints:
+        // quranForgetfulness, quranMajorMistakes, quranMinorMistakes: max 5.00
+        // tajweedTheory: max 15.00
         for (const month of MONTHLY_EXAM_WEEKS) {
-            let score = 0;
-            if (s.profile === 'EXCELLENT') score = getRandomScore(28, 30);
-            else if (s.profile === 'GOOD') score = getRandomScore(24, 28);
-            else if (s.profile === 'WEAK') score = getRandomScore(18, 24);
-            else score = getRandomScore(0, 18);
+            let quranForget, quranMajor, quranMinor, tajweed;
+            if (s.profile === 'PERFECT') {
+                quranForget = 5;  // درجة كاملة
+                quranMajor = 5;
+                quranMinor = 5;
+                tajweed = 15;
+            } else if (s.profile === 'EXCELLENT') {
+                quranForget = getRandomScore(4.5, 5);
+                quranMajor = getRandomScore(4.5, 5);
+                quranMinor = getRandomScore(4.5, 5);
+                tajweed = getRandomScore(13.5, 15);
+            } else if (s.profile === 'GOOD') {
+                quranForget = getRandomScore(4, 4.5);
+                quranMajor = getRandomScore(4, 4.5);
+                quranMinor = getRandomScore(4, 4.5);
+                tajweed = getRandomScore(12, 13.5);
+            } else if (s.profile === 'WEAK') {
+                quranForget = getRandomScore(3, 4);
+                quranMajor = getRandomScore(3, 4);
+                quranMinor = getRandomScore(3, 4);
+                tajweed = getRandomScore(9, 12);
+            } else {
+                quranForget = getRandomScore(0, 3);
+                quranMajor = getRandomScore(0, 3);
+                quranMinor = getRandomScore(0, 3);
+                tajweed = getRandomScore(0, 9);
+            }
 
             monthlyGrades.push({
                 studentId: sId,
                 courseId: cId,
                 month: month,
-                quranForgetfulness: score * 0.3,
-                quranMajorMistakes: score * 0.1,
-                quranMinorMistakes: score * 0.1,
-                tajweedTheory: score * 0.5
+                quranForgetfulness: quranForget,
+                quranMajorMistakes: quranMajor,
+                quranMinorMistakes: quranMinor,
+                tajweedTheory: tajweed
             });
         }
 
-        // Final
-        let finalScore = 0;
-        if (s.profile === 'EXCELLENT') finalScore = getRandomScore(57, 60);
-        else if (s.profile === 'GOOD') finalScore = getRandomScore(48, 56);
-        else if (s.profile === 'WEAK') finalScore = getRandomScore(36, 48);
-        else finalScore = getRandomScore(0, 36);
+        // Final - quranTest max 40, tajweedTest max 20
+        let quranTest, tajweedTest;
+        if (s.profile === 'PERFECT') {
+            quranTest = 40;  // درجة كاملة
+            tajweedTest = 20;
+        } else if (s.profile === 'EXCELLENT') {
+            quranTest = getRandomScore(36, 40);
+            tajweedTest = getRandomScore(18, 20);
+        } else if (s.profile === 'GOOD') {
+            quranTest = getRandomScore(32, 36);
+            tajweedTest = getRandomScore(16, 18);
+        } else if (s.profile === 'WEAK') {
+            quranTest = getRandomScore(24, 32);
+            tajweedTest = getRandomScore(12, 16);
+        } else {
+            quranTest = getRandomScore(0, 24);
+            tajweedTest = getRandomScore(0, 12);
+        }
 
         finalExams.push({
             studentId: sId,
             courseId: cId,
-            quranTest: finalScore * 0.66,
-            tajweedTest: finalScore * 0.34
+            quranTest: quranTest,
+            tajweedTest: tajweedTest
         });
     }
 

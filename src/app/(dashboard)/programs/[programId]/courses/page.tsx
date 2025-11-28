@@ -21,7 +21,13 @@ interface Course {
 
 interface Teacher {
   id: string;
-  name: string;
+  userName: string;
+}
+
+interface ProgramData {
+  id: string;
+  programName: string;
+  courses: Course[];
 }
 
 export default function CoursesPage() {
@@ -33,6 +39,8 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [programName, setProgramName] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCourse, setNewCourse] = useState({
     courseName: '',
@@ -50,89 +58,80 @@ export default function CoursesPage() {
     }
   }, [session, status, router]);
 
-  // بيانات تجريبية للمعلمات
+  // جلب المعلمات من قاعدة البيانات
   useEffect(() => {
-    const mockTeachers: Teacher[] = [
-      { id: 'teacher-1', name: 'المعلمة سارة' },
-      { id: 'teacher-2', name: 'المعلمة فاطمة' },
-      { id: 'teacher-3', name: 'المعلمة عائشة' },
-    ];
-    setTeachers(mockTeachers);
+    async function fetchTeachers() {
+      try {
+        const res = await fetch('/api/users?role=TEACHER');
+        if (res.ok) {
+          const data = await res.json();
+          setTeachers(data.users || []);
+        }
+      } catch (err) {
+        console.error('Error fetching teachers:', err);
+      }
+    }
+    fetchTeachers();
   }, []);
 
-  // بيانات تجريبية للحلقات والبرامج
+  // جلب البرنامج والحلقات من قاعدة البيانات
   useEffect(() => {
-    const programsData: { [key: string]: { programName: string; courses: Course[] } } = {
-      '1': {
-        programName: 'برنامج حفظ القرآن الكريم',
-        courses: [
-          {
-            id: 'course-1',
-            courseName: 'حلقة المستوى الأول',
-            courseDescription: 'حلقة للمبتدئات في حفظ القرآن',
-            syllabus: 'جزء عم كاملاً',
-            level: 1,
-            maxStudents: 15,
-            teacherId: 'teacher-1',
-            teacherName: 'المعلمة سارة',
-            isActive: true,
-            createdAt: '2025-01-10',
-            studentsCount: 12
-          },
-          {
-            id: 'course-2',
-            courseName: 'حلقة المستوى الثاني',
-            courseDescription: 'حلقة للطالبات المتوسطات',
-            syllabus: 'جزء تبارك وجزء قد سمع',
-            level: 2,
-            maxStudents: 18,
-            teacherId: 'teacher-2',
-            teacherName: 'المعلمة فاطمة',
-            isActive: true,
-            createdAt: '2025-01-15',
-            studentsCount: 15
+    async function fetchProgramData() {
+      if (!programId) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const res = await fetch(`/api/programs/${programId}`);
+        if (!res.ok) {
+          if (res.status === 404) {
+            setError('البرنامج غير موجود');
+          } else {
+            setError('حدث خطأ أثناء جلب البيانات');
           }
-        ]
-      },
-      '2': {
-        programName: 'برنامج التجويد المتقدم',
-        courses: [
-          {
-            id: 'course-3',
-            courseName: 'حلقة أحكام التلاوة',
-            courseDescription: 'حلقة متخصصة في أحكام التجويد',
-            syllabus: 'الأحكام النظرية والتطبيقية',
-            level: 1,
-            maxStudents: 10,
-            teacherId: 'teacher-3',
-            teacherName: 'المعلمة عائشة',
-            isActive: true,
-            createdAt: '2025-01-20',
-            studentsCount: 8
-          }
-        ]
+          return;
+        }
+        
+        const data: ProgramData = await res.json();
+        setProgramName(data.programName);
+        setCourses(data.courses || []);
+      } catch (err) {
+        console.error('Error fetching program:', err);
+        setError('حدث خطأ في الاتصال');
+      } finally {
+        setIsLoading(false);
       }
-    };
-
-    const programData = programsData[programId];
-    if (programData) {
-      setProgramName(programData.programName);
-      setCourses(programData.courses);
     }
+    
+    fetchProgramData();
   }, [programId]);
 
-  if (status === "loading") {
+  if (status === "loading" || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">جاري التحقق من الجلسة...</p>
+          <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>
         </div>
       </div>
     );
   }
 
   if (!session) return null;
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 text-lg mb-4">{error}</p>
+          <Link href="/programs" className="text-blue-600 hover:underline">
+            ← العودة للبرامج
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const userRole = session.user?.role;
   const canManageCourses = userRole === 'ADMIN';
@@ -148,7 +147,7 @@ export default function CoursesPage() {
         level: newCourse.level,
         maxStudents: newCourse.maxStudents,
         teacherId: newCourse.teacherId || undefined,
-        teacherName: selectedTeacher?.name,
+        teacherName: selectedTeacher?.userName,
         isActive: true,
         createdAt: new Date().toISOString().split('T')[0],
         studentsCount: 0
@@ -178,7 +177,7 @@ export default function CoursesPage() {
     const selectedTeacher = teachers.find(t => t.id === teacherId);
     setCourses(courses.map(course =>
       course.id === courseId
-        ? { ...course, teacherId, teacherName: selectedTeacher?.name }
+        ? { ...course, teacherId, teacherName: selectedTeacher?.userName }
         : course
     ));
   };
@@ -297,7 +296,7 @@ export default function CoursesPage() {
                     <option value="">اختر معلمة</option>
                     {teachers.map((teacher) => (
                       <option key={teacher.id} value={teacher.id}>
-                        {teacher.name}
+                        {teacher.userName}
                       </option>
                     ))}
                   </select>
@@ -394,7 +393,7 @@ export default function CoursesPage() {
                               <option value="">بدون معلمة</option>
                               {teachers.map((teacher) => (
                                 <option key={teacher.id} value={teacher.id}>
-                                  {teacher.name}
+                                  {teacher.userName}
                                 </option>
                               ))}
                             </select>
