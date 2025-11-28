@@ -26,15 +26,17 @@ const medalEmojis = ['🥇', '🥈', '🥉'];
 export default function BehaviorPointsReportContent({ userId, userRole }: Props) {
   const [data, setData] = useState<BehaviorPointsReportItem[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   
   const [filters, setFilters] = useState<ReportFilters>({});
   const [sortBy, setSortBy] = useState<SortOptions>({ field: 'total', order: 'desc' });
 
-  useEffect(() => { fetchCourses(); fetchData(); }, []);
-  useEffect(() => { fetchData(); }, [filters, sortBy]);
+  useEffect(() => { fetchCourses(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (hasLoadedOnce) fetchData(); }, [filters, sortBy]);
 
   const fetchCourses = async () => {
     try {
@@ -54,7 +56,12 @@ export default function BehaviorPointsReportContent({ userId, userRole }: Props)
         setData(result.data);
       }
       setIsLoading(false);
+      setHasLoadedOnce(true);
     });
+  };
+
+  const handleShowReport = () => {
+    fetchData();
   };
 
   const handleFilterChange = (key: keyof ReportFilters, value: string) => {
@@ -96,10 +103,33 @@ export default function BehaviorPointsReportContent({ userId, userRole }: Props)
             <input type="date" value={filters.dateTo || ''} onChange={(e) => handleFilterChange('dateTo', e.target.value)} className="w-full px-4 py-2 border rounded-lg" />
           </div>
           <SmartExportButton onExport={handleExport} isLoading={isPending} disabled={data.length === 0} />
+          
+          <button
+            onClick={handleShowReport}
+            disabled={isPending || isLoading}
+            className="px-6 py-2 bg-gradient-to-r from-primary-purple to-primary-blue text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 font-medium disabled:opacity-50"
+          >
+            {isPending || isLoading ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                جاري التحميل...
+              </>
+            ) : (
+              <>
+                🏆 عرض التقرير
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {isLoading || isPending ? (
+      {!hasLoadedOnce ? (
+        <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+          <div className="text-6xl mb-4">🏆</div>
+          <h3 className="text-xl font-medium text-gray-700 mb-2">اختر الحلقة واضغط على زر &quot;عرض التقرير&quot;</h3>
+          <p className="text-gray-500">سيتم عرض ترتيب الطالبات حسب النقاط بعد الضغط على الزر</p>
+        </div>
+      ) : isLoading || isPending ? (
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
           <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>

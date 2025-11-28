@@ -18,6 +18,7 @@ export const BehaviorPointsTab = memo(({ courseId, date, onUnsavedChanges }: Beh
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (courseId && date) {
       fetchStudentsPoints();

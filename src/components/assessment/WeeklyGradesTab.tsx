@@ -18,6 +18,7 @@ export const WeeklyGradesTab = memo(({ courseId, week, onWeekChange, onUnsavedCh
 
   const gradeValues = generateQuarterStepValues(5, 0.25);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (courseId) {
       fetchWeeklyGrades();

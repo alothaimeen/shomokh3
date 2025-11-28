@@ -26,12 +26,14 @@ function BehaviorGradesContent() {
     }
   }, [status, router]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (session?.user?.role === 'ADMIN' || session?.user?.role === 'TEACHER') {
       fetchCourses();
     }
   }, [session]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const courseId = searchParams.get('courseId');
     if (courseId) {
@@ -42,6 +44,7 @@ function BehaviorGradesContent() {
     }
   }, [searchParams, courses]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (selectedCourse && selectedDate) {
       fetchGrades();

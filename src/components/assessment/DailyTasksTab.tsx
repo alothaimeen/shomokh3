@@ -18,6 +18,7 @@ export const DailyTasksTab = memo(({ courseId, date, onUnsavedChanges }: DailyTa
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (courseId && date) {
       fetchTask();

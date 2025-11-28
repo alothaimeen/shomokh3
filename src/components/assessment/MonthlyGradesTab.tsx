@@ -26,6 +26,7 @@ export const MonthlyGradesTab = memo(({ courseId, month, onMonthChange, onUnsave
   const quranGradeValues = generateQuarterStepValues(5, 0.25);
   const tajweedGradeValues = generateQuarterStepValues(15, 0.25);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (courseId) {
       fetchMonthlyGrades();

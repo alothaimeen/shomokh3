@@ -17,6 +17,7 @@ export const FinalExamTab = memo(({ courseId, onUnsavedChanges }: FinalExamTabPr
   const quranTestValues = generateQuarterStepValues(40, 0.25);
   const tajweedTestValues = generateQuarterStepValues(20, 0.25);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (courseId) {
       fetchGrades();

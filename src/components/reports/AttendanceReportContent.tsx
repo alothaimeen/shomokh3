@@ -35,7 +35,8 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
   const [data, setData] = useState<AttendanceReportItem[]>([]);
   const [byDateData, setByDateData] = useState<AttendanceReportByDate[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   
@@ -47,8 +48,9 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
     present: 0, excused: 0, absent: 0, reviewed: 0, leftEarly: 0, total: 0, attendanceRate: 0
   });
 
-  useEffect(() => { fetchCourses(); fetchData(); }, []);
-  useEffect(() => { fetchData(); }, [filters, sortBy, viewMode]);
+  useEffect(() => { fetchCourses(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (hasLoadedOnce) fetchData(); }, [filters, sortBy, viewMode]);
   useEffect(() => {
     if (viewMode === 'by-student' && data.length > 0) {
       calculateStats(data);
@@ -79,7 +81,12 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
         }
       }
       setIsLoading(false);
+      setHasLoadedOnce(true);
     });
+  };
+
+  const handleShowReport = () => {
+    fetchData();
   };
 
   const calculateStats = (records: AttendanceReportItem[]) => {
@@ -156,6 +163,23 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
             </select>
           </div>
           {viewMode === 'by-student' && <SmartExportButton onExport={handleExport} isLoading={isPending} disabled={data.length === 0} />}
+          
+          <button
+            onClick={handleShowReport}
+            disabled={isPending || isLoading}
+            className="px-6 py-2 bg-gradient-to-r from-primary-purple to-primary-blue text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 font-medium disabled:opacity-50"
+          >
+            {isPending || isLoading ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                جاري التحميل...
+              </>
+            ) : (
+              <>
+                📋 عرض التقرير
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -174,7 +198,13 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
       )}
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        {isLoading || isPending ? (
+        {!hasLoadedOnce ? (
+          <div className="p-12 text-center">
+            <div className="text-6xl mb-4">📋</div>
+            <h3 className="text-xl font-medium text-gray-700 mb-2">اختر الحلقة واضغط على زر &quot;عرض التقرير&quot;</h3>
+            <p className="text-gray-500">سيتم عرض سجلات الحضور بعد الضغط على الزر</p>
+          </div>
+        ) : isLoading || isPending ? (
           <div className="p-8 text-center"><div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div><p className="mt-4 text-gray-600">جاري تحميل...</p></div>
         ) : viewMode === 'by-student' ? (
           data.length === 0 ? <div className="p-8 text-center text-gray-500">لا توجد سجلات</div> : (

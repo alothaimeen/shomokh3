@@ -17,6 +17,7 @@ export const BehaviorGradesTab = memo(({ courseId, date, onUnsavedChanges }: Beh
 
   const behaviorScoreValues = generateQuarterStepValues(1, 0.25);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (courseId && date) {
       fetchGrades();

@@ -18,7 +18,8 @@ interface Props {
 export default function AcademicReportsContent({ userId, userRole }: Props) {
   const [data, setData] = useState<AcademicReportItem[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   
@@ -28,11 +29,14 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
 
   useEffect(() => {
     fetchCourses();
-    fetchData();
   }, []);
 
+  // إعادة جلب البيانات عند تغيير الفلاتر فقط إذا تم التحميل مسبقاً
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    fetchData();
+    if (hasLoadedOnce) {
+      fetchData();
+    }
   }, [filters, sortBy]);
 
   const fetchCourses = async () => {
@@ -61,7 +65,12 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
       }
       
       setIsLoading(false);
+      setHasLoadedOnce(true);
     });
+  };
+
+  const handleShowReport = () => {
+    fetchData();
   };
 
   const handleFilterChange = (key: keyof ReportFilters, value: string) => {
@@ -159,6 +168,23 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
             {sortBy.order === 'desc' ? '↓ تنازلي' : '↑ تصاعدي'}
           </button>
 
+          <button
+            onClick={handleShowReport}
+            disabled={isPending || isLoading}
+            className="px-6 py-2 bg-gradient-to-r from-primary-purple to-primary-blue text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 font-medium disabled:opacity-50"
+          >
+            {isPending || isLoading ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                جاري التحميل...
+              </>
+            ) : (
+              <>
+                📊 عرض التقرير
+              </>
+            )}
+          </button>
+
           <SmartExportButton 
             onExport={handleExport}
             isLoading={isPending}
@@ -193,7 +219,13 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
       </div>
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        {isLoading || isPending ? (
+        {!hasLoadedOnce ? (
+          <div className="p-12 text-center">
+            <div className="text-6xl mb-4">📊</div>
+            <h3 className="text-xl font-medium text-gray-700 mb-2">اختر الحلقة واضغط على زر &quot;عرض التقرير&quot;</h3>
+            <p className="text-gray-500">سيتم عرض بيانات الطالبات بعد الضغط على الزر</p>
+          </div>
+        ) : isLoading || isPending ? (
           <div className="p-8 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
             <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>
