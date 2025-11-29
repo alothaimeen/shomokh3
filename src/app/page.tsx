@@ -34,19 +34,40 @@ export default function Home() {
             تعلمي القرآن الكريم مع معلمات مجازات، وتابعي تقدمك عبر نظام شامل
           </p>
 
-          <div className="flex justify-center space-x-4 space-x-reverse">
-            <Link
-              href="/register"
-              className="px-8 py-4 bg-gradient-to-r from-primary-purple to-primary-blue text-white text-lg font-semibold rounded-lg hover:shadow-lg transition-shadow"
-            >
-              انضمي كطالبة
-            </Link>
-            <Link
-              href="/login"
-              className="px-8 py-4 border-2 border-primary-purple text-primary-purple text-lg font-semibold rounded-lg hover:bg-primary-purple hover:text-white transition-colors"
-            >
-              تسجيل دخول
-            </Link>
+          <div className="flex flex-col items-center gap-4">
+            {/* Primary Actions */}
+            <div className="flex justify-center space-x-4 space-x-reverse">
+              <Link
+                href="/register"
+                className="px-8 py-4 bg-gradient-to-r from-primary-purple to-primary-blue text-white text-lg font-semibold rounded-lg hover:shadow-lg transition-shadow"
+              >
+                انضمي كطالبة
+              </Link>
+              <Link
+                href="/login"
+                className="px-8 py-4 border-2 border-primary-purple text-primary-purple text-lg font-semibold rounded-lg hover:bg-primary-purple hover:text-white transition-colors"
+              >
+                تسجيل دخول
+              </Link>
+            </div>
+            
+            {/* Secondary Actions - Progress & Why Change */}
+            <div className="flex justify-center space-x-4 space-x-reverse mt-2">
+              <Link
+                href="/progress"
+                className="group flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 font-medium rounded-lg hover:border-primary-purple hover:text-primary-purple transition-all"
+              >
+                <span className="text-xl">📊</span>
+                <span>ماذا أنجزنا؟</span>
+              </Link>
+              <Link
+                href="/why-change"
+                className="group flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 font-medium rounded-lg hover:border-primary-blue hover:text-primary-blue transition-all"
+              >
+                <span className="text-xl">💡</span>
+                <span>لماذا نغير المنصة؟</span>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -206,6 +227,12 @@ export default function Home() {
             </Link>
             <Link href="/about/achievements" className="text-gray-400 hover:text-white transition-colors">
               إنجازاتنا
+            </Link>
+            <Link href="/progress" className="text-gray-400 hover:text-white transition-colors">
+              تقدم المشروع
+            </Link>
+            <Link href="/why-change" className="text-gray-400 hover:text-white transition-colors">
+              لماذا نغير؟
             </Link>
             <Link href="/about/contact" className="text-gray-400 hover:text-white transition-colors">
               تواصل معنا

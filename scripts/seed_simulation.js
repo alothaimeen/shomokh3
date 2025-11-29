@@ -39,31 +39,44 @@ async function processSequentially(items, processFn, label = '') {
     }
 }
 
-// Calendar Constants
+// Calendar Constants - حسب التقويم الدراسي
+// التقييم اليومي: 70 يوم بالضبط (14 أسبوع × 5 أيام)
+// الإجازات يتم تعويضها في اليوم التالي وتُسجل بتاريخ الإجازة
 const START_DATE = new Date('2025-08-31');
-const END_DATE = new Date('2025-12-18');
-const HOLIDAYS = [
-    '2025-09-23', // National Day
-    '2025-10-12', // Extra Holiday
-    '2025-11-23', '2025-11-24', '2025-11-25', '2025-11-26', '2025-11-27', // Autumn Break
-    '2025-12-11', '2025-12-14' // Extra Holidays
-];
+const TOTAL_DAILY_GRADES = 70; // عدد أيام التقييم اليومي المطلوب
+
+// أيام العمل الأساسية (الأحد-الخميس) من 31 أغسطس حتى نهاية الأسبوع 15
+// يتم توليد 70 يوم بالضبط بما فيها أيام تعويض الإجازات
+function generateDailyGradeDates() {
+    const dates = [];
+    let currentDate = new Date(START_DATE);
+    const endDate = new Date('2025-12-11'); // الخميس 11 ديسمبر - لإكمال 70 يوم
+    
+    // إجازة الخريف - نتخطاها
+    const autumnBreak = ['2025-11-23', '2025-11-24', '2025-11-25', '2025-11-26', '2025-11-27'];
+    
+    while (currentDate <= endDate && dates.length < TOTAL_DAILY_GRADES) {
+        const day = currentDate.getDay();
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        // تخطي الجمعة والسبت وإجازة الخريف
+        if (day !== 5 && day !== 6 && !autumnBreak.includes(dateStr)) {
+            dates.push(new Date(currentDate));
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return dates;
+}
+
+const DAILY_GRADE_DATES = generateDailyGradeDates();
+console.log(`📅 عدد أيام التقييم اليومي: ${DAILY_GRADE_DATES.length}`);
 
 // Week values must be 1-10 per schema constraint
 const WEEKLY_EXAM_WEEKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 // Month values must be 1-3 per schema constraint  
 const MONTHLY_EXAM_WEEKS = [1, 2, 3];
 const FINAL_EXAM_WEEK = 16;
-
-function isHoliday(date) {
-    const dateString = date.toISOString().split('T')[0];
-    return HOLIDAYS.includes(dateString);
-}
-
-function getWeekNumber(date) {
-    const diff = date.getTime() - START_DATE.getTime();
-    return Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
-}
 
 function getRandomScore(min, max, decimals = 2) {
     const score = Math.random() * (max - min) + min;
@@ -237,6 +250,7 @@ async function main() {
     const attendanceRecords = [];
     const dailyGrades = [];
     const behaviorPoints = [];
+    const behaviorGrades = []; // درجات السلوك اليومية (للتقارير)
     const weeklyGrades = [];
     const monthlyGrades = [];
     const finalExams = [];
@@ -245,50 +259,55 @@ async function main() {
         const sId = studentNumToId.get(s.studentNumber);
         const cId = s.circleId;
 
-        let currentDate = new Date(START_DATE);
-        while (currentDate <= END_DATE) {
-            if (currentDate.getDay() !== 5 && currentDate.getDay() !== 6 && !isHoliday(currentDate)) {
-                const isPresent = shouldAttend(s.profile);
-                const dateIso = new Date(currentDate); // Clone
+        // استخدام 70 يوم بالضبط للتقييم اليومي
+        for (const dateIso of DAILY_GRADE_DATES) {
+            const isPresent = shouldAttend(s.profile);
 
-                // Attendance
-                attendanceRecords.push({
+            // Attendance
+            attendanceRecords.push({
+                studentId: sId,
+                courseId: cId,
+                date: new Date(dateIso),
+                status: isPresent ? 'PRESENT' : 'ABSENT'
+            });
+
+            if (isPresent) {
+                let dailyScore = 0;
+                if (s.profile === 'PERFECT') dailyScore = 10; // درجة كاملة
+                else if (s.profile === 'EXCELLENT') dailyScore = getRandomScore(9.5, 10);
+                else if (s.profile === 'GOOD') dailyScore = getRandomScore(8, 9.5);
+                else if (s.profile === 'WEAK') dailyScore = getRandomScore(6, 8);
+                else dailyScore = getRandomScore(0, 6);
+
+                // Daily Grade (memorization + review = 10 max)
+                dailyGrades.push({
                     studentId: sId,
                     courseId: cId,
-                    date: dateIso,
-                    status: isPresent ? 'PRESENT' : 'ABSENT'
+                    date: new Date(dateIso),
+                    memorization: s.profile === 'PERFECT' ? 5 : dailyScore * 0.5,
+                    review: s.profile === 'PERFECT' ? 5 : dailyScore * 0.5
                 });
 
-                if (isPresent) {
-                    let dailyScore = 0;
-                    if (s.profile === 'PERFECT') dailyScore = 10; // درجة كاملة
-                    else if (s.profile === 'EXCELLENT') dailyScore = getRandomScore(9.5, 10);
-                    else if (s.profile === 'GOOD') dailyScore = getRandomScore(8, 9.5);
-                    else if (s.profile === 'WEAK') dailyScore = getRandomScore(6, 8);
-                    else dailyScore = getRandomScore(0, 6);
+                // BehaviorGrade - درجة السلوك اليومية (0-1)
+                // جميع الطالبات يحصلن على درجة كاملة في السلوك = 1
+                behaviorGrades.push({
+                    studentId: sId,
+                    courseId: cId,
+                    date: new Date(dateIso),
+                    dailyScore: 1.00 // درجة كاملة للجميع
+                });
 
-                    // Daily Grade (memorization + review = 10 max)
-                    dailyGrades.push({
-                        studentId: sId,
-                        courseId: cId,
-                        date: dateIso,
-                        memorization: s.profile === 'PERFECT' ? 5 : dailyScore * 0.5,
-                        review: s.profile === 'PERFECT' ? 5 : dailyScore * 0.5
-                    });
-
-                    // Behavior (4 criteria × true = 20 points max)
-                    behaviorPoints.push({
-                        studentId: sId,
-                        courseId: cId,
-                        date: dateIso,
-                        earlyAttendance: s.profile === 'PERFECT' ? true : Math.random() > 0.5,
-                        perfectMemorization: s.profile === 'PERFECT' ? true : dailyScore > 9,
-                        activeParticipation: true,
-                        timeCommitment: true
-                    });
-                }
+                // BehaviorPoint - نقاط السلوك (4 معايير boolean)
+                behaviorPoints.push({
+                    studentId: sId,
+                    courseId: cId,
+                    date: new Date(dateIso),
+                    earlyAttendance: s.profile === 'PERFECT' ? true : Math.random() > 0.5,
+                    perfectMemorization: s.profile === 'PERFECT' ? true : dailyScore > 9,
+                    activeParticipation: true,
+                    timeCommitment: true
+                });
             }
-            currentDate.setDate(currentDate.getDate() + 1);
         }
 
         // Weekly (max 5 per week)
@@ -393,6 +412,7 @@ async function main() {
 
     await batchInsert('attendance', attendanceRecords);
     await batchInsert('dailyGrade', dailyGrades);
+    await batchInsert('behaviorGrade', behaviorGrades); // درجات السلوك للتقارير
     await batchInsert('behaviorPoint', behaviorPoints);
     await batchInsert('weeklyGrade', weeklyGrades);
     await batchInsert('monthlyGrade', monthlyGrades);

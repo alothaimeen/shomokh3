@@ -11,6 +11,7 @@ import {
   type AttendanceViewMode 
 } from '@/actions/reports';
 import SmartExportButton from './SmartExportButton';
+import PrintButton from './PrintButton';
 import { exportAttendanceReport } from '@/lib/utils/exportHelpers';
 
 interface Course {
@@ -164,6 +165,12 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
           </div>
           {viewMode === 'by-student' && <SmartExportButton onExport={handleExport} isLoading={isPending} disabled={data.length === 0} />}
           
+          <PrintButton 
+            printAreaId="attendance-report-table"
+            title="تقرير الحضور"
+            disabled={viewMode === 'by-student' ? data.length === 0 : byDateData.length === 0}
+          />
+          
           <button
             onClick={handleShowReport}
             disabled={isPending || isLoading}
@@ -208,7 +215,7 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
           <div className="p-8 text-center"><div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div><p className="mt-4 text-gray-600">جاري تحميل...</p></div>
         ) : viewMode === 'by-student' ? (
           data.length === 0 ? <div className="p-8 text-center text-gray-500">لا توجد سجلات</div> : (
-            <div className="overflow-x-auto">
+            <div id="attendance-report-table" className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-primary-purple to-primary-blue text-white">
                   <tr><th className="p-3 text-right">التاريخ</th><th className="p-3 text-right">رقم</th><th className="p-3 text-right">الاسم</th><th className="p-3 text-center">الحلقة</th><th className="p-3 text-center">البرنامج</th><th className="p-3 text-center">الحالة</th></tr>
@@ -234,7 +241,7 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
           )
         ) : (
           byDateData.length === 0 ? <div className="p-8 text-center text-gray-500">لا توجد سجلات</div> : (
-            <div className="divide-y">
+            <div id="attendance-report-table" className="divide-y">
               {byDateData.map((dg) => (
                 <div key={dg.date} className="p-4">
                   <div className="flex items-center justify-between mb-4">

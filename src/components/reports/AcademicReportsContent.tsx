@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition } from 'react';
 import { getAcademicReportData, type AcademicReportItem, type ReportFilters, type SortOptions, type SortField, type ExportFormat } from '@/actions/reports';
 import SmartExportButton from './SmartExportButton';
+import PrintButton from './PrintButton';
 import { exportAcademicReport } from '@/lib/utils/exportHelpers';
 
 interface Course {
@@ -190,6 +191,12 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
             isLoading={isPending}
             disabled={data.length === 0}
           />
+
+          <PrintButton 
+            printAreaId="academic-report-table"
+            title="التقرير الأكاديمي"
+            disabled={data.length === 0}
+          />
         </div>
       </div>
 
@@ -278,7 +285,7 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
         ) : data.length === 0 ? (
           <div className="p-8 text-center text-gray-500">لا توجد بيانات متاحة</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div id="academic-report-table" className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gradient-to-r from-primary-purple to-primary-blue text-white">
                 <tr>

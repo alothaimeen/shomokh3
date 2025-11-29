@@ -9,6 +9,7 @@ import {
   type ExportFormat 
 } from '@/actions/reports';
 import SmartExportButton from './SmartExportButton';
+import PrintButton from './PrintButton';
 import { exportBehaviorPointsReport } from '@/lib/utils/exportHelpers';
 
 interface Course {
@@ -104,6 +105,12 @@ export default function BehaviorPointsReportContent({ userId, userRole }: Props)
           </div>
           <SmartExportButton onExport={handleExport} isLoading={isPending} disabled={data.length === 0} />
           
+          <PrintButton 
+            printAreaId="behavior-points-report-table"
+            title="تقرير النقاط التحفيزية"
+            disabled={data.length === 0}
+          />
+          
           <button
             onClick={handleShowReport}
             disabled={isPending || isLoading}
@@ -177,7 +184,7 @@ export default function BehaviorPointsReportContent({ userId, userRole }: Props)
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div id="behavior-points-report-table" className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-primary-purple to-primary-blue text-white">

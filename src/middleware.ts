@@ -6,7 +6,12 @@ export default withAuth({
       const path = req.nextUrl.pathname;
 
       // Public routes
-      if (path === '/' || path === '/login') return true;
+      if (path === '/' || 
+          path === '/login' || 
+          path === '/progress' || 
+          path === '/why-change' ||
+          path.startsWith('/about') ||
+          path.startsWith('/register')) return true;
 
       // No token = unauthorized
       if (!token) {
