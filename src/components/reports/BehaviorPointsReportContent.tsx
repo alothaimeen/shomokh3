@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useCallback } from 'react';
 import { 
   getBehaviorPointsReportData, 
   type BehaviorPointsReportItem,
@@ -35,10 +35,6 @@ export default function BehaviorPointsReportContent({ userId, userRole }: Props)
   const [filters, setFilters] = useState<ReportFilters>({});
   const [sortBy, setSortBy] = useState<SortOptions>({ field: 'total', order: 'desc' });
 
-  useEffect(() => { fetchCourses(); }, []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (hasLoadedOnce) fetchData(); }, [filters, sortBy]);
-
   const fetchCourses = async () => {
     try {
       const res = await fetch('/api/courses');
@@ -46,7 +42,7 @@ export default function BehaviorPointsReportContent({ userId, userRole }: Props)
     } catch (err) { console.error('Error:', err); }
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     startTransition(async () => {
       setIsLoading(true);
       setError(null);
@@ -59,7 +55,10 @@ export default function BehaviorPointsReportContent({ userId, userRole }: Props)
       setIsLoading(false);
       setHasLoadedOnce(true);
     });
-  };
+  }, [filters, sortBy]);
+
+  useEffect(() => { fetchCourses(); }, []);
+  useEffect(() => { if (hasLoadedOnce) fetchData(); }, [hasLoadedOnce, fetchData]);
 
   const handleShowReport = () => {
     fetchData();

@@ -3,7 +3,36 @@ import ProgressBar from './components/ProgressBar';
 import FeatureCard from './components/FeatureCard';
 import CurrentWorkSection from './components/CurrentWorkSection';
 import UpcomingFeatures from './components/UpcomingFeatures';
-import progressData from '@/data/progress.json';
+import progressDataRaw from '@/data/progress.json';
+
+// تحديد نوع البيانات
+interface ProgressData {
+  currentProgress: {
+    percentage: number;
+    completed: number;
+    total: number;
+    currentPhase: string;
+  };
+  completedFeatures: {
+    id: number;
+    category: string;
+    icon: string;
+    features: { title: string; description: string }[];
+  }[];
+  currentWork: {
+    title: string;
+    description: string;
+  }[];
+  upcomingFeatures: {
+    id: number;
+    title: string;
+    icon: string;
+    description: string;
+    priority: string;
+  }[];
+}
+
+const progressData = progressDataRaw as ProgressData;
 
 export default function ProgressPage() {
 

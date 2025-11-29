@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useCallback } from 'react';
 import { 
   getAttendanceReportData, 
   type AttendanceReportItem, 
@@ -49,15 +49,6 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
     present: 0, excused: 0, absent: 0, reviewed: 0, leftEarly: 0, total: 0, attendanceRate: 0
   });
 
-  useEffect(() => { fetchCourses(); }, []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (hasLoadedOnce) fetchData(); }, [filters, sortBy, viewMode]);
-  useEffect(() => {
-    if (viewMode === 'by-student' && data.length > 0) {
-      calculateStats(data);
-    }
-  }, [data, viewMode]);
-
   const fetchCourses = async () => {
     try {
       const res = await fetch('/api/courses');
@@ -65,7 +56,7 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
     } catch (err) { console.error('Error:', err); }
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     startTransition(async () => {
       setIsLoading(true);
       setError(null);
@@ -84,7 +75,15 @@ export default function AttendanceReportContent({ userId, userRole }: Props) {
       setIsLoading(false);
       setHasLoadedOnce(true);
     });
-  };
+  }, [filters, sortBy, viewMode]);
+
+  useEffect(() => { fetchCourses(); }, []);
+  useEffect(() => { if (hasLoadedOnce) fetchData(); }, [hasLoadedOnce, fetchData]);
+  useEffect(() => {
+    if (viewMode === 'by-student' && data.length > 0) {
+      calculateStats(data);
+    }
+  }, [data, viewMode]);
 
   const handleShowReport = () => {
     fetchData();

@@ -340,3 +340,39 @@ model BehaviorPoint {
   @@unique([studentId, courseId, date])
   @@map("behavior_points")
 }
+
+model PublicSiteSettings {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // إحصائيات الصفحة الرئيسية
+  studentsCount     Int      @default(0)
+  teachersCount     Int      @default(0)
+  coursesCount      Int      @default(0)
+  facesCompleted    Int      @default(0)
+  
+  // عن الجمعية
+  aboutTitle        String   @default("عن الجمعية")
+  aboutVision       String   @default("جمعية رائدة لتعليم مستمر، بأساليب مبتكرة") @db.Text
+  aboutMission      String   @default("تعليم القرآن الكريم وتحفيظه، وترسيخ القيم والأخلاق الإسلامية") @db.Text
+  aboutGoals        String   @default("تعليم القرآن الكريم وفق المنهج النبوي") @db.Text
+  
+  // إنجازاتنا
+  achievementsTitle String   @default("إنجازاتنا")
+  achievementsText  String   @default("أكثر من 11 ألف طالبة و2 مليون وجه منجز") @db.Text
+  
+  // تواصل معنا
+  contactTitle      String   @default("تواصل معنا")
+  contactEmail      String   @default("")
+  contactPhone      String   @default("")
+  contactAddress    String   @default("")
+  contactWhatsapp   String   @default("")
+  contactIban       String   @default("")
+  
+  // Meta Settings
+  isActive          Boolean  @default(true)
+  lastEditedById    String?
+
+  @@map("public_site_settings")
+}

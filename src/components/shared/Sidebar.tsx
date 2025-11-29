@@ -22,7 +22,8 @@ import {
   X,
   Menu,
   Loader2,
-  Trophy
+  Trophy,
+  Globe
 } from 'lucide-react';
 
 interface NavItem {
@@ -63,7 +64,16 @@ const navItems: NavItem[] = [
   { href: '/my-attendance', label: 'حضوري', icon: <CalendarCheck size={20} />, roles: ['STUDENT'] },
   { href: '/my-grades', label: 'درجاتي', icon: <GraduationCap size={20} />, roles: ['STUDENT'] },
   { href: '/daily-tasks', label: 'المهام اليومية', icon: <ListChecks size={20} />, roles: ['STUDENT'] },
-  { href: '/settings', label: 'الإعدادات', icon: <Settings size={20} />, roles: ['ADMIN', 'TEACHER', 'STUDENT'] }
+  {
+    href: '#settings',
+    label: 'الإعدادات',
+    icon: <Settings size={20} />,
+    roles: ['ADMIN', 'TEACHER', 'STUDENT'],
+    children: [
+      { href: '/settings', label: 'التفضيلات', icon: <Settings size={18} />, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
+      { href: '/site-settings', label: 'بيانات الجمعية', icon: <Globe size={18} />, roles: ['ADMIN'] }
+    ]
+  }
 ];
 
 export default function Sidebar() {
@@ -140,8 +150,8 @@ export default function Sidebar() {
   return (
     <>
       {isMobileOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" onClick={() => setIsMobileOpen(false)} />}
-      <aside className={sidebarClasses}>
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
+      <aside className={sidebarClasses + " flex flex-col"}>
+        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 shrink-0">
           {!isCollapsed && (
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-purple to-primary-blue flex items-center justify-center text-white font-bold text-xl">ش</div>
@@ -153,9 +163,9 @@ export default function Sidebar() {
             <ChevronRight size={20} className={isCollapsed ? "" : "rotate-180"} style={{ transition: "transform 0.3s" }} />
           </button>
         </div>
-        <nav className="flex-1 overflow-y-auto py-4"><ul className="space-y-1 px-3">{filteredNavItems.map((item) => renderNavItem(item))}</ul></nav>
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 min-h-0"><ul className="space-y-1 px-3">{filteredNavItems.map((item) => renderNavItem(item))}</ul></nav>
         {!isCollapsed && session?.user && (
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-gray-200 shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-purple to-primary-blue flex items-center justify-center text-white font-bold">{session.user.name?.charAt(0) || 'م'}</div>
               <div className="flex-1 min-w-0">

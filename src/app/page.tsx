@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import StatsSection from "@/components/landing/StatsSection";
+import StatsSkeleton from "@/components/landing/StatsSkeleton";
 
 export default function Home() {
   return (
@@ -112,26 +115,9 @@ export default function Home() {
         </div>
 
         {/* Stats Section */}
-        <div className="bg-white rounded-lg p-8 shadow-md">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-3xl font-bold text-primary-purple mb-2">11,548+</div>
-              <div className="text-gray-600">طالبة</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-primary-blue mb-2">60+</div>
-              <div className="text-gray-600">معلمة</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-600 mb-2">59+</div>
-              <div className="text-gray-600">حلقة قرآنية</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-blue-600 mb-2">2,075,633</div>
-              <div className="text-gray-600">وجه منجز</div>
-            </div>
-          </div>
-        </div>
+        <Suspense fallback={<StatsSkeleton />}>
+          <StatsSection />
+        </Suspense>
 
         {/* About Links Section */}
         <div className="bg-white rounded-lg shadow-md p-8 mt-16">
@@ -169,7 +155,7 @@ export default function Home() {
                 إنجازاتنا
               </h4>
               <p className="text-gray-600 text-sm">
-                أكثر من 11 ألف طالبة و2 مليون وجه منجز
+                مسيرة عطاء متواصل في تعليم القرآن الكريم
               </p>
             </Link>
 

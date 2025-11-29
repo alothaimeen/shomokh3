@@ -23,7 +23,9 @@ export default withAuth({
       if (path.startsWith('/programs') ||
           path.startsWith('/users') ||
           path.startsWith('/students') ||
-          path.startsWith('/teacher-requests')) {
+          path.startsWith('/teacher-requests') ||
+          path.startsWith('/site-settings') ||
+          path.startsWith('/admin')) {
         const isAuthorized = token.role === 'ADMIN';
         console.log(`🛡️ Middleware - Admin-only path: ${path}`, {
           tokenRole: token.role,

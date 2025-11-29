@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -23,20 +23,16 @@ export default function LoginPage() {
       });
 
       if (result?.ok) {
-        // الحصول على Session للتحقق من الدور
-        const session = await getSession();
-        console.log('تسجيل دخول ناجح:', session);
-
-        // التوجه للوحة التحكم
+        // التوجه مباشرة للوحة التحكم بدون استدعاء getSession
         router.push('/dashboard');
         router.refresh();
       } else {
         alert('بيانات تسجيل الدخول غير صحيحة. جرب: admin@shamokh.edu / admin123');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('خطأ في تسجيل الدخول:', error);
       alert('حدث خطأ في تسجيل الدخول');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -55,17 +51,15 @@ export default function LoginPage() {
       });
 
       if (result?.ok) {
-        const session = await getSession();
-        console.log('دخول سريع ناجح:', session);
         router.push('/dashboard');
         router.refresh();
       } else {
         alert('فشل الدخول السريع');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('خطأ في الدخول السريع:', error);
       alert('حدث خطأ في الدخول السريع');
-    } finally {
       setIsLoading(false);
     }
   };
