@@ -151,41 +151,6 @@ export default async function DataAsync({ params }) {
 }
 ```
 
-### Pattern 4: معايير الصفحات الجديدة (من Session 19 فصاعداً)
-
-**لكل صفحة محمية جديدة:**
-1. ✅ تكون داخل `(dashboard)` route group
-2. ✅ استخدم Server Component (async function)
-3. ✅ إذا كانت البيانات > 100 سجل → استخدم Suspense
-4. ✅ أنشئ Async Component + Skeleton Component
-5. ✅ لا تضع Sidebar في الصفحة (موجود في Layout)
-
-**مثال التطبيق:**
-```typescript
-// ✅ صفحة جديدة صحيحة
-import { Suspense } from 'react';
-import DataAsync from '@/components/DataAsync';
-import DataSkeleton from '@/components/DataSkeleton';
-
-export default async function NewPage({ searchParams }) {
-  const session = await auth();
-  if (!session?.user) redirect('/login');
-  
-  const params = await searchParams;
-  
-  return (
-    <>
-      <AppHeader title="العنوان" />
-      <div className="p-8">
-        <Suspense fallback={<DataSkeleton />}>
-          <DataAsync params={params} />
-        </Suspense>
-      </div>
-    </>
-  );
-}
-```
-
 ---
 
 ## 6. قواعد قاعدة البيانات (Supabase) 🗄️
@@ -230,27 +195,4 @@ export default async function NewPage({ searchParams }) {
 - **useActionState:** تأكد من أنك تستخدم React 19.
 
 ---
-
-## 📖 ملفات المشروع المرجعية
-
-### للقراءة اليومية
-1. **[AI_RULES.md](AI_RULES.md)** (هذا الملف) - القواعد التقنية والأنماط
-2. **[PROJECT_TIMELINE.md](PROJECT_TIMELINE.md)** - الجلسات المكتملة والمخططة
-3. **[CURRENT_STATUS.md](CURRENT_STATUS.md)** - الحالة الحالية والمهام النشطة
-4. **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - البطاقة السريعة والحلول الجاهزة
-
-### للمرجعية عند الحاجة
-- **[PROJECT_MAP.md](PROJECT_MAP.md)** - خريطة الملفات والمجلدات
-- **[docs/history/](docs/history/)** - الأرشيف التاريخي للجلسات القديمة (1-17)
-
----
-
-**⏰ متى يُحدّث هذا الملف؟**
-- ✅ عند إضافة قاعدة تقنية جديدة (port، naming conventions، security rules)
-- ✅ عند اعتماد نمط تصميم جديد (Pattern 5, 6, ...)
-- ✅ عند اكتشاف ثغرة أمنية تحتاج لقاعدة صارمة
-- ❌ لا يُحدّث لمجرد إكمال جلسة عمل عادية
-
----
-
-**ملاحظة:** يتم تحديث هذا الملف عند إضافة قواعد تقنية جديدة أو أنماط تصميم معتمدة فقط.
+**ملاحظة:** هذا الملف يُحدث فقط عند تغيير المعايير التقنية أو إضافة أنماط تصميم جديدة.
