@@ -1,5 +1,6 @@
 ﻿import Link from 'next/link';
 import { CalendarCheck, Users, ClipboardCheck, FileText, GraduationCap, Award, BarChart3, Trophy, TrendingUp } from 'lucide-react';
+import TeacherCharts from './TeacherCharts';
 
 interface TeacherCourse {
   id: string;
@@ -74,6 +75,14 @@ export default function TeacherDashboard({ courses }: TeacherDashboardProps) {
           ))}
         </div>
       </div>
+
+      {/* قسم الرسوم البيانية */}
+      {courses.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">إحصائيات الأداء</h2>
+          <TeacherCharts />
+        </div>
+      )}
     </>
   );
 }

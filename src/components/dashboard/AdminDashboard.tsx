@@ -1,5 +1,6 @@
 ﻿import Link from 'next/link';
 import { Users, BookOpen, GraduationCap, UserCheck, BarChart3, Trophy, TrendingUp } from 'lucide-react';
+import AdminCharts from './AdminCharts';
 
 interface AdminDashboardProps {
   stats: {
@@ -62,6 +63,12 @@ export default function AdminDashboard({ stats }: AdminDashboardProps) {
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* قسم الرسوم البيانية */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">التحليلات والإحصائيات</h2>
+        <AdminCharts />
       </div>
     </>
   );

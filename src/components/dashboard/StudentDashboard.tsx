@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BookOpen, CalendarCheck, GraduationCap, ListChecks } from 'lucide-react';
+import StudentCharts from './StudentCharts';
 
 interface StudentEnrollment {
   id: string;
@@ -76,6 +77,14 @@ export default function StudentDashboard({ enrollments }: StudentDashboardProps)
           ))}
         </div>
       </div>
+
+      {/* قسم الرسوم البيانية - يظهر فقط إذا كانت الطالبة مسجلة في حلقة */}
+      {enrollments.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">تقدمك الدراسي</h2>
+          <StudentCharts />
+        </div>
+      )}
     </>
   );
 }
