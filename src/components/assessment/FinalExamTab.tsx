@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { FinalExamEntry } from '@/types/assessment';
 import { generateQuarterStepValues } from '@/lib/grading-formulas';
 
@@ -17,14 +17,7 @@ export const FinalExamTab = memo(({ courseId, onUnsavedChanges }: FinalExamTabPr
   const quranTestValues = generateQuarterStepValues(40, 0.25);
   const tajweedTestValues = generateQuarterStepValues(20, 0.25);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (courseId) {
-      fetchGrades();
-    }
-  }, [courseId]);
-
-  const fetchGrades = async () => {
+  const fetchGrades = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/grades/final-exam?courseId=${courseId}`);
@@ -49,7 +42,13 @@ export const FinalExamTab = memo(({ courseId, onUnsavedChanges }: FinalExamTabPr
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId]);
+
+  useEffect(() => {
+    if (courseId) {
+      fetchGrades();
+    }
+  }, [courseId, fetchGrades]);
 
   const handleGradeChange = (studentId: string, field: 'quranTest' | 'tajweedTest' | 'notes', value: string | number) => {
     setGrades(prev => ({

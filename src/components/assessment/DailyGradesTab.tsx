@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { generateQuarterStepValues } from '@/lib/grading-formulas';
 
 interface DailyGradesTabProps {
@@ -39,14 +39,7 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
   const gradeValues = generateQuarterStepValues(5, 0.25);
   const behaviorValues = generateQuarterStepValues(1, 0.25);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (courseId && date) {
-      fetchAllData();
-    }
-  }, [courseId, date]);
-
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
       // 1. Get students
@@ -123,7 +116,13 @@ export const DailyGradesTab = memo(({ courseId, date, onUnsavedChanges }: DailyG
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId, date]);
+
+  useEffect(() => {
+    if (courseId && date) {
+      fetchAllData();
+    }
+  }, [courseId, date, fetchAllData]);
 
   const toggleSection = (studentId: string, section: 'grades' | 'tasks' | 'points') => {
     setExpandedSections(prev => ({

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { BehaviorPointEntry } from '@/types/assessment';
 
 interface BehaviorPointsTabProps {
@@ -18,14 +18,7 @@ export const BehaviorPointsTab = memo(({ courseId, date, onUnsavedChanges }: Beh
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (courseId && date) {
-      fetchStudentsPoints();
-    }
-  }, [courseId, date]);
-
-  const fetchStudentsPoints = async () => {
+  const fetchStudentsPoints = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/points/behavior?courseId=${courseId}&date=${date}`);
@@ -39,7 +32,13 @@ export const BehaviorPointsTab = memo(({ courseId, date, onUnsavedChanges }: Beh
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId, date]);
+
+  useEffect(() => {
+    if (courseId && date) {
+      fetchStudentsPoints();
+    }
+  }, [courseId, date, fetchStudentsPoints]);
 
   const handleCheckboxChange = (studentId: string, field: keyof BehaviorPointEntry) => {
     if (field === 'studentId' || field === 'notes') return;

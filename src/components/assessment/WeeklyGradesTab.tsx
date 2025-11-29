@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { WeeklyGradeEntry, Student } from '@/types/assessment';
 import { generateQuarterStepValues } from '@/lib/grading-formulas';
 
@@ -18,14 +18,7 @@ export const WeeklyGradesTab = memo(({ courseId, week, onWeekChange, onUnsavedCh
 
   const gradeValues = generateQuarterStepValues(5, 0.25);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (courseId) {
-      fetchWeeklyGrades();
-    }
-  }, [courseId, week]);
-
-  const fetchWeeklyGrades = async () => {
+  const fetchWeeklyGrades = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/grades/weekly?courseId=${courseId}`);
@@ -47,7 +40,13 @@ export const WeeklyGradesTab = memo(({ courseId, week, onWeekChange, onUnsavedCh
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId, week]);
+
+  useEffect(() => {
+    if (courseId) {
+      fetchWeeklyGrades();
+    }
+  }, [courseId, week, fetchWeeklyGrades]);
 
   const handleGradeChange = (studentId: string, value: number) => {
     setEditedGrades((prev) => ({

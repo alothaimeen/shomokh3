@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { BehaviorGradeEntry } from '@/types/assessment';
 import { generateQuarterStepValues } from '@/lib/grading-formulas';
 
@@ -17,14 +17,7 @@ export const BehaviorGradesTab = memo(({ courseId, date, onUnsavedChanges }: Beh
 
   const behaviorScoreValues = generateQuarterStepValues(1, 0.25);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (courseId && date) {
-      fetchGrades();
-    }
-  }, [courseId, date]);
-
-  const fetchGrades = async () => {
+  const fetchGrades = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/grades/behavior?courseId=${courseId}&date=${date}`);
@@ -48,7 +41,13 @@ export const BehaviorGradesTab = memo(({ courseId, date, onUnsavedChanges }: Beh
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId, date]);
+
+  useEffect(() => {
+    if (courseId && date) {
+      fetchGrades();
+    }
+  }, [courseId, date, fetchGrades]);
 
   const handleGradeChange = (studentId: string, field: 'dailyScore' | 'notes', value: string | number) => {
     setGrades(prev => ({

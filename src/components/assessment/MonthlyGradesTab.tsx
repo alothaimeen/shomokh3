@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { MonthlyGradeEntry } from '@/types/assessment';
 import { generateQuarterStepValues } from '@/lib/grading-formulas';
 
@@ -26,14 +26,7 @@ export const MonthlyGradesTab = memo(({ courseId, month, onMonthChange, onUnsave
   const quranGradeValues = generateQuarterStepValues(5, 0.25);
   const tajweedGradeValues = generateQuarterStepValues(15, 0.25);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (courseId) {
-      fetchMonthlyGrades();
-    }
-  }, [courseId, month]);
-
-  const fetchMonthlyGrades = async () => {
+  const fetchMonthlyGrades = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/grades/monthly?courseId=${courseId}`);
@@ -59,7 +52,13 @@ export const MonthlyGradesTab = memo(({ courseId, month, onMonthChange, onUnsave
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId, month]);
+
+  useEffect(() => {
+    if (courseId) {
+      fetchMonthlyGrades();
+    }
+  }, [courseId, month, fetchMonthlyGrades]);
 
   const handleGradeChange = (
     studentId: string,

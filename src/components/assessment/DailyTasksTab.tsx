@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { DailyTaskEntry } from '@/types/assessment';
 
 interface DailyTasksTabProps {
@@ -18,14 +18,7 @@ export const DailyTasksTab = memo(({ courseId, date, onUnsavedChanges }: DailyTa
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (courseId && date) {
-      fetchTask();
-    }
-  }, [courseId, date]);
-
-  const fetchTask = async () => {
+  const fetchTask = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/points/daily-tasks?courseId=${courseId}&date=${date}`);
@@ -51,7 +44,13 @@ export const DailyTasksTab = memo(({ courseId, date, onUnsavedChanges }: DailyTa
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId, date]);
+
+  useEffect(() => {
+    if (courseId && date) {
+      fetchTask();
+    }
+  }, [courseId, date, fetchTask]);
 
   const handleCheckboxChange = (field: keyof DailyTaskEntry) => {
     if (field === 'notes') return;

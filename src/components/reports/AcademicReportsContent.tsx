@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useCallback } from 'react';
 import { getAcademicReportData, type AcademicReportItem, type ReportFilters, type SortOptions, type SortField, type ExportFormat } from '@/actions/reports';
 import SmartExportButton from './SmartExportButton';
 import PrintButton from './PrintButton';
@@ -28,31 +28,7 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
   const [sortBy, setSortBy] = useState<SortOptions>({ field: 'total', order: 'desc' });
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
-
-  // إعادة جلب البيانات عند تغيير الفلاتر فقط إذا تم التحميل مسبقاً
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (hasLoadedOnce) {
-      fetchData();
-    }
-  }, [filters, sortBy]);
-
-  const fetchCourses = async () => {
-    try {
-      const res = await fetch('/api/courses');
-      if (res.ok) {
-        const coursesData = await res.json();
-        setCourses(coursesData);
-      }
-    } catch (err) {
-      console.error('Error fetching courses:', err);
-    }
-  };
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     startTransition(async () => {
       setIsLoading(true);
       setError(null);
@@ -68,6 +44,28 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
       setIsLoading(false);
       setHasLoadedOnce(true);
     });
+  }, [filters, sortBy]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    if (hasLoadedOnce) {
+      fetchData();
+    }
+  }, [filters, sortBy, hasLoadedOnce, fetchData]);
+
+  const fetchCourses = async () => {
+    try {
+      const res = await fetch('/api/courses');
+      if (res.ok) {
+        const coursesData = await res.json();
+        setCourses(coursesData);
+      }
+    } catch (err) {
+      console.error('Error fetching courses:', err);
+    }
   };
 
   const handleShowReport = () => {
