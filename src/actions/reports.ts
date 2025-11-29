@@ -358,35 +358,39 @@ export interface AcademicReportItem {
   courseName: string;
   // الدرجات اليومية
   dailyGrades: {
-    recitation: number | null;
-    review: number | null;
-    homework: number | null;
-    participation: number | null;
-    total: number;
+    raw: number;          // الدرجة الخام (max 700)
+    normalized: number;   // الدرجة المعيارية (÷14 = max 50)
     count: number;
     average: number;
   };
   // الدرجات الأسبوعية
   weeklyGrades: {
-    total: number;
+    total: number;        // (max 50 - لا تحويل)
     count: number;
     average: number;
   };
   // الدرجات الشهرية
   monthlyGrades: {
-    total: number;
+    raw: number;          // الدرجة الخام (max 90)
+    normalized: number;   // الدرجة المعيارية (÷3 = max 30)
     count: number;
     average: number;
   };
-  // الدرجات السلوكية
+  // السلوك (من BehaviorGrade)
   behaviorGrades: {
-    total: number;
+    raw: number;          // الدرجة الخام (max 70)
+    normalized: number;   // الدرجة المعيارية (÷7 = max 10)
     count: number;
     average: number;
   };
-  // الإجمالي
+  // الاختبار النهائي
+  finalExamGrade: {
+    quranTest: number;    // max 40
+    tajweedTest: number;  // max 20
+    total: number;        // max 60
+  };
+  // الإجمالي (من 200)
   overallTotal: number;
-  overallAverage: number;
   percentage: number;
   status: 'ممتاز' | 'جيد جداً' | 'جيد' | 'مقبول' | 'ضعيف';
 }
@@ -421,7 +425,7 @@ export async function getAcademicReportData(
     }
 
     // جلب جميع الدرجات
-    const [dailyGrades, weeklyGrades, monthlyGrades, behaviorPoints] = await Promise.all([
+    const [dailyGrades, weeklyGrades, monthlyGrades, behaviorGrades, finalExams] = await Promise.all([
       db.dailyGrade.findMany({
         where: whereClause,
         include: {
@@ -443,8 +447,16 @@ export async function getAcademicReportData(
           course: { select: { id: true, courseName: true } }
         }
       }),
-      // نقرأ من BehaviorPoint بدلاً من BehaviorGrade
-      db.behaviorPoint.findMany({
+      // استخدام BehaviorGrade (درجة السلوك الأكاديمية) بدلاً من BehaviorPoint (النقاط التحفيزية)
+      db.behaviorGrade.findMany({
+        where: whereClause,
+        include: {
+          student: { select: { id: true, studentNumber: true, studentName: true } },
+          course: { select: { id: true, courseName: true } }
+        }
+      }),
+      // جلب بيانات الاختبار النهائي
+      db.finalExam.findMany({
         where: whereClause,
         include: {
           student: { select: { id: true, studentNumber: true, studentName: true } },
@@ -468,47 +480,56 @@ export async function getAcademicReportData(
           courseId: grade.course.id,
           courseName: grade.course.courseName,
           dailyGrades: {
-            recitation: 0,
-            review: 0,
-            homework: 0,
-            participation: 0,
-            total: 0,
+            raw: 0,
+            normalized: 0,
             count: 0,
             average: 0
           },
           weeklyGrades: { total: 0, count: 0, average: 0 },
-          monthlyGrades: { total: 0, count: 0, average: 0 },
-          behaviorGrades: { total: 0, count: 0, average: 0 },
+          monthlyGrades: { raw: 0, normalized: 0, count: 0, average: 0 },
+          behaviorGrades: { raw: 0, normalized: 0, count: 0, average: 0 },
+          finalExamGrade: { quranTest: 0, tajweedTest: 0, total: 0 },
           overallTotal: 0,
-          overallAverage: 0,
           percentage: 0,
           status: 'مقبول'
         });
       }
 
       const item = studentsMap.get(key)!;
-      const dailyTotal =
-        Number(grade.memorization || 0) +
-        Number(grade.review || 0) +
-        (0 || 0) +
-        (0 || 0);
-
-      item.dailyGrades.total += dailyTotal;
+      // اليومية: memorization (0-5) + review (0-5) = max 10 per day
+      const dailyTotal = Number(grade.memorization || 0) + Number(grade.review || 0);
+      item.dailyGrades.raw += dailyTotal;
       item.dailyGrades.count++;
-      item.dailyGrades.recitation = (item.dailyGrades.recitation || 0) + Number(grade.memorization || 0);
-      item.dailyGrades.review = (item.dailyGrades.review || 0) + Number(grade.review || 0);
-      item.dailyGrades.homework = (item.dailyGrades.homework || 0) + (0 || 0);
-      item.dailyGrades.participation = (item.dailyGrades.participation || 0) + (0 || 0);
     });
 
     // معالجة الدرجات الأسبوعية
     weeklyGrades.forEach(grade => {
       const key = `${grade.studentId}-${grade.courseId}`;
-      const item = studentsMap.get(key);
-      if (item) {
-        item.weeklyGrades.total += Number(grade.grade) || 0;
-        item.weeklyGrades.count++;
+      let item = studentsMap.get(key);
+      
+      // إنشاء الطالبة إذا لم تكن موجودة (قد لا يكون لديها درجات يومية)
+      if (!item) {
+        studentsMap.set(key, {
+          studentId: grade.student.id,
+          studentNumber: grade.student.studentNumber,
+          studentName: grade.student.studentName,
+          courseId: grade.course.id,
+          courseName: grade.course.courseName,
+          dailyGrades: { raw: 0, normalized: 0, count: 0, average: 0 },
+          weeklyGrades: { total: 0, count: 0, average: 0 },
+          monthlyGrades: { raw: 0, normalized: 0, count: 0, average: 0 },
+          behaviorGrades: { raw: 0, normalized: 0, count: 0, average: 0 },
+          finalExamGrade: { quranTest: 0, tajweedTest: 0, total: 0 },
+          overallTotal: 0,
+          percentage: 0,
+          status: 'مقبول'
+        });
+        item = studentsMap.get(key)!;
       }
+      
+      // الأسبوعية: grade (0-5) × 10 أسابيع = max 50
+      item.weeklyGrades.total += Number(grade.grade) || 0;
+      item.weeklyGrades.count++;
     });
 
     // معالجة الدرجات الشهرية
@@ -516,38 +537,53 @@ export async function getAcademicReportData(
       const key = `${grade.studentId}-${grade.courseId}`;
       const item = studentsMap.get(key);
       if (item) {
-        item.monthlyGrades.total += (Number(grade.quranForgetfulness) + Number(grade.quranMajorMistakes) + Number(grade.quranMinorMistakes) + Number(grade.tajweedTheory)) || 0;
+        // الشهرية: (0-5) + (0-5) + (0-5) + (0-15) = max 30 per month × 3 = max 90
+        const monthlyTotal = 
+          Number(grade.quranForgetfulness || 0) + 
+          Number(grade.quranMajorMistakes || 0) + 
+          Number(grade.quranMinorMistakes || 0) + 
+          Number(grade.tajweedTheory || 0);
+        item.monthlyGrades.raw += monthlyTotal;
         item.monthlyGrades.count++;
       }
     });
 
-    // معالجة الدرجات السلوكية (من BehaviorPoint)
-    behaviorPoints.forEach(point => {
-      const key = `${point.studentId}-${point.courseId}`;
+    // معالجة درجات السلوك (من BehaviorGrade - درجة أكاديمية)
+    behaviorGrades.forEach(grade => {
+      const key = `${grade.studentId}-${grade.courseId}`;
       const item = studentsMap.get(key);
       if (item) {
-        // كل معيار = 5 نقاط (max 20 per session)
-        const sessionPoints = 
-          (point.earlyAttendance ? 5 : 0) +
-          (point.perfectMemorization ? 5 : 0) +
-          (point.activeParticipation ? 5 : 0) +
-          (point.timeCommitment ? 5 : 0);
-        item.behaviorGrades.total += sessionPoints;
+        // السلوك: dailyScore (0-1) × 70 يوم = max 70
+        item.behaviorGrades.raw += Number(grade.dailyScore || 0);
         item.behaviorGrades.count++;
       }
     });
 
-    // حساب المعدلات والنسب المئوية
-    // نظام الدرجات:
-    // - اليومية: memorization (0-5) + review (0-5) = max 10 per day
-    // - الأسبوعية: grade (0-5) = max 5 per week, 10 weeks = max 50
-    // - الشهرية: quranForgetfulness(0-5) + quranMajorMistakes(0-5) + quranMinorMistakes(0-5) + tajweedTheory(0-15) = max 30 per month, 3 months = max 90
-    // - السلوك: max 20 per session (4 × 5 points)
+    // معالجة الاختبار النهائي
+    finalExams.forEach(exam => {
+      const key = `${exam.studentId}-${exam.courseId}`;
+      const item = studentsMap.get(key);
+      if (item) {
+        // النهائي: quranTest (0-40) + tajweedTest (0-20) = max 60
+        item.finalExamGrade.quranTest = Number(exam.quranTest || 0);
+        item.finalExamGrade.tajweedTest = Number(exam.tajweedTest || 0);
+        item.finalExamGrade.total = item.finalExamGrade.quranTest + item.finalExamGrade.tajweedTest;
+      }
+    });
+
+    // حساب الدرجات المعيارية والنسب المئوية
+    // نظام الدرجات المعتمد (من 200):
+    // - اليومية: 700 خام ÷ 14 = 50 درجة معيارية
+    // - الأسبوعية: 50 درجة (لا تحويل)
+    // - الشهرية: 90 خام ÷ 3 = 30 درجة معيارية
+    // - السلوك: 70 خام ÷ 7 = 10 درجات معيارية
+    // - الاختبار النهائي: 60 درجة (لا تحويل)
+    // الإجمالي = 50 + 50 + 30 + 10 + 60 = 200
     
     const report = Array.from(studentsMap.values()).map(item => {
-      // حساب المعدلات (متوسط الدرجة لكل وحدة)
+      // حساب المعدلات
       item.dailyGrades.average = item.dailyGrades.count > 0
-        ? parseFloat((item.dailyGrades.total / item.dailyGrades.count).toFixed(2))
+        ? parseFloat((item.dailyGrades.raw / item.dailyGrades.count).toFixed(2))
         : 0;
 
       item.weeklyGrades.average = item.weeklyGrades.count > 0
@@ -555,34 +591,34 @@ export async function getAcademicReportData(
         : 0;
 
       item.monthlyGrades.average = item.monthlyGrades.count > 0
-        ? parseFloat((item.monthlyGrades.total / item.monthlyGrades.count).toFixed(2))
+        ? parseFloat((item.monthlyGrades.raw / item.monthlyGrades.count).toFixed(2))
         : 0;
 
       item.behaviorGrades.average = item.behaviorGrades.count > 0
-        ? parseFloat((item.behaviorGrades.total / item.behaviorGrades.count).toFixed(2))
+        ? parseFloat((item.behaviorGrades.raw / item.behaviorGrades.count).toFixed(2))
         : 0;
 
-      // الإجمالي (مجموع كل الدرجات)
+      // ✅ تطبيق الصيغ المعيارية
+      // اليومية: الخام ÷ 14 (700 ÷ 14 = 50)
+      item.dailyGrades.normalized = parseFloat((item.dailyGrades.raw / 14).toFixed(2));
+      
+      // الشهرية: الخام ÷ 3 (90 ÷ 3 = 30)
+      item.monthlyGrades.normalized = parseFloat((item.monthlyGrades.raw / 3).toFixed(2));
+      
+      // السلوك: الخام ÷ 7 (70 ÷ 7 = 10)
+      item.behaviorGrades.normalized = parseFloat((item.behaviorGrades.raw / 7).toFixed(2));
+
+      // ✅ حساب الإجمالي الصحيح (من 200)
       item.overallTotal = parseFloat((
-        item.dailyGrades.total +
-        item.weeklyGrades.total +
-        item.monthlyGrades.total +
-        item.behaviorGrades.total
+        item.dailyGrades.normalized +      // max 50
+        item.weeklyGrades.total +          // max 50
+        item.monthlyGrades.normalized +    // max 30
+        item.behaviorGrades.normalized +   // max 10
+        item.finalExamGrade.total          // max 60
       ).toFixed(2));
 
-      // حساب الدرجة القصوى الممكنة
-      const maxDaily = item.dailyGrades.count * 10; // max 10 per day
-      const maxWeekly = item.weeklyGrades.count * 5; // max 5 per week
-      const maxMonthly = item.monthlyGrades.count * 30; // max 30 per month
-      const maxBehavior = item.behaviorGrades.count * 20; // max 20 per session
-      const maxPossible = maxDaily + maxWeekly + maxMonthly + maxBehavior;
-
-      item.overallAverage = maxPossible > 0
-        ? parseFloat((item.overallTotal / maxPossible * 100).toFixed(2))
-        : 0;
-
-      // النسبة المئوية
-      item.percentage = Math.min(100, Math.round(item.overallAverage));
+      // ✅ النسبة المئوية (من 200)
+      item.percentage = Math.min(100, Math.round((item.overallTotal / 200) * 100));
 
       // الحالة
       if (item.percentage >= 90) item.status = 'ممتاز';

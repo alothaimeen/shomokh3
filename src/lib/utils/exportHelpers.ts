@@ -100,13 +100,25 @@ export function exportAcademicReport(
   filters?: ReportFilters
 ): void {
   const headers = format === 'detailed'
-    ? ['رقم الطالبة', 'اسم الطالبة', 'الحلقة', 'الدرجات اليومية', 'الدرجات الأسبوعية', 'الدرجات الشهرية', 'الدرجات السلوكية', 'الإجمالي', 'المعدل', 'النسبة المئوية', 'الحالة']
+    ? ['رقم الطالبة', 'اسم الطالبة', 'الحلقة', 'اليومية (50)', 'الأسبوعية (50)', 'الشهرية (30)', 'السلوك (10)', 'النهائي (60)', 'الإجمالي (200)', 'النسبة المئوية', 'الحالة']
     : ['رقم الطالبة', 'اسم الطالبة', 'الحلقة', 'الإجمالي', 'النسبة المئوية', 'الحالة'];
 
   const rows = data.map(item =>
     format === 'detailed'
-      ? [String(item.studentNumber), item.studentName, item.courseName, String(item.dailyGrades.total), String(item.weeklyGrades.total), String(item.monthlyGrades.total), String(item.behaviorGrades.total), String(item.overallTotal), String(item.overallAverage), `${item.percentage}%`, item.status]
-      : [String(item.studentNumber), item.studentName, item.courseName, String(item.overallTotal), `${item.percentage}%`, item.status]
+      ? [
+          String(item.studentNumber), 
+          item.studentName, 
+          item.courseName, 
+          String(item.dailyGrades.normalized.toFixed(1)), 
+          String(item.weeklyGrades.total.toFixed(1)), 
+          String(item.monthlyGrades.normalized.toFixed(1)), 
+          String(item.behaviorGrades.normalized.toFixed(1)), 
+          String(item.finalExamGrade.total.toFixed(1)), 
+          String(item.overallTotal.toFixed(1)), 
+          `${item.percentage}%`, 
+          item.status
+        ]
+      : [String(item.studentNumber), item.studentName, item.courseName, String(item.overallTotal.toFixed(1)), `${item.percentage}%`, item.status]
   );
 
   const csv = generateCSV(headers, rows);

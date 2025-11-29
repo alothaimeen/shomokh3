@@ -193,6 +193,51 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
         </div>
       </div>
 
+      <div className="bg-gradient-to-br from-purple-50 to-blue-50 p-6 rounded-xl shadow-sm mb-6 border border-purple-200">
+        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <span className="text-2xl">🧮</span>
+          نظام حساب الدرجات الأكاديمية (من 200)
+        </h3>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-sm">
+          <div className="bg-white p-3 rounded-lg shadow-sm">
+            <h4 className="font-semibold text-purple-700 mb-1">📚 اليومية</h4>
+            <p className="text-gray-600 text-xs">حفظ + مراجعة</p>
+            <p className="text-lg font-bold text-purple-600">50 درجة</p>
+          </div>
+          
+          <div className="bg-white p-3 rounded-lg shadow-sm">
+            <h4 className="font-semibold text-purple-700 mb-1">📅 الأسبوعية</h4>
+            <p className="text-gray-600 text-xs">10 أسابيع × 5</p>
+            <p className="text-lg font-bold text-purple-600">50 درجة</p>
+          </div>
+          
+          <div className="bg-white p-3 rounded-lg shadow-sm">
+            <h4 className="font-semibold text-purple-700 mb-1">🗓️ الشهرية</h4>
+            <p className="text-gray-600 text-xs">3 أشهر × 30</p>
+            <p className="text-lg font-bold text-purple-600">30 درجة</p>
+          </div>
+          
+          <div className="bg-white p-3 rounded-lg shadow-sm">
+            <h4 className="font-semibold text-purple-700 mb-1">⭐ السلوك</h4>
+            <p className="text-gray-600 text-xs">70 يوم</p>
+            <p className="text-lg font-bold text-purple-600">10 درجات</p>
+          </div>
+          
+          <div className="bg-white p-3 rounded-lg shadow-sm">
+            <h4 className="font-semibold text-purple-700 mb-1">📝 النهائي</h4>
+            <p className="text-gray-600 text-xs">قرآن + تجويد</p>
+            <p className="text-lg font-bold text-purple-600">60 درجة</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-purple-600 to-blue-600 p-3 rounded-lg shadow-md text-white">
+            <h4 className="font-bold mb-1">🎯 الإجمالي</h4>
+            <p className="text-xs opacity-90">المجموع الكلي</p>
+            <p className="text-lg font-bold">200 درجة</p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">{data.length}</div>
@@ -240,11 +285,12 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
                   <th className="p-3 text-right">الرقم</th>
                   <th className="p-3 text-right">اسم الطالبة</th>
                   <th className="p-3 text-center">الحلقة</th>
-                  <th className="p-3 text-center">اليومية</th>
-                  <th className="p-3 text-center">الأسبوعية</th>
-                  <th className="p-3 text-center">الشهرية</th>
-                  <th className="p-3 text-center">السلوك</th>
-                  <th className="p-3 text-center bg-yellow-500">الإجمالي</th>
+                  <th className="p-3 text-center">اليومية (50)</th>
+                  <th className="p-3 text-center">الأسبوعية (50)</th>
+                  <th className="p-3 text-center">الشهرية (30)</th>
+                  <th className="p-3 text-center">السلوك (10)</th>
+                  <th className="p-3 text-center">النهائي (60)</th>
+                  <th className="p-3 text-center bg-yellow-500">الإجمالي (200)</th>
                   <th className="p-3 text-center bg-green-600">النسبة</th>
                 </tr>
               </thead>
@@ -254,11 +300,16 @@ export default function AcademicReportsContent({ userId, userRole }: Props) {
                     <td className="p-3 text-right font-medium">{item.studentNumber}</td>
                     <td className="p-3 text-right">{item.studentName}</td>
                     <td className="p-3 text-center text-gray-600">{item.courseName}</td>
-                    <td className="p-3 text-center">{item.dailyGrades.average}</td>
-                    <td className="p-3 text-center">{item.weeklyGrades.average}</td>
-                    <td className="p-3 text-center">{item.monthlyGrades.average}</td>
-                    <td className="p-3 text-center">{item.behaviorGrades.average}</td>
-                    <td className="p-3 text-center font-bold bg-yellow-50">{item.overallTotal}</td>
+                    <td className="p-3 text-center">{item.dailyGrades.normalized.toFixed(1)}</td>
+                    <td className="p-3 text-center">{item.weeklyGrades.total.toFixed(1)}</td>
+                    <td className="p-3 text-center">{item.monthlyGrades.normalized.toFixed(1)}</td>
+                    <td className="p-3 text-center">{item.behaviorGrades.normalized.toFixed(1)}</td>
+                    <td className="p-3 text-center">
+                      {item.finalExamGrade.total > 0 
+                        ? item.finalExamGrade.total.toFixed(1) 
+                        : <span className="text-gray-400 text-xs">⏳</span>}
+                    </td>
+                    <td className="p-3 text-center font-bold bg-yellow-50">{item.overallTotal.toFixed(1)}</td>
                     <td className={`p-3 text-center font-bold ${getStatusColor(item.percentage)}`}>
                       {getStatusBadge(item.percentage)} {item.percentage}%
                     </td>
