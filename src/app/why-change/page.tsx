@@ -21,20 +21,12 @@ export default function WhyChangePage() {
             </div>
             <h1 className="text-xl font-bold text-gray-900">منصة شموخ</h1>
           </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/progress"
-              className="px-4 py-2 text-primary-purple hover:text-primary-blue transition-colors"
-            >
-              ماذا أنجزنا؟
-            </Link>
-            <Link
-              href="/login"
-              className="px-4 py-2 bg-gradient-to-r from-primary-purple to-primary-blue text-white rounded-lg hover:shadow-lg transition-shadow"
-            >
-              تسجيل الدخول
-            </Link>
-          </div>
+          <Link
+            href="/login"
+            className="px-4 py-2 bg-gradient-to-r from-primary-purple to-primary-blue text-white rounded-lg hover:shadow-lg transition-shadow"
+          >
+            تسجيل الدخول
+          </Link>
         </div>
       </header>
 

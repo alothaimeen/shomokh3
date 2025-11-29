@@ -13,24 +13,15 @@
       "features": [
         {
           "title": "نظام تسجيل الدخول والحسابات",
-          "description": "تسجيل دخول آمن للطالبات والمعلمات والإدارة مع حماية قوية للبيانات والخصوصية",
-          "link": "/login",
-          "linkType": "page",
-          "requiredRole": null
+          "description": "تسجيل دخول آمن للطالبات والمعلمات والإدارة مع حماية قوية للبيانات والخصوصية"
         },
         {
           "title": "نظام الحلقات والبرامج",
-          "description": "إنشاء وإدارة البرامج التعليمية والحلقات وتوزيع الطالبات",
-          "link": "/dashboard/admin/programs",
-          "linkType": "page",
-          "requiredRole": "ADMIN"
+          "description": "إنشاء وإدارة البرامج التعليمية والحلقات وتوزيع الطالبات"
         },
         {
           "title": "الصفحات الشخصية",
-          "description": "لوحات تحكم مخصصة لكل دور (إدارة، معلمة، طالبة) مع معلومات واضحة ومباشرة",
-          "link": "/dashboard",
-          "linkType": "page",
-          "requiredRole": "ADMIN"
+          "description": "لوحات تحكم مخصصة لكل دور (إدارة، معلمة، طالبة) مع معلومات واضحة ومباشرة"
         }
       ]
     },
@@ -41,24 +32,15 @@
       "features": [
         {
           "title": "تسجيل الحفظ اليومي",
-          "description": "إدخال ما حفظته الطالبة يومياً (الحفظ + المراجعة) مع حساب تلقائي للدرجات",
-          "link": "/dashboard/teacher/daily-tasks",
-          "linkType": "page",
-          "requiredRole": "TEACHER"
+          "description": "إدخال ما حفظته الطالبة يومياً (الحفظ + المراجعة) مع حساب تلقائي للدرجات"
         },
         {
           "title": "التقييمات الأسبوعية والشهرية",
-          "description": "تسجيل تقييمات أسبوعية وشهرية شاملة (نسيان، أخطاء، تجويد)",
-          "link": "/dashboard/teacher/evaluations",
-          "linkType": "page",
-          "requiredRole": "TEACHER"
+          "description": "تسجيل تقييمات أسبوعية وشهرية شاملة (نسيان، أخطاء، تجويد)"
         },
         {
           "title": "نظام نقاط السلوك والتحفيز",
-          "description": "تسجيل نقاط للسلوك والأخلاق والالتزام والتفاعل لتحفيز الطالبات",
-          "link": "/dashboard/teacher/points",
-          "linkType": "page",
-          "requiredRole": "TEACHER"
+          "description": "تسجيل نقاط للسلوك والأخلاق والالتزام والتفاعل لتحفيز الطالبات"
         }
       ]
     },
@@ -69,17 +51,11 @@
       "features": [
         {
           "title": "تسجيل الحضور",
-          "description": "تسجيل سريع للحضور والغياب مع حفظ الأعذار والملاحظات",
-          "link": "/dashboard/teacher/attendance",
-          "linkType": "page",
-          "requiredRole": "TEACHER"
+          "description": "تسجيل سريع للحضور والغياب مع حفظ الأعذار والملاحظات"
         },
         {
           "title": "متابعة الغياب",
-          "description": "إحصائيات واضحة لكل طالبة مع تنبيهات للغياب المتكرر",
-          "link": "/dashboard/teacher/attendance-report",
-          "linkType": "page",
-          "requiredRole": "TEACHER"
+          "description": "إحصائيات واضحة لكل طالبة مع تنبيهات للغياب المتكرر"
         }
       ]
     },
@@ -90,24 +66,15 @@
       "features": [
         {
           "title": "التقرير الأكاديمي",
-          "description": "عرض شامل لدرجات كل طالبة مع حساب النسب المئوية تلقائياً وإمكانية التحميل بصيغة Excel",
-          "link": "/dashboard/teacher/reports/academic",
-          "linkType": "page",
-          "requiredRole": "TEACHER"
+          "description": "عرض شامل لدرجات كل طالبة مع حساب النسب المئوية تلقائياً وإمكانية التحميل بصيغة Excel"
         },
         {
           "title": "تقرير الحضور والغياب",
-          "description": "إحصائيات كاملة عن الحضور بحسب الطالبة أو التاريخ مع إمكانية التحميل",
-          "link": "/dashboard/teacher/reports/attendance",
-          "linkType": "page",
-          "requiredRole": "TEACHER"
+          "description": "إحصائيات كاملة عن الحضور بحسب الطالبة أو التاريخ مع إمكانية التحميل"
         },
         {
           "title": "تقرير النقاط التحفيزية",
-          "description": "ترتيب الطالبات حسب نقاطهن مع تفصيل النقاط بحسب المعايير",
-          "link": "/dashboard/teacher/reports/points",
-          "linkType": "page",
-          "requiredRole": "TEACHER"
+          "description": "ترتيب الطالبات حسب نقاطهن مع تفصيل النقاط بحسب المعايير"
         }
       ]
     },
@@ -118,10 +85,7 @@
       "features": [
         {
           "title": "تحسينات الأداء الكبرى",
-          "description": "تحميل الصفحات أسرع بنسبة 80% مع استجابة فورية وتجربة سلسة",
-          "link": null,
-          "linkType": null,
-          "requiredRole": null
+          "description": "تحميل الصفحات أسرع بنسبة 80% مع استجابة فورية وتجربة سلسة"
         }
       ]
     }
