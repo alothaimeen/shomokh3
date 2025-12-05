@@ -96,7 +96,7 @@ export async function getAttendanceReportData(
       whereClause.studentId = filters.studentId;
     }
     if (filters?.status) {
-      whereClause.status = filters.status as any;
+      whereClause.status = filters.status as Prisma.EnumAttendanceStatusFilter;
     }
     if (filters?.dateFrom || filters?.dateTo) {
       whereClause.date = {};

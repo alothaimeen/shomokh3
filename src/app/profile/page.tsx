@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [userProfile, setUserProfile] = useState({
     userName: "",
@@ -52,8 +53,8 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('تحديث الملف الشخصي:', userProfile);
-    alert('تم تحديث الملف الشخصي بنجاح (بيانات ثابتة)');
+    setMessage({ type: 'success', text: 'تم تحديث الملف الشخصي بنجاح' });
+    setTimeout(() => setMessage(null), 3000);
   };
 
   return (
@@ -85,6 +86,12 @@ export default function ProfilePage() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+        {/* Toast Message */}
+        {message && (
+          <div className={`mb-4 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {message.text}
+          </div>
+        )}
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-6">

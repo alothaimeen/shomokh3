@@ -15,7 +15,6 @@ export default withAuth({
 
       // No token = unauthorized
       if (!token) {
-        console.log(`🛡️ Middleware - No token for path: ${path}`);
         return false;
       }
 
@@ -26,12 +25,7 @@ export default withAuth({
           path.startsWith('/teacher-requests') ||
           path.startsWith('/site-settings') ||
           path.startsWith('/admin')) {
-        const isAuthorized = token.role === 'ADMIN';
-        console.log(`🛡️ Middleware - Admin-only path: ${path}`, {
-          tokenRole: token.role,
-          isAuthorized
-        });
-        return isAuthorized;
+        return token.role === 'ADMIN';
       }
 
       // TEACHER or ADMIN routes
