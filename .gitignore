@@ -31,3 +31,8 @@ MCP_SETUP.md
 *_mcp_config.json
 *.token
 *.secret
+
+# CRITICAL: Deployment files with credentials (NEVER commit!)
+للرفع في الموقع.md
+CREDENTIALS_BACKUP.md
+backup-*.json

@@ -1,7 +1,7 @@
 ---
 title: "AI_RULES"
-version: "1.0"
-last_updated: "2025-11-26"
+version: "1.1"
+last_updated: "2025-12-05"
 status: "stable"
 description: "القواعد التقنية، البروتوكولات، وأنماط التصميم المعتمدة في مشروع شموخ v3"
 ---
@@ -215,17 +215,34 @@ export default async function NewPage({ searchParams }) {
 
 <FORBIDDEN action="database" enforcement="strict">
 
+### ⚠️ تنبيه: مشروع Supabase جديد (5 ديسمبر 2025)
+تم ترحيل قاعدة البيانات إلى مشروع جديد:
+- **Project Name:** ShomokhQ
+- **Project ID:** dlfeucrbrkcywnwjxlaz
+- **Region:** `aws-1-ap-southeast-2` (Asia-Pacific)
+
 ### الاتصال (Connection)
-- ✅ ALWAYS use Port **6543** مع `pgbouncer=true`
-- ✅ `DATABASE_URL="postgresql://postgres:[pass]@db.[proj].supabase.co:6543/postgres?pgbouncer=true"`
+- ✅ **للاستخدام العادي:** Port **6543** مع `?pgbouncer=true`
+  ```
+  DATABASE_URL="postgresql://postgres.dlfeucrbrkcywnwjxlaz:[pass]@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true"
+  ```
+- ✅ **لـ prisma db push فقط:** Port **5432** (بدون pgbouncer)
+  ```
+  DATABASE_URL="postgresql://postgres.dlfeucrbrkcywnwjxlaz:[pass]@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
+  ```
 
 ### المحظورات
-- ❌ **NEVER** Port 5432 (لا يدعم اتصالات كثيرة في Serverless)
-- ❌ **NEVER** `prisma db push` without approval (خطير في الإنتاج)
-- ❌ **NEVER** `prisma migrate dev` (قد يسبب مشاكل مع Supabase أحياناً)
+- ❌ **NEVER** المنطقة القديمة `us-west-1` (المشروع الجديد في `ap-southeast-2`)
+- ❌ **NEVER** `prisma migrate dev` (يحتاج DIRECT_URL غير متاح)
+- ❌ **NEVER** prisma db push مع منفذ 6543 (يعلق للأبد)
 
-**Rationale:** Supabase Serverless requires Transaction Pooler (Port 6543)
-**Error if violated:** P1001 Connection Timeout
+**خطوات إنشاء/تحديث الجداول:**
+1. غيّر `.env` لاستخدام منفذ 5432
+2. نفّذ `npx prisma db push --accept-data-loss`
+3. أعد `.env` لمنفذ 6543
+4. نفّذ `npx prisma generate`
+
+**Error if violated:** P1001 Connection Timeout أو "Tenant or user not found"
 
 </FORBIDDEN>
 
