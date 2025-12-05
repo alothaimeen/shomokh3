@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import DualDatePicker from '@/components/shared/DualDatePicker';
 
 interface Course {
   id: string;
@@ -35,7 +36,7 @@ export default function CourseSelector({ courses, selectedCourse, selectedDate }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <div>
           <label className="block text-sm font-medium mb-2">اختيار الحلقة</label>
           <select
@@ -54,11 +55,10 @@ export default function CourseSelector({ courses, selectedCourse, selectedDate }
 
         <div>
           <label className="block text-sm font-medium mb-2">التاريخ</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => handleDateChange(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+          <DualDatePicker
+            selectedDate={selectedDate}
+            onDateChange={handleDateChange}
+            maxDate={new Date().toISOString().split('T')[0]}
           />
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { saveBehaviorGrades } from '@/actions/grades';
+import DualDatePicker from '@/components/shared/DualDatePicker';
 
 interface Course {
   id: string;
@@ -121,7 +122,7 @@ export default function BehaviorGradesForm({
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6 grid grid-cols-1 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             اختيار الحلقة
@@ -143,12 +144,10 @@ export default function BehaviorGradesForm({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             التاريخ
           </label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => handleDateChange(e.target.value)}
-            max={new Date().toISOString().split('T')[0]}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+          <DualDatePicker
+            selectedDate={selectedDate}
+            onDateChange={handleDateChange}
+            maxDate={new Date().toISOString().split('T')[0]}
           />
         </div>
       </div>

@@ -36,7 +36,7 @@ export default function TeacherDashboard({ courses }: TeacherDashboardProps) {
             {courses.map((course) => (
               <Link
                 key={course.id}
-                href={`/enrolled-students?courseId=${course.id}`}
+                href={`/my-courses/${course.id}`}
                 className="p-5 rounded-lg border-2 border-gray-200 hover:border-primary-purple hover:bg-purple-50 transition-all"
               >
                 <h3 className="font-bold text-lg text-gray-800 mb-2">{course.courseName}</h3>

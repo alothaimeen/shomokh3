@@ -1,353 +1,382 @@
 /**
- * سكربت استعادة البيانات من النسخة الاحتياطية
- * ===========================================
- * يستعيد البيانات من ملف backup-*.json إلى قاعدة البيانات الجديدة
+ * سكربت استعادة البيانات المُحسّن (High Performance)
+ * ================================================
+ * يستعيد البيانات من ملف backup-*.json إلى قاعدة البيانات
+ * 
+ * التحسينات:
+ * - استخدام createMany مع skipDuplicates بدلاً من create المفرد
+ * - تقسيم البيانات إلى دفعات (1000 سجل)
+ * - معالجة متسلسلة لتجنب استنفاد Connection Pool
+ * - إعادة المحاولة عند الخطأ (Retry with backoff)
+ * - إحصائيات أداء مفصلة
+ * 
+ * Usage: node scripts/restore-from-backup.js [backup-file.json]
  */
 
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
+const path = require('path');
 
 const prisma = new PrismaClient();
 
+// ==================== UTILITIES ====================
+
+// تقسيم المصفوفة إلى دفعات
+function chunk(arr, size) {
+  return Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+    arr.slice(i * size, i * size + size)
+  );
+}
+
+// إعادة المحاولة عند الفشل
+async function withRetry(fn, maxRetries = 3, baseDelay = 1000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      const delay = baseDelay * attempt;
+      console.log(`  ⚠️ خطأ، إعادة المحاولة ${attempt}/${maxRetries} بعد ${delay}ms...`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+
+// تحويل التاريخ بأمان
+function safeDate(dateStr) {
+  if (!dateStr) return new Date();
+  return new Date(dateStr);
+}
+
+// تحويل Decimal بأمان
+function safeDecimal(value) {
+  if (value === null || value === undefined) return 0;
+  return parseFloat(value);
+}
+
+// ==================== BATCH INSERT ====================
+
+async function batchInsert(modelName, records, transform, batchSize = 1000) {
+  if (!records || records.length === 0) {
+    console.log(`   ⏭️ لا توجد سجلات`);
+    return { inserted: 0, total: 0, time: 0 };
+  }
+
+  const startTime = Date.now();
+  const chunks = chunk(records, batchSize);
+  let totalInserted = 0;
+
+  for (const [i, batch] of chunks.entries()) {
+    await withRetry(async () => {
+      const data = batch.map(transform);
+      const result = await prisma[modelName].createMany({
+        data,
+        skipDuplicates: true
+      });
+      totalInserted += result.count;
+    });
+
+    // طباعة التقدم كل 5 دفعات
+    if ((i + 1) % 5 === 0 || i === chunks.length - 1) {
+      const progress = Math.round(((i + 1) / chunks.length) * 100);
+      process.stdout.write(`\r   ⏳ ${progress}% (${Math.min((i + 1) * batchSize, records.length)}/${records.length})`);
+    }
+  }
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+  console.log(`\r   ✅ ${totalInserted}/${records.length} سجل (${elapsed}s)                    `);
+
+  return { inserted: totalInserted, total: records.length, time: elapsed };
+}
+
+// ==================== MAIN RESTORE FUNCTION ====================
+
 async function restore() {
-  console.log('🔄 بدء استعادة البيانات...\n');
-  
-  // قراءة ملف النسخة الاحتياطية
-  const backupFile = 'backup-2025-12-05T06-35-20.json';
-  const backup = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
-  
+  console.log('\n🚀 بدء استعادة البيانات (النسخة المُحسّنة)...\n');
+  const globalStart = Date.now();
+
+  // البحث عن ملف النسخة الاحتياطية
+  let backupFile = process.argv[2];
+  if (!backupFile) {
+    // البحث عن أحدث ملف backup
+    const files = fs.readdirSync(process.cwd())
+      .filter(f => f.startsWith('backup-') && f.endsWith('.json'))
+      .sort()
+      .reverse();
+    backupFile = files[0];
+  }
+
+  if (!backupFile || !fs.existsSync(backupFile)) {
+    console.error('❌ لم يتم العثور على ملف النسخة الاحتياطية');
+    console.error('   Usage: node scripts/restore-from-backup.js backup-file.json');
+    process.exit(1);
+  }
+
   console.log('📂 ملف النسخة الاحتياطية:', backupFile);
-  console.log('📊 إجمالي السجلات:', backup.stats.totalRecords);
-  console.log('');
+  const backup = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
+  console.log('📊 إجمالي السجلات:', backup.stats?.totalRecords || 'غير محدد');
+  console.log('📅 تاريخ النسخة:', backup.metadata?.createdAt || 'غير محدد');
+  console.log('\n' + '='.repeat(50) + '\n');
+
+  const stats = {};
 
   try {
-    // 1. استعادة المستخدمين
+    // 1. المستخدمين (Users)
     console.log('👥 استعادة المستخدمين...');
-    let usersRestored = 0;
-    for (const user of backup.data.users) {
-      try {
-        await prisma.user.create({
-          data: {
-            id: user.id,
-            userName: user.userName,
-            userEmail: user.userEmail,
-            passwordHash: user.passwordHash,
-            userRole: user.userRole,
-            isActive: user.isActive,
-            createdAt: new Date(user.createdAt),
-            updatedAt: new Date(user.updatedAt)
-          }
-        });
-        usersRestored++;
-      } catch (e) {
-        // تجاهل التكرارات
-      }
-    }
-    console.log(`   ✅ ${usersRestored}/${backup.data.users.length} مستخدم`);
+    stats.users = await batchInsert('user', backup.data.users, (u) => ({
+      id: u.id,
+      userName: u.userName,
+      userEmail: u.userEmail,
+      passwordHash: u.passwordHash,
+      userRole: u.userRole,
+      isActive: u.isActive ?? true,
+      createdAt: safeDate(u.createdAt),
+      updatedAt: safeDate(u.updatedAt)
+    }));
 
-    // 2. استعادة البرامج
+    // 2. البرامج (Programs)
     console.log('📚 استعادة البرامج...');
-    let programsRestored = 0;
-    for (const prog of backup.data.programs) {
-      try {
-        await prisma.program.create({
-          data: {
-            id: prog.id,
-            programName: prog.programName,
-            programDescription: prog.programDescription,
-            isActive: prog.isActive,
-            createdAt: new Date(prog.createdAt),
-            updatedAt: new Date(prog.updatedAt)
-          }
-        });
-        programsRestored++;
-      } catch (e) {}
-    }
-    console.log(`   ✅ ${programsRestored}/${backup.data.programs.length} برنامج`);
+    stats.programs = await batchInsert('program', backup.data.programs, (p) => ({
+      id: p.id,
+      programName: p.programName,
+      programDescription: p.programDescription,
+      isActive: p.isActive ?? true,
+      createdAt: safeDate(p.createdAt),
+      updatedAt: safeDate(p.updatedAt)
+    }));
 
-    // 3. استعادة الحلقات
+    // 3. الحلقات (Courses)
     console.log('🎓 استعادة الحلقات...');
-    let coursesRestored = 0;
-    for (const course of backup.data.courses) {
-      try {
-        await prisma.course.create({
-          data: {
-            id: course.id,
-            courseName: course.courseName,
-            courseDescription: course.courseDescription,
-            programId: course.programId,
-            teacherId: course.teacherId,
-            maxStudents: course.maxStudents,
-            isActive: course.isActive,
-            createdAt: new Date(course.createdAt),
-            updatedAt: new Date(course.updatedAt)
-          }
-        });
-        coursesRestored++;
-      } catch (e) {}
-    }
-    console.log(`   ✅ ${coursesRestored}/${backup.data.courses.length} حلقة`);
+    stats.courses = await batchInsert('course', backup.data.courses, (c) => ({
+      id: c.id,
+      courseName: c.courseName,
+      courseDescription: c.courseDescription,
+      syllabus: c.syllabus,
+      level: c.level ?? 1,
+      programId: c.programId,
+      teacherId: c.teacherId,
+      maxStudents: c.maxStudents ?? 20,
+      isActive: c.isActive ?? true,
+      createdAt: safeDate(c.createdAt),
+      updatedAt: safeDate(c.updatedAt)
+    }));
 
-    // 4. استعادة الطالبات
+    // 4. الطالبات (Students)
     console.log('👧 استعادة الطالبات...');
-    let studentsRestored = 0;
-    for (const student of backup.data.students) {
-      try {
-        await prisma.student.create({
-          data: {
-            id: student.id,
-            userId: student.userId,
-            studentName: student.studentName,
-            studentPhone: student.studentPhone,
-            studentGrade: student.studentGrade,
-            parentPhone: student.parentPhone,
-            enrollmentDate: new Date(student.enrollmentDate),
-            createdAt: new Date(student.createdAt),
-            updatedAt: new Date(student.updatedAt)
-          }
-        });
-        studentsRestored++;
-      } catch (e) {}
-    }
-    console.log(`   ✅ ${studentsRestored}/${backup.data.students.length} طالبة`);
+    stats.students = await batchInsert('student', backup.data.students, (s) => ({
+      id: s.id,
+      studentNumber: s.studentNumber,
+      studentName: s.studentName,
+      qualification: s.qualification || 'غير محدد',
+      nationality: s.nationality || 'سعودية',
+      studentPhone: s.studentPhone || '',
+      memorizedAmount: s.memorizedAmount || 'غير محدد',
+      paymentStatus: s.paymentStatus || 'UNPAID',
+      memorizationPlan: s.memorizationPlan,
+      notes: s.notes,
+      userId: s.userId,
+      isActive: s.isActive ?? true,
+      createdAt: safeDate(s.createdAt),
+      updatedAt: safeDate(s.updatedAt)
+    }));
 
-    // 5. استعادة التسجيلات
+    // 5. طلبات التسجيل (EnrollmentRequests)
+    console.log('📋 استعادة طلبات التسجيل...');
+    stats.enrollmentRequests = await batchInsert('enrollmentRequest', backup.data.enrollmentRequests, (e) => ({
+      id: e.id,
+      studentId: e.studentId,
+      courseId: e.courseId,
+      status: e.status || 'PENDING',
+      message: e.message,
+      createdAt: safeDate(e.createdAt),
+      updatedAt: safeDate(e.updatedAt)
+    }));
+
+    // 6. التسجيلات (Enrollments)
     console.log('📝 استعادة التسجيلات...');
-    let enrollmentsRestored = 0;
-    for (const enroll of backup.data.enrollments) {
-      try {
-        await prisma.enrollment.create({
-          data: {
-            id: enroll.id,
-            studentId: enroll.studentId,
-            courseId: enroll.courseId,
-            enrollmentDate: new Date(enroll.enrollmentDate),
-            isActive: enroll.isActive,
-            createdAt: new Date(enroll.createdAt),
-            updatedAt: new Date(enroll.updatedAt)
-          }
-        });
-        enrollmentsRestored++;
-      } catch (e) {}
-    }
-    console.log(`   ✅ ${enrollmentsRestored}/${backup.data.enrollments.length} تسجيل`);
+    stats.enrollments = await batchInsert('enrollment', backup.data.enrollments, (e) => ({
+      id: e.id,
+      studentId: e.studentId,
+      courseId: e.courseId,
+      enrolledAt: safeDate(e.enrolledAt),
+      isActive: e.isActive ?? true,
+      createdAt: safeDate(e.createdAt),
+      updatedAt: safeDate(e.updatedAt)
+    }));
 
-    // 6. استعادة الحضور (بدفعات)
+    // 7. الحضور (Attendance)
     console.log('📅 استعادة الحضور...');
-    let attendanceRestored = 0;
-    const attendanceBatch = 100;
-    for (let i = 0; i < backup.data.attendance.length; i += attendanceBatch) {
-      const batch = backup.data.attendance.slice(i, i + attendanceBatch);
-      for (const att of batch) {
-        try {
-          await prisma.attendance.create({
-            data: {
-              id: att.id,
-              studentId: att.studentId,
-              courseId: att.courseId,
-              date: new Date(att.date),
-              status: att.status,
-              notes: att.notes,
-              createdAt: new Date(att.createdAt),
-              updatedAt: new Date(att.updatedAt)
-            }
-          });
-          attendanceRestored++;
-        } catch (e) {}
-      }
-      process.stdout.write(`\r   ⏳ ${attendanceRestored}/${backup.data.attendance.length}`);
-    }
-    console.log(`\n   ✅ ${attendanceRestored}/${backup.data.attendance.length} سجل حضور`);
+    stats.attendance = await batchInsert('attendance', backup.data.attendance, (a) => ({
+      id: a.id,
+      studentId: a.studentId,
+      courseId: a.courseId,
+      date: safeDate(a.date),
+      status: a.status || 'PRESENT',
+      notes: a.notes,
+      createdAt: safeDate(a.createdAt),
+      updatedAt: safeDate(a.updatedAt)
+    }));
 
-    // 7. استعادة الدرجات اليومية
+    // 8. الدرجات اليومية (DailyGrades)
     console.log('📊 استعادة الدرجات اليومية...');
-    let dailyGradesRestored = 0;
-    for (let i = 0; i < backup.data.dailyGrades.length; i += 100) {
-      const batch = backup.data.dailyGrades.slice(i, i + 100);
-      for (const grade of batch) {
-        try {
-          await prisma.dailyGrade.create({
-            data: {
-              id: grade.id,
-              studentId: grade.studentId,
-              courseId: grade.courseId,
-              date: new Date(grade.date),
-              memorization: grade.memorization,
-              review: grade.review,
-              notes: grade.notes,
-              createdAt: new Date(grade.createdAt),
-              updatedAt: new Date(grade.updatedAt)
-            }
-          });
-          dailyGradesRestored++;
-        } catch (e) {}
-      }
-      process.stdout.write(`\r   ⏳ ${dailyGradesRestored}/${backup.data.dailyGrades.length}`);
-    }
-    console.log(`\n   ✅ ${dailyGradesRestored}/${backup.data.dailyGrades.length} درجة يومية`);
+    stats.dailyGrades = await batchInsert('dailyGrade', backup.data.dailyGrades, (g) => ({
+      id: g.id,
+      studentId: g.studentId,
+      courseId: g.courseId,
+      date: safeDate(g.date),
+      memorization: safeDecimal(g.memorization),
+      review: safeDecimal(g.review),
+      notes: g.notes,
+      createdAt: safeDate(g.createdAt),
+      updatedAt: safeDate(g.updatedAt)
+    }));
 
-    // 8. استعادة الدرجات الأسبوعية
+    // 9. الدرجات الأسبوعية (WeeklyGrades)
     console.log('📊 استعادة الدرجات الأسبوعية...');
-    let weeklyGradesRestored = 0;
-    for (const grade of backup.data.weeklyGrades) {
-      try {
-        await prisma.weeklyGrade.create({
-          data: {
-            id: grade.id,
-            studentId: grade.studentId,
-            courseId: grade.courseId,
-            weekNumber: grade.weekNumber,
-            grade: grade.grade,
-            notes: grade.notes,
-            createdAt: new Date(grade.createdAt),
-            updatedAt: new Date(grade.updatedAt)
-          }
-        });
-        weeklyGradesRestored++;
-      } catch (e) {}
-    }
-    console.log(`   ✅ ${weeklyGradesRestored}/${backup.data.weeklyGrades.length} درجة أسبوعية`);
+    stats.weeklyGrades = await batchInsert('weeklyGrade', backup.data.weeklyGrades, (g) => ({
+      id: g.id,
+      studentId: g.studentId,
+      courseId: g.courseId,
+      week: g.week || g.weekNumber,
+      grade: safeDecimal(g.grade),
+      notes: g.notes,
+      createdAt: safeDate(g.createdAt),
+      updatedAt: safeDate(g.updatedAt)
+    }));
 
-    // 9. استعادة الدرجات الشهرية
+    // 10. الدرجات الشهرية (MonthlyGrades)
     console.log('📊 استعادة الدرجات الشهرية...');
-    let monthlyGradesRestored = 0;
-    for (const grade of backup.data.monthlyGrades) {
-      try {
-        await prisma.monthlyGrade.create({
-          data: {
-            id: grade.id,
-            studentId: grade.studentId,
-            courseId: grade.courseId,
-            monthNumber: grade.monthNumber,
-            quranForgetfulness: grade.quranForgetfulness,
-            quranMajor: grade.quranMajor,
-            quranMinor: grade.quranMinor,
-            tajweed: grade.tajweed,
-            notes: grade.notes,
-            createdAt: new Date(grade.createdAt),
-            updatedAt: new Date(grade.updatedAt)
-          }
-        });
-        monthlyGradesRestored++;
-      } catch (e) {}
-    }
-    console.log(`   ✅ ${monthlyGradesRestored}/${backup.data.monthlyGrades.length} درجة شهرية`);
+    stats.monthlyGrades = await batchInsert('monthlyGrade', backup.data.monthlyGrades, (g) => ({
+      id: g.id,
+      studentId: g.studentId,
+      courseId: g.courseId,
+      month: g.month || g.monthNumber,
+      quranForgetfulness: safeDecimal(g.quranForgetfulness),
+      quranMajorMistakes: safeDecimal(g.quranMajorMistakes || g.quranMajor),
+      quranMinorMistakes: safeDecimal(g.quranMinorMistakes || g.quranMinor),
+      tajweedTheory: safeDecimal(g.tajweedTheory || g.tajweed),
+      notes: g.notes,
+      createdAt: safeDate(g.createdAt),
+      updatedAt: safeDate(g.updatedAt)
+    }));
 
-    // 10. استعادة الاختبارات النهائية
-    console.log('📊 استعادة الاختبارات النهائية...');
-    let finalExamsRestored = 0;
-    for (const exam of backup.data.finalExams) {
-      try {
-        await prisma.finalExam.create({
-          data: {
-            id: exam.id,
-            studentId: exam.studentId,
-            courseId: exam.courseId,
-            grade: exam.grade,
-            notes: exam.notes,
-            createdAt: new Date(exam.createdAt),
-            updatedAt: new Date(exam.updatedAt)
-          }
-        });
-        finalExamsRestored++;
-      } catch (e) {}
-    }
-    console.log(`   ✅ ${finalExamsRestored}/${backup.data.finalExams.length} اختبار نهائي`);
+    // 11. الاختبارات النهائية (FinalExams)
+    console.log('📝 استعادة الاختبارات النهائية...');
+    stats.finalExams = await batchInsert('finalExam', backup.data.finalExams, (e) => ({
+      id: e.id,
+      studentId: e.studentId,
+      courseId: e.courseId,
+      quranTest: safeDecimal(e.quranTest || e.grade),
+      tajweedTest: safeDecimal(e.tajweedTest || 0),
+      notes: e.notes,
+      createdAt: safeDate(e.createdAt),
+      updatedAt: safeDate(e.updatedAt)
+    }));
 
-    // 11. استعادة درجات السلوك
-    console.log('📊 استعادة درجات السلوك...');
-    let behaviorGradesRestored = 0;
-    for (let i = 0; i < backup.data.behaviorGrades.length; i += 100) {
-      const batch = backup.data.behaviorGrades.slice(i, i + 100);
-      for (const grade of batch) {
-        try {
-          await prisma.behaviorGrade.create({
-            data: {
-              id: grade.id,
-              studentId: grade.studentId,
-              courseId: grade.courseId,
-              date: new Date(grade.date),
-              grade: grade.grade,
-              notes: grade.notes,
-              createdAt: new Date(grade.createdAt),
-              updatedAt: new Date(grade.updatedAt)
-            }
-          });
-          behaviorGradesRestored++;
-        } catch (e) {}
-      }
-      process.stdout.write(`\r   ⏳ ${behaviorGradesRestored}/${backup.data.behaviorGrades.length}`);
-    }
-    console.log(`\n   ✅ ${behaviorGradesRestored}/${backup.data.behaviorGrades.length} درجة سلوك`);
+    // 12. درجات السلوك (BehaviorGrades)
+    console.log('⭐ استعادة درجات السلوك...');
+    stats.behaviorGrades = await batchInsert('behaviorGrade', backup.data.behaviorGrades, (g) => ({
+      id: g.id,
+      studentId: g.studentId,
+      courseId: g.courseId,
+      date: safeDate(g.date),
+      dailyScore: safeDecimal(g.dailyScore || g.grade),
+      notes: g.notes,
+      createdAt: safeDate(g.createdAt),
+      updatedAt: safeDate(g.updatedAt)
+    }));
 
-    // 12. استعادة نقاط السلوك
-    console.log('⭐ استعادة نقاط السلوك...');
-    let behaviorPointsRestored = 0;
-    for (let i = 0; i < backup.data.behaviorPoints.length; i += 100) {
-      const batch = backup.data.behaviorPoints.slice(i, i + 100);
-      for (const point of batch) {
-        try {
-          await prisma.behaviorPoint.create({
-            data: {
-              id: point.id,
-              studentId: point.studentId,
-              courseId: point.courseId,
-              date: new Date(point.date),
-              attendance: point.attendance,
-              uniform: point.uniform,
-              interaction: point.interaction,
-              focus: point.focus,
-              notes: point.notes,
-              createdAt: new Date(point.createdAt),
-              updatedAt: new Date(point.updatedAt)
-            }
-          });
-          behaviorPointsRestored++;
-        } catch (e) {}
-      }
-      process.stdout.write(`\r   ⏳ ${behaviorPointsRestored}/${backup.data.behaviorPoints.length}`);
-    }
-    console.log(`\n   ✅ ${behaviorPointsRestored}/${backup.data.behaviorPoints.length} نقطة سلوك`);
+    // 13. المهام اليومية (DailyTasks)
+    console.log('✅ استعادة المهام اليومية...');
+    stats.dailyTasks = await batchInsert('dailyTask', backup.data.dailyTasks, (t) => ({
+      id: t.id,
+      studentId: t.studentId,
+      courseId: t.courseId,
+      date: safeDate(t.date),
+      listening5Times: t.listening5Times ?? false,
+      repetition10Times: t.repetition10Times ?? false,
+      recitedToPeer: t.recitedToPeer ?? false,
+      notes: t.notes,
+      createdAt: safeDate(t.createdAt),
+      updatedAt: safeDate(t.updatedAt)
+    }));
 
-    // 13. استعادة إعدادات الموقع
+    // 14. نقاط السلوك (BehaviorPoints)
+    console.log('🏆 استعادة نقاط السلوك...');
+    stats.behaviorPoints = await batchInsert('behaviorPoint', backup.data.behaviorPoints, (p) => ({
+      id: p.id,
+      studentId: p.studentId,
+      courseId: p.courseId,
+      date: safeDate(p.date),
+      earlyAttendance: p.earlyAttendance ?? p.attendance ?? false,
+      perfectMemorization: p.perfectMemorization ?? false,
+      activeParticipation: p.activeParticipation ?? p.interaction ?? false,
+      timeCommitment: p.timeCommitment ?? p.focus ?? false,
+      notes: p.notes,
+      createdAt: safeDate(p.createdAt),
+      updatedAt: safeDate(p.updatedAt)
+    }));
+
+    // 15. إعدادات الموقع (PublicSiteSettings)
     console.log('⚙️ استعادة إعدادات الموقع...');
-    let settingsRestored = 0;
-    for (const setting of backup.data.publicSiteSettings) {
-      try {
-        await prisma.publicSiteSettings.create({
-          data: {
-            id: setting.id,
-            studentsCount: setting.studentsCount,
-            teachersCount: setting.teachersCount,
-            coursesCount: setting.coursesCount,
-            facesCompleted: setting.facesCompleted,
-            aboutVision: setting.aboutVision,
-            aboutMission: setting.aboutMission,
-            aboutGoals: setting.aboutGoals,
-            achievementsText: setting.achievementsText,
-            contactEmail: setting.contactEmail,
-            contactPhone: setting.contactPhone,
-            contactAddress: setting.contactAddress,
-            contactWhatsapp: setting.contactWhatsapp,
-            contactIban: setting.contactIban,
-            createdAt: new Date(setting.createdAt),
-            updatedAt: new Date(setting.updatedAt)
-          }
-        });
-        settingsRestored++;
-      } catch (e) {}
-    }
-    console.log(`   ✅ ${settingsRestored}/${backup.data.publicSiteSettings.length} إعداد`);
+    stats.publicSiteSettings = await batchInsert('publicSiteSettings', backup.data.publicSiteSettings, (s) => ({
+      id: s.id,
+      studentsCount: s.studentsCount ?? 0,
+      teachersCount: s.teachersCount ?? 0,
+      coursesCount: s.coursesCount ?? 0,
+      facesCompleted: s.facesCompleted ?? 0,
+      aboutTitle: s.aboutTitle,
+      aboutVision: s.aboutVision,
+      aboutMission: s.aboutMission,
+      aboutGoals: s.aboutGoals,
+      achievementsTitle: s.achievementsTitle,
+      achievementsText: s.achievementsText,
+      contactTitle: s.contactTitle,
+      contactEmail: s.contactEmail,
+      contactPhone: s.contactPhone,
+      contactAddress: s.contactAddress,
+      contactWhatsapp: s.contactWhatsapp,
+      contactIban: s.contactIban,
+      isActive: s.isActive ?? true,
+      lastEditedById: s.lastEditedById,
+      createdAt: safeDate(s.createdAt),
+      updatedAt: safeDate(s.updatedAt)
+    }));
+
+    // ==================== SUMMARY ====================
+    const totalTime = ((Date.now() - globalStart) / 1000).toFixed(2);
+    const totalInserted = Object.values(stats).reduce((sum, s) => sum + (s?.inserted || 0), 0);
+    const totalRecords = Object.values(stats).reduce((sum, s) => sum + (s?.total || 0), 0);
 
     console.log('\n' + '='.repeat(50));
     console.log('✅ تمت الاستعادة بنجاح!');
     console.log('='.repeat(50));
+    console.log(`\n📊 ملخص الاستعادة:`);
+    console.log('-'.repeat(40));
+
+    for (const [name, stat] of Object.entries(stats)) {
+      if (stat && stat.total > 0) {
+        const status = stat.inserted === stat.total ? '✅' : '⚠️';
+        console.log(`   ${status} ${name.padEnd(20)} ${stat.inserted}/${stat.total} (${stat.time}s)`);
+      }
+    }
+
+    console.log('-'.repeat(40));
+    console.log(`   📦 الإجمالي: ${totalInserted.toLocaleString()}/${totalRecords.toLocaleString()} سجل`);
+    console.log(`   ⏱️ الوقت الكلي: ${totalTime}s`);
+    console.log(`   🚀 السرعة: ${Math.round(totalRecords / totalTime)} سجل/ثانية`);
+    console.log('='.repeat(50) + '\n');
 
   } catch (error) {
-    console.error('❌ خطأ:', error.message);
+    console.error('\n❌ خطأ في الاستعادة:', error.message);
+    if (error.code === 'P1001') {
+      console.error('   ⚠️ فشل الاتصال بقاعدة البيانات');
+    }
+    process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
 }
 
+// تشغيل الاستعادة
 restore();

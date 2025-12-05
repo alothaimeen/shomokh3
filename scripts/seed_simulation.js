@@ -1,432 +1,411 @@
+/**
+ * سكربت محاكاة البيانات السريع (Fast Simulation Seeder)
+ * ======================================================
+ * يُنشئ معلمات وطالبات وحلقات مع درجات كاملة للفصل الدراسي
+ * 
+ * المميزات:
+ * - سرعة عالية: createMany مع skipDuplicates
+ * - بيانات متنوعة: مؤهلات، جنسيات، حفظ، سداد
+ * - teacher1@shamokh.edu للتجربة
+ * 
+ * Usage: node scripts/seed_simulation.js
+ */
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-const fs = require('fs');
-const path = require('path');
 
-// Configure connection pool timeout (30s instead of default 10s)
-const prisma = new PrismaClient({
-    datasources: {
-        db: {
-            url: process.env.DATABASE_URL
-        }
-    }
-});
-const data = JSON.parse(fs.readFileSync(path.join(__dirname, 'seed_data.json'), 'utf8'));
+const prisma = new PrismaClient();
 
-// Retry helper for transient connection errors
-async function withRetry(fn, maxRetries = 3, delayMs = 1000) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            return await fn();
-        } catch (error) {
-            if (attempt === maxRetries || !error.code?.startsWith('P20')) {
-                throw error;
-            }
-            console.log(`  ⚠️ Retry ${attempt}/${maxRetries} after ${delayMs}ms...`);
-            await new Promise(r => setTimeout(r, delayMs));
-            delayMs *= 2; // Exponential backoff
-        }
+// ==================== CONFIGURATION ====================
+
+const CONFIG = {
+    START_DATE: new Date('2025-08-31'),
+    TOTAL_DAILY_GRADES: 70,
+    AUTUMN_BREAK: ['2025-11-23', '2025-11-24', '2025-11-25', '2025-11-26', '2025-11-27'],
+    END_DATE: new Date('2025-12-11'),
+    TEACHER_PASSWORD: 'teacher123',
+    STUDENT_PASSWORD: 'student123',
+    STUDENTS_PER_COURSE: 30,
+    BATCH_SIZE: 1000
+};
+
+// ==================== DIVERSITY DATA ====================
+
+const QUALIFICATIONS = {
+    general: ['ثانوي', 'متوسط', 'ابتدائي', 'جامعي'],
+    advanced: ['جامعي', 'ماجستير']
+};
+
+const NATIONALITIES = [
+    'سعودية', 'سعودية', 'سعودية', 'سعودية', 'سعودية',
+    'سعودية', 'سعودية', 'سعودية',
+    'يمنية', 'سورية', 'مصرية', 'أردنية', 'فلسطينية'
+];
+
+const MEMORIZATION_AMOUNTS = [
+    'جزء عم', 'جزء تبارك', '3 أجزاء', '5 أجزاء',
+    '10 أجزاء', '15 جزء', '20 جزء', 'حافظة كاملة'
+];
+
+const PAYMENT_STATUSES = [
+    'PAID', 'PAID', 'PAID', 'PAID', 'PAID', 'PAID', 'PAID',
+    'UNPAID', 'UNPAID',
+    'PARTIAL'
+];
+
+const STUDENT_NAMES = [
+    'نورة الفهد', 'هند السعيد', 'رزان الحربي', 'دانة الشهري', 'لمى العمري',
+    'أسماء الزهراني', 'منال القرني', 'سلمى الغامدي', 'ريم البقمي', 'هدى الأحمدي',
+    'فاطمة المالكي', 'خلود العسيري', 'نوف الخالدي', 'جواهر الحازمي', 'بدور الرشيدي',
+    'عبير المهنا', 'أمل الراشد', 'سارة الفيصل', 'مها التميمي', 'وفاء الحمدان',
+    'ندى السبيعي', 'رغد الجهني', 'حصة المطيري', 'نجود الدوسري', 'شيماء العنزي',
+    'لطيفة الشمري', 'هيفاء القحطاني', 'روان الهاجري', 'ديمة الخثلان', 'غادة العتيبي'
+];
+
+const PROFILES = [
+    'PERFECT', 'PERFECT', 'PERFECT', 'PERFECT', 'PERFECT', 'PERFECT',
+    'EXCELLENT', 'EXCELLENT', 'EXCELLENT', 'EXCELLENT', 'EXCELLENT',
+    'EXCELLENT', 'EXCELLENT', 'EXCELLENT', 'EXCELLENT',
+    'GOOD', 'GOOD', 'GOOD', 'GOOD', 'GOOD', 'GOOD', 'GOOD', 'GOOD', 'GOOD',
+    'WEAK', 'WEAK', 'WEAK', 'WEAK',
+    'FAILING', 'FAILING'
+];
+
+// ==================== TEACHERS DATA ====================
+
+const TEACHERS = [
+    {
+        name: 'المعلمة التجريبية',
+        email: 'teacher1@shamokh.edu',
+        courses: [
+            { name: 'حلقة الفجر - المستوى الأول', program: 'برنامج الحفظ المكثف' },
+            { name: 'حلقة المغرب - المستوى الأول', program: 'برنامج التجويد المتقدم' }
+        ]
+    },
+    {
+        name: 'سارة الأحمد',
+        email: 'teacher2@shamokh.edu',
+        courses: [
+            { name: 'حلقة الضحى - المستوى الثاني', program: 'برنامج الحفظ المكثف' },
+            { name: 'حلقة العصر - المستوى الأول', program: 'برنامج المراجعة' }
+        ]
+    },
+    {
+        name: 'فاطمة المالكي',
+        email: 'teacher3@shamokh.edu',
+        courses: [
+            { name: 'حلقة الظهر - المتقدمات', program: 'برنامج المراحل العليا' }
+        ]
+    },
+    {
+        name: 'نورة القحطاني',
+        email: 'teacher4@shamokh.edu',
+        courses: [
+            { name: 'حلقة المبتدئات - الأحد', program: 'برنامج المبتدئات' },
+            { name: 'حلقة المبتدئات - الثلاثاء', program: 'برنامج المبتدئات' }
+        ]
     }
+];
+
+// ==================== UTILITIES ====================
+
+function chunk(arr, size) {
+    return Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+        arr.slice(i * size, i * size + size)
+    );
 }
 
-// Sequential processing to avoid pool exhaustion
-async function processSequentially(items, processFn, label = '') {
-    for (let i = 0; i < items.length; i++) {
-        await withRetry(() => processFn(items[i]));
-        if ((i + 1) % 50 === 0) {
-            console.log(`  ${label}: ${i + 1}/${items.length}`);
-        }
-    }
+function getRandomItem(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Calendar Constants - حسب التقويم الدراسي
-// التقييم اليومي: 70 يوم بالضبط (14 أسبوع × 5 أيام)
-// الإجازات يتم تعويضها في اليوم التالي وتُسجل بتاريخ الإجازة
-const START_DATE = new Date('2025-08-31');
-const TOTAL_DAILY_GRADES = 70; // عدد أيام التقييم اليومي المطلوب
+function getRandomScore(min, max) {
+    return parseFloat((Math.random() * (max - min) + min).toFixed(2));
+}
 
-// أيام العمل الأساسية (الأحد-الخميس) من 31 أغسطس حتى نهاية الأسبوع 15
-// يتم توليد 70 يوم بالضبط بما فيها أيام تعويض الإجازات
-function generateDailyGradeDates() {
+function shouldAttend(profile) {
+    const rates = { 'PERFECT': 1.0, 'EXCELLENT': 0.98, 'GOOD': 0.90, 'WEAK': 0.80, 'FAILING': 0.70 };
+    return Math.random() < rates[profile];
+}
+
+function getQualification(programName) {
+    const isAdvanced = programName.includes('المراحل العليا') ||
+        programName.includes('المتقدمات') ||
+        programName.includes('التجويد المتقدم');
+    return getRandomItem(isAdvanced ? QUALIFICATIONS.advanced : QUALIFICATIONS.general);
+}
+
+function generateDailyDates() {
     const dates = [];
-    let currentDate = new Date(START_DATE);
-    const endDate = new Date('2025-12-11'); // الخميس 11 ديسمبر - لإكمال 70 يوم
-    
-    // إجازة الخريف - نتخطاها
-    const autumnBreak = ['2025-11-23', '2025-11-24', '2025-11-25', '2025-11-26', '2025-11-27'];
-    
-    while (currentDate <= endDate && dates.length < TOTAL_DAILY_GRADES) {
+    let currentDate = new Date(CONFIG.START_DATE);
+    while (currentDate <= CONFIG.END_DATE && dates.length < CONFIG.TOTAL_DAILY_GRADES) {
         const day = currentDate.getDay();
         const dateStr = currentDate.toISOString().split('T')[0];
-        
-        // تخطي الجمعة والسبت وإجازة الخريف
-        if (day !== 5 && day !== 6 && !autumnBreak.includes(dateStr)) {
+        if (day !== 5 && day !== 6 && !CONFIG.AUTUMN_BREAK.includes(dateStr)) {
             dates.push(new Date(currentDate));
         }
         currentDate.setDate(currentDate.getDate() + 1);
     }
-    
     return dates;
 }
 
-const DAILY_GRADE_DATES = generateDailyGradeDates();
-console.log(`📅 عدد أيام التقييم اليومي: ${DAILY_GRADE_DATES.length}`);
-
-// Week values must be 1-10 per schema constraint
-const WEEKLY_EXAM_WEEKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-// Month values must be 1-3 per schema constraint  
-const MONTHLY_EXAM_WEEKS = [1, 2, 3];
-const FINAL_EXAM_WEEK = 16;
-
-function getRandomScore(min, max, decimals = 2) {
-    const score = Math.random() * (max - min) + min;
-    return parseFloat(score.toFixed(decimals));
-}
-
-function shouldAttend(profile) {
-    const rates = {
-        'PERFECT': 1.0,    // 100% حضور
-        'EXCELLENT': 0.98,
-        'GOOD': 0.90,
-        'WEAK': 0.80,
-        'FAILING': 0.70
+function getScores(profile) {
+    const s = {
+        'PERFECT': { d: 10, w: 5, mQ: 5, mT: 15, fQ: 40, fT: 20 },
+        'EXCELLENT': { d: () => getRandomScore(9.5, 10), w: () => getRandomScore(4.5, 5), mQ: () => getRandomScore(4.5, 5), mT: () => getRandomScore(13.5, 15), fQ: () => getRandomScore(36, 40), fT: () => getRandomScore(18, 20) },
+        'GOOD': { d: () => getRandomScore(8, 9.5), w: () => getRandomScore(4, 4.5), mQ: () => getRandomScore(4, 4.5), mT: () => getRandomScore(12, 13.5), fQ: () => getRandomScore(32, 36), fT: () => getRandomScore(16, 18) },
+        'WEAK': { d: () => getRandomScore(6, 8), w: () => getRandomScore(3, 4), mQ: () => getRandomScore(3, 4), mT: () => getRandomScore(9, 12), fQ: () => getRandomScore(24, 32), fT: () => getRandomScore(12, 16) },
+        'FAILING': { d: () => getRandomScore(0, 6), w: () => getRandomScore(0, 3), mQ: () => getRandomScore(0, 3), mT: () => getRandomScore(0, 9), fQ: () => getRandomScore(0, 24), fT: () => getRandomScore(0, 12) }
     };
-    return Math.random() < rates[profile];
+    return s[profile];
 }
+
+function val(v) { return typeof v === 'function' ? v() : v; }
+
+async function batchInsert(model, data, label) {
+    if (!data.length) return 0;
+    const chunks_arr = chunk(data, CONFIG.BATCH_SIZE);
+    let total = 0;
+    for (const [i, batch] of chunks_arr.entries()) {
+        const result = await prisma[model].createMany({ data: batch, skipDuplicates: true });
+        total += result.count;
+        if ((i + 1) % 5 === 0 || i === chunks_arr.length - 1) {
+            process.stdout.write(`\r  ${label}: ${Math.min((i + 1) * CONFIG.BATCH_SIZE, data.length)}/${data.length}`);
+        }
+    }
+    console.log(`\r  ✅ ${label}: ${total}/${data.length}                    `);
+    return total;
+}
+
+// ==================== MAIN ====================
 
 async function main() {
-    console.log("🚀 Starting OPTIMIZED simulation seeding...");
+    console.log('\n🚀 بدء محاكاة البيانات السريعة...\n');
     const startTime = Date.now();
+    const DAILY_DATES = generateDailyDates();
+    console.log(`📅 أيام التقييم: ${DAILY_DATES.length}`);
 
-    // 1. Programs, Circles, Teachers (Sequential is fine, low volume)
-    const programMap = new Map(); // name -> id
-    const circleMap = new Map(); // name -> {id, teacherId}
-    const teacherMap = new Map(); // email -> id
+    const teacherPasswordHash = await bcrypt.hash(CONFIG.TEACHER_PASSWORD, 10);
+    const studentPasswordHash = await bcrypt.hash(CONFIG.STUDENT_PASSWORD, 10);
 
-    console.log("📦 preparing structure...");
+    // ==================== PHASE 1: Structure (Sequential - Small) ====================
+    console.log('\n📦 المرحلة 1: إنشاء الهيكل...');
 
-    for (const programData of data) {
-        // Program
-        let program = await prisma.program.findFirst({ where: { programName: programData.name } });
-        if (!program) {
-            program = await prisma.program.create({
-                data: { programName: programData.name, programDescription: programData.description }
-            });
-        }
-        programMap.set(programData.name, program.id);
+    const programIds = new Map();
+    const courseData = [];
+    const teacherIds = new Map();
 
-        for (const circleData of programData.circles) {
-            // Teacher
-            const teacherPassword = await bcrypt.hash(circleData.teacher.password, 10);
-            const teacher = await prisma.user.upsert({
-                where: { userEmail: circleData.teacher.email },
-                update: {},
-                create: {
-                    userName: circleData.teacher.name,
-                    userEmail: circleData.teacher.email,
-                    passwordHash: teacherPassword,
-                    userRole: 'TEACHER'
+    // Create teachers
+    for (const t of TEACHERS) {
+        const teacher = await prisma.user.upsert({
+            where: { userEmail: t.email },
+            update: {},
+            create: { userName: t.name, userEmail: t.email, passwordHash: teacherPasswordHash, userRole: 'TEACHER' }
+        });
+        teacherIds.set(t.email, teacher.id);
+        console.log(`  ✅ ${t.name}`);
+
+        // Create programs and courses
+        for (const c of t.courses) {
+            let programId = programIds.get(c.program);
+            if (!programId) {
+                let prog = await prisma.program.findFirst({ where: { programName: c.program } });
+                if (!prog) {
+                    prog = await prisma.program.create({ data: { programName: c.program, programDescription: `وصف ${c.program}` } });
                 }
-            });
-            teacherMap.set(circleData.teacher.email, teacher.id);
+                programId = prog.id;
+                programIds.set(c.program, programId);
+            }
 
-            // Circle
-            let course = await prisma.course.findFirst({
-                where: { courseName: circleData.name, programId: program.id }
-            });
+            let course = await prisma.course.findFirst({ where: { courseName: c.name, programId } });
             if (!course) {
                 course = await prisma.course.create({
-                    data: {
-                        courseName: circleData.name,
-                        programId: program.id,
-                        teacherId: teacher.id,
-                        maxStudents: 30
-                    }
+                    data: { courseName: c.name, programId, teacherId: teacher.id, maxStudents: CONFIG.STUDENTS_PER_COURSE }
                 });
             }
-            circleMap.set(circleData.name, { id: course.id, teacherId: teacher.id });
+            courseData.push({ id: course.id, programName: c.program, teacherEmail: t.email });
+            console.log(`     📚 ${c.name}`);
         }
     }
 
-    // 2. Prepare Students (Batch)
-    console.log("👥 Preparing students...");
-    const studentsToCreate = [];
-    const studentUsersToCreate = [];
-    const defaultPasswordHash = await bcrypt.hash("password123", 10);
+    // ==================== PHASE 2: Generate All Data in Memory ====================
+    console.log('\n📊 المرحلة 2: توليد البيانات...');
 
-    // Flatten data for easy processing
-    const allStudents = [];
-    for (const programData of data) {
-        for (const circleData of programData.circles) {
-            const circleInfo = circleMap.get(circleData.name);
-            for (const studentData of circleData.students) {
-                allStudents.push({
-                    ...studentData,
-                    circleId: circleInfo.id
-                });
-            }
-        }
-    }
-
-    // Create Users first (Upsert one by one is safest for Users due to unique email, 
-    // but for speed we can try createMany with skipDuplicates if we assume clean slate or handle errors.
-    // Given we want to update if exists, upsert is better. 
-    // To speed up, we can use Promise.all in chunks.)
-
-    console.log(`Processing ${allStudents.length} students...`);
-
-    // Chunking helper
-    const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
-        arr.slice(i * size, i * size + size)
-    );
-
-    // Create Users SEQUENTIALLY to avoid pool exhaustion
-    console.log("  Creating user accounts...");
-    await processSequentially(allStudents, (s) =>
-        prisma.user.upsert({
-            where: { userEmail: s.email },
-            update: {},
-            create: {
-                userName: s.name,
-                userEmail: s.email,
-                passwordHash: defaultPasswordHash,
-                userRole: 'STUDENT'
-            }
-        }),
-        'Users'
-    );
-
-    // Fetch all users to get IDs
-    const users = await prisma.user.findMany({
-        where: { userRole: 'STUDENT' },
-        select: { id: true, userEmail: true }
-    });
-    const userEmailToId = new Map(users.map(u => [u.userEmail, u.id]));
-
-    // Create Students SEQUENTIALLY to avoid pool exhaustion
-    console.log("  Creating student records...");
-    await processSequentially(allStudents, (s) =>
-        prisma.student.upsert({
-            where: { studentNumber: s.studentNumber },
-            update: {},
-            create: {
-                studentName: s.name,
-                studentNumber: s.studentNumber,
-                userId: userEmailToId.get(s.email),
-                qualification: "General",
-                nationality: "Saudi",
-                studentPhone: "0500000000",
-                memorizedAmount: "None",
-                paymentStatus: "PAID"
-            }
-        }),
-        'Students'
-    );
-
-    // Fetch all students to get IDs
-    const dbStudents = await prisma.student.findMany({
-        select: { id: true, studentNumber: true }
-    });
-    const studentNumToId = new Map(dbStudents.map(s => [s.studentNumber, s.id]));
-
-    // 3. Enrollments (Batch)
-    console.log("📝 Processing enrollments...");
+    const users = [];
+    const students = [];
     const enrollments = [];
-    for (const s of allStudents) {
-        enrollments.push({
-            studentId: studentNumToId.get(s.studentNumber),
-            courseId: s.circleId,
-            enrolledAt: START_DATE
-        });
-    }
-    // Use createMany with skipDuplicates
-    await prisma.enrollment.createMany({
-        data: enrollments,
-        skipDuplicates: true
-    });
-
-    // 4. Simulation Data (Batch)
-    console.log("📅 Simulating semester days...");
-    const attendanceRecords = [];
+    const attendance = [];
     const dailyGrades = [];
+    const behaviorGrades = [];
     const behaviorPoints = [];
-    const behaviorGrades = []; // درجات السلوك اليومية (للتقارير)
     const weeklyGrades = [];
     const monthlyGrades = [];
     const finalExams = [];
 
-    for (const s of allStudents) {
-        const sId = studentNumToId.get(s.studentNumber);
-        const cId = s.circleId;
+    let studentNumber = 5000; // Start from 5000 to avoid conflicts
 
-        // استخدام 70 يوم بالضبط للتقييم اليومي
-        for (const dateIso of DAILY_GRADE_DATES) {
-            const isPresent = shouldAttend(s.profile);
+    for (const course of courseData) {
+        for (let i = 0; i < CONFIG.STUDENTS_PER_COURSE; i++) {
+            const profile = PROFILES[i % PROFILES.length];
+            const studentName = STUDENT_NAMES[i % STUDENT_NAMES.length];
+            const email = `sim${studentNumber}@test.edu`;
+            const odId = `sim-user-${studentNumber}`;
+            const osId = `sim-student-${studentNumber}`;
 
-            // Attendance
-            attendanceRecords.push({
-                studentId: sId,
-                courseId: cId,
-                date: new Date(dateIso),
-                status: isPresent ? 'PRESENT' : 'ABSENT'
+            // User
+            users.push({
+                id: odId,
+                userName: studentName,
+                userEmail: email,
+                passwordHash: studentPasswordHash,
+                userRole: 'STUDENT',
+                isActive: true
             });
 
-            if (isPresent) {
-                let dailyScore = 0;
-                if (s.profile === 'PERFECT') dailyScore = 10; // درجة كاملة
-                else if (s.profile === 'EXCELLENT') dailyScore = getRandomScore(9.5, 10);
-                else if (s.profile === 'GOOD') dailyScore = getRandomScore(8, 9.5);
-                else if (s.profile === 'WEAK') dailyScore = getRandomScore(6, 8);
-                else dailyScore = getRandomScore(0, 6);
-
-                // Daily Grade (memorization + review = 10 max)
-                dailyGrades.push({
-                    studentId: sId,
-                    courseId: cId,
-                    date: new Date(dateIso),
-                    memorization: s.profile === 'PERFECT' ? 5 : dailyScore * 0.5,
-                    review: s.profile === 'PERFECT' ? 5 : dailyScore * 0.5
-                });
-
-                // BehaviorGrade - درجة السلوك اليومية (0-1)
-                // جميع الطالبات يحصلن على درجة كاملة في السلوك = 1
-                behaviorGrades.push({
-                    studentId: sId,
-                    courseId: cId,
-                    date: new Date(dateIso),
-                    dailyScore: 1.00 // درجة كاملة للجميع
-                });
-
-                // BehaviorPoint - نقاط السلوك (4 معايير boolean)
-                behaviorPoints.push({
-                    studentId: sId,
-                    courseId: cId,
-                    date: new Date(dateIso),
-                    earlyAttendance: s.profile === 'PERFECT' ? true : Math.random() > 0.5,
-                    perfectMemorization: s.profile === 'PERFECT' ? true : dailyScore > 9,
-                    activeParticipation: true,
-                    timeCommitment: true
-                });
-            }
-        }
-
-        // Weekly (max 5 per week)
-        for (const week of WEEKLY_EXAM_WEEKS) {
-            let score = 0;
-            if (s.profile === 'PERFECT') score = 5; // درجة كاملة
-            else if (s.profile === 'EXCELLENT') score = getRandomScore(4.5, 5);
-            else if (s.profile === 'GOOD') score = getRandomScore(4, 4.5);
-            else if (s.profile === 'WEAK') score = getRandomScore(3, 4);
-            else score = getRandomScore(0, 3);
-
-            weeklyGrades.push({
-                studentId: sId,
-                courseId: cId,
-                week: week,
-                grade: score
+            // Student
+            students.push({
+                id: osId,
+                studentNumber,
+                studentName,
+                userId: odId,
+                qualification: getQualification(course.programName),
+                nationality: getRandomItem(NATIONALITIES),
+                studentPhone: `050${Math.floor(1000000 + Math.random() * 9000000)}`,
+                memorizedAmount: getRandomItem(MEMORIZATION_AMOUNTS),
+                paymentStatus: getRandomItem(PAYMENT_STATUSES),
+                isActive: true
             });
-        }
 
-        // Monthly - scores must fit schema constraints:
-        // quranForgetfulness, quranMajorMistakes, quranMinorMistakes: max 5.00
-        // tajweedTheory: max 15.00
-        for (const month of MONTHLY_EXAM_WEEKS) {
-            let quranForget, quranMajor, quranMinor, tajweed;
-            if (s.profile === 'PERFECT') {
-                quranForget = 5;  // درجة كاملة
-                quranMajor = 5;
-                quranMinor = 5;
-                tajweed = 15;
-            } else if (s.profile === 'EXCELLENT') {
-                quranForget = getRandomScore(4.5, 5);
-                quranMajor = getRandomScore(4.5, 5);
-                quranMinor = getRandomScore(4.5, 5);
-                tajweed = getRandomScore(13.5, 15);
-            } else if (s.profile === 'GOOD') {
-                quranForget = getRandomScore(4, 4.5);
-                quranMajor = getRandomScore(4, 4.5);
-                quranMinor = getRandomScore(4, 4.5);
-                tajweed = getRandomScore(12, 13.5);
-            } else if (s.profile === 'WEAK') {
-                quranForget = getRandomScore(3, 4);
-                quranMajor = getRandomScore(3, 4);
-                quranMinor = getRandomScore(3, 4);
-                tajweed = getRandomScore(9, 12);
-            } else {
-                quranForget = getRandomScore(0, 3);
-                quranMajor = getRandomScore(0, 3);
-                quranMinor = getRandomScore(0, 3);
-                tajweed = getRandomScore(0, 9);
+            // Enrollment
+            enrollments.push({
+                studentId: osId,
+                courseId: course.id,
+                enrolledAt: CONFIG.START_DATE,
+                isActive: true
+            });
+
+            const scores = getScores(profile);
+
+            // Daily data
+            for (const date of DAILY_DATES) {
+                const isPresent = shouldAttend(profile);
+
+                attendance.push({
+                    studentId: osId,
+                    courseId: course.id,
+                    date,
+                    status: isPresent ? 'PRESENT' : 'ABSENT'
+                });
+
+                if (isPresent) {
+                    const d = val(scores.d);
+                    dailyGrades.push({
+                        studentId: osId,
+                        courseId: course.id,
+                        date,
+                        memorization: profile === 'PERFECT' ? 5 : d * 0.5,
+                        review: profile === 'PERFECT' ? 5 : d * 0.5
+                    });
+
+                    behaviorGrades.push({
+                        studentId: osId,
+                        courseId: course.id,
+                        date,
+                        dailyScore: 1.00
+                    });
+
+                    behaviorPoints.push({
+                        studentId: osId,
+                        courseId: course.id,
+                        date,
+                        earlyAttendance: profile === 'PERFECT' || Math.random() > 0.5,
+                        perfectMemorization: profile === 'PERFECT' || d > 9,
+                        activeParticipation: true,
+                        timeCommitment: true
+                    });
+                }
             }
 
-            monthlyGrades.push({
-                studentId: sId,
-                courseId: cId,
-                month: month,
-                quranForgetfulness: quranForget,
-                quranMajorMistakes: quranMajor,
-                quranMinorMistakes: quranMinor,
-                tajweedTheory: tajweed
+            // Weekly grades (10 weeks)
+            for (let week = 1; week <= 10; week++) {
+                weeklyGrades.push({
+                    studentId: osId,
+                    courseId: course.id,
+                    week,
+                    grade: val(scores.w)
+                });
+            }
+
+            // Monthly grades (3 months)
+            for (let month = 1; month <= 3; month++) {
+                monthlyGrades.push({
+                    studentId: osId,
+                    courseId: course.id,
+                    month,
+                    quranForgetfulness: val(scores.mQ),
+                    quranMajorMistakes: val(scores.mQ),
+                    quranMinorMistakes: val(scores.mQ),
+                    tajweedTheory: val(scores.mT)
+                });
+            }
+
+            // Final exam
+            finalExams.push({
+                studentId: osId,
+                courseId: course.id,
+                quranTest: val(scores.fQ),
+                tajweedTest: val(scores.fT)
             });
-        }
 
-        // Final - quranTest max 40, tajweedTest max 20
-        let quranTest, tajweedTest;
-        if (s.profile === 'PERFECT') {
-            quranTest = 40;  // درجة كاملة
-            tajweedTest = 20;
-        } else if (s.profile === 'EXCELLENT') {
-            quranTest = getRandomScore(36, 40);
-            tajweedTest = getRandomScore(18, 20);
-        } else if (s.profile === 'GOOD') {
-            quranTest = getRandomScore(32, 36);
-            tajweedTest = getRandomScore(16, 18);
-        } else if (s.profile === 'WEAK') {
-            quranTest = getRandomScore(24, 32);
-            tajweedTest = getRandomScore(12, 16);
-        } else {
-            quranTest = getRandomScore(0, 24);
-            tajweedTest = getRandomScore(0, 12);
-        }
-
-        finalExams.push({
-            studentId: sId,
-            courseId: cId,
-            quranTest: quranTest,
-            tajweedTest: tajweedTest
-        });
-    }
-
-    // Batch Insert Helper
-    async function batchInsert(modelName, records) {
-        console.log(`Inserting ${records.length} ${modelName} records...`);
-        const chunks = chunk(records, 1000); // 1000 per batch
-        for (const [i, batch] of chunks.entries()) {
-            await prisma[modelName].createMany({
-                data: batch,
-                skipDuplicates: true
-            });
-            if (i % 5 === 0) console.log(`  ${modelName}: Processed ${(i + 1) * 1000} records...`);
+            studentNumber++;
         }
     }
 
-    await batchInsert('attendance', attendanceRecords);
-    await batchInsert('dailyGrade', dailyGrades);
-    await batchInsert('behaviorGrade', behaviorGrades); // درجات السلوك للتقارير
-    await batchInsert('behaviorPoint', behaviorPoints);
-    await batchInsert('weeklyGrade', weeklyGrades);
-    await batchInsert('monthlyGrade', monthlyGrades);
-    await batchInsert('finalExam', finalExams);
+    console.log(`  📝 المستخدمين: ${users.length}`);
+    console.log(`  👧 الطالبات: ${students.length}`);
+    console.log(`  📋 التسجيلات: ${enrollments.length}`);
+    console.log(`  📅 الحضور: ${attendance.length}`);
+    console.log(`  📊 الدرجات اليومية: ${dailyGrades.length}`);
 
-    const duration = (Date.now() - startTime) / 1000;
-    console.log(`✅ Simulation seeding completed in ${duration.toFixed(2)}s!`);
+    // ==================== PHASE 3: Batch Insert ====================
+    console.log('\n💾 المرحلة 3: إدخال البيانات...');
+
+    await batchInsert('user', users, 'المستخدمين');
+    await batchInsert('student', students, 'الطالبات');
+    await batchInsert('enrollment', enrollments, 'التسجيلات');
+    await batchInsert('attendance', attendance, 'الحضور');
+    await batchInsert('dailyGrade', dailyGrades, 'الدرجات اليومية');
+    await batchInsert('behaviorGrade', behaviorGrades, 'درجات السلوك');
+    await batchInsert('behaviorPoint', behaviorPoints, 'نقاط السلوك');
+    await batchInsert('weeklyGrade', weeklyGrades, 'الدرجات الأسبوعية');
+    await batchInsert('monthlyGrade', monthlyGrades, 'الدرجات الشهرية');
+    await batchInsert('finalExam', finalExams, 'الاختبارات النهائية');
+
+    // ==================== SUMMARY ====================
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    const totalRecords = users.length + students.length + enrollments.length +
+        attendance.length + dailyGrades.length + behaviorGrades.length +
+        behaviorPoints.length + weeklyGrades.length + monthlyGrades.length + finalExams.length;
+
+    console.log('\n' + '='.repeat(50));
+    console.log('✅ تمت المحاكاة بنجاح!');
+    console.log('='.repeat(50));
+    console.log(`
+📊 الإحصائيات:
+   👩‍🏫 المعلمات: ${TEACHERS.length}
+   📚 الحلقات: ${courseData.length}
+   👧 الطالبات: ${students.length}
+   
+   📦 إجمالي السجلات: ${totalRecords.toLocaleString()}
+   ⏱️ الوقت: ${duration}s
+   🚀 السرعة: ${Math.round(totalRecords / duration)} سجل/ثانية
+`);
+    console.log('='.repeat(50));
+    console.log('\n💡 للتجربة:');
+    console.log('   📧 teacher1@shamokh.edu');
+    console.log('   🔑 teacher123\n');
 }
 
 main()
-    .catch((e) => {
-        console.error(e);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+    .catch((e) => { console.error('❌ خطأ:', e.message); process.exit(1); })
+    .finally(() => prisma.$disconnect());

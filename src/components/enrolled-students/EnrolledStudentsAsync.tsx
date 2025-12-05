@@ -51,6 +51,10 @@ export default async function EnrolledStudentsAsync({ courseId }: Props) {
             studentName: true,
             studentNumber: true,
             studentPhone: true,
+            qualification: true,
+            nationality: true,
+            memorizedAmount: true,
+            paymentStatus: true,
             user: {
               select: {
                 userEmail: true
