@@ -9,7 +9,7 @@ import HijriDate from 'hijri-date';
 /**
  * أسماء الأشهر الهجرية
  */
-export const HIJRI_MONTHS = [
+const HIJRI_MONTHS = [
   'محرم',
   'صفر',
   'ربيع الأول',
@@ -27,7 +27,7 @@ export const HIJRI_MONTHS = [
 /**
  * أسماء الأيام بالعربية
  */
-export const WEEKDAYS = [
+const WEEKDAYS = [
   'الأحد',
   'الإثنين',
   'الثلاثاء',
@@ -40,7 +40,7 @@ export const WEEKDAYS = [
 /**
  * أسماء الأشهر الميلادية بالعربية
  */
-export const GREGORIAN_MONTHS = [
+const GREGORIAN_MONTHS = [
   'يناير',
   'فبراير',
   'مارس',
@@ -136,37 +136,4 @@ export function getCurrentHijriDate(): string {
  */
 export function getCurrentFullDate(): string {
   return formatFullDate(new Date());
-}
-
-/**
- * تحويل تاريخ هجري إلى ميلادي
- * @param year السنة الهجرية
- * @param month الشهر الهجري (1-12)
- * @param day اليوم الهجري
- * @returns كائن Date ميلادي
- */
-export function convertHijriToGregorian(year: number, month: number, day: number): Date {
-  const hijriDate = new HijriDate(year, month, day);
-  return hijriDate.toGregorian();
-}
-
-/**
- * الحصول على عدد أيام الشهر الهجري
- * @param year السنة الهجرية
- * @param month الشهر الهجري (1-12)
- * @returns عدد الأيام
- */
-export function getHijriMonthDays(year: number, month: number): number {
-  const oddMonths = [1, 3, 5, 7, 9, 11];
-  return oddMonths.includes(month) ? 30 : 29;
-}
-
-/**
- * الحصول على عدد أيام الشهر الميلادي
- * @param year السنة الميلادية
- * @param month الشهر الميلادي (1-12)
- * @returns عدد الأيام
- */
-export function getGregorianMonthDays(year: number, month: number): number {
-  return new Date(year, month, 0).getDate();
 }
