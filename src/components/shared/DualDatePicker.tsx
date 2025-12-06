@@ -133,16 +133,31 @@ export default function DualDatePicker({
     onDateChange(today);
   }, [today, onDateChange]);
 
-  // إنشاء خيارات الأيام
-  const hijriDays = Array.from(
-    { length: getHijriMonthDays(hijriState.year, hijriState.month) },
-    (_, i) => i + 1
-  );
+  // إنشاء خيارات الأيام مع اسم اليوم
+  const hijriDaysWithNames = useMemo(() => {
+    const daysCount = getHijriMonthDays(hijriState.year, hijriState.month);
+    return Array.from({ length: daysCount }, (_, i) => {
+      const dayNum = i + 1;
+      // حساب اسم اليوم بالتحويل للميلادي
+      try {
+        const gregDate = convertHijriToGregorian(hijriState.year, hijriState.month, dayNum);
+        const dayName = WEEKDAYS[gregDate.getDay()];
+        return { value: dayNum, label: `${dayNum} ${dayName}` };
+      } catch {
+        return { value: dayNum, label: `${dayNum}` };
+      }
+    });
+  }, [hijriState.year, hijriState.month]);
 
-  const gregorianDays = Array.from(
-    { length: getGregorianMonthDays(gregorianState.year, gregorianState.month) },
-    (_, i) => i + 1
-  );
+  const gregorianDaysWithNames = useMemo(() => {
+    const daysCount = getGregorianMonthDays(gregorianState.year, gregorianState.month);
+    return Array.from({ length: daysCount }, (_, i) => {
+      const dayNum = i + 1;
+      const date = new Date(gregorianState.year, gregorianState.month - 1, dayNum);
+      const dayName = WEEKDAYS[date.getDay()];
+      return { value: dayNum, label: `${dayNum} ${dayName}` };
+    });
+  }, [gregorianState.year, gregorianState.month]);
 
   const hijriYears = [1445, 1446, 1447, 1448, 1449, 1450];
   const gregorianYears = [2023, 2024, 2025, 2026, 2027, 2028];
@@ -153,6 +168,9 @@ export default function DualDatePicker({
     const d = new Date(dateStr + 'T00:00:00');
     return WEEKDAYS[d.getDay()];
   }, [pendingDate, selectedDate, today]);
+
+  // التاريخ المستهدف للانتقال
+  const targetDate = pendingDate || selectedDate;
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -168,13 +186,13 @@ export default function DualDatePicker({
 
       {/* عرض التاريخ المنسق */}
       <div className="text-center py-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border">
-        <div className="flex items-center justify-center gap-2 text-lg font-bold">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-lg font-bold">
           <span className="text-green-700">
-            {hijriState.day} {selectedDayName} | {HIJRI_MONTHS[hijriState.month - 1]} | {hijriState.year} هـ
+            {hijriState.day} {selectedDayName} | {hijriState.month} {HIJRI_MONTHS[hijriState.month - 1]} | {hijriState.year} هـ
           </span>
           <span className="text-gray-400">-</span>
           <span className="text-blue-700">
-            {gregorianState.day} {selectedDayName} | {GREGORIAN_MONTHS[gregorianState.month - 1]} | {gregorianState.year} م
+            {gregorianState.day} {selectedDayName} | {gregorianState.month} {GREGORIAN_MONTHS[gregorianState.month - 1]} | {gregorianState.year} م
           </span>
         </div>
       </div>
@@ -190,25 +208,25 @@ export default function DualDatePicker({
             <select 
               value={hijriState.day}
               onChange={(e) => handleHijriChange('day', +e.target.value)}
-              className="p-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+              className="p-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-sm"
             >
-              {hijriDays.map((d) => (
-                <option key={d} value={d}>{d}</option>
+              {hijriDaysWithNames.map((d) => (
+                <option key={d.value} value={d.value}>{d.label}</option>
               ))}
             </select>
             <select 
               value={hijriState.month}
               onChange={(e) => handleHijriChange('month', +e.target.value)}
-              className="p-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+              className="p-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-sm"
             >
               {HIJRI_MONTHS.map((name, i) => (
-                <option key={i+1} value={i+1}>{name}</option>
+                <option key={i+1} value={i+1}>{i+1} {name}</option>
               ))}
             </select>
             <select 
               value={hijriState.year}
               onChange={(e) => handleHijriChange('year', +e.target.value)}
-              className="p-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+              className="p-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-sm"
             >
               {hijriYears.map(y => (
                 <option key={y} value={y}>{y}هـ</option>
@@ -227,25 +245,25 @@ export default function DualDatePicker({
             <select 
               value={gregorianState.day}
               onChange={(e) => handleGregorianChange('day', +e.target.value)}
-              className="p-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="p-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
             >
-              {gregorianDays.map((d) => (
-                <option key={d} value={d}>{d}</option>
+              {gregorianDaysWithNames.map((d) => (
+                <option key={d.value} value={d.value}>{d.label}</option>
               ))}
             </select>
             <select 
               value={gregorianState.month}
               onChange={(e) => handleGregorianChange('month', +e.target.value)}
-              className="p-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="p-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
             >
               {GREGORIAN_MONTHS.map((name, i) => (
-                <option key={i+1} value={i+1}>{name}</option>
+                <option key={i+1} value={i+1}>{i+1} {name}</option>
               ))}
             </select>
             <select 
               value={gregorianState.year}
               onChange={(e) => handleGregorianChange('year', +e.target.value)}
-              className="p-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="p-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
             >
               {gregorianYears.map(y => (
                 <option key={y} value={y}>{y}م</option>
@@ -255,17 +273,20 @@ export default function DualDatePicker({
         </div>
       </div>
 
-      {/* زر الانتقال للتاريخ المختار */}
-      {pendingDate && pendingDate !== selectedDate && (
-        <button
-          type="button"
-          onClick={handleGoToDate}
-          className="w-full py-3 px-4 bg-gradient-to-r from-primary-purple to-primary-blue hover:opacity-90 text-white rounded-lg font-bold transition-all flex items-center justify-center gap-2 shadow-md"
-        >
-          <ArrowLeft size={20} />
-          انتقل للتاريخ المختار
-        </button>
-      )}
+      {/* زر الانتقال للتاريخ المختار - يظهر دائماً */}
+      <button
+        type="button"
+        onClick={handleGoToDate}
+        disabled={!pendingDate || pendingDate === selectedDate}
+        className={`w-full py-3 px-4 rounded-lg font-bold transition-all flex items-center justify-center gap-2 shadow-md ${
+          pendingDate && pendingDate !== selectedDate
+            ? 'bg-gradient-to-r from-primary-purple to-primary-blue hover:opacity-90 text-white'
+            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+        }`}
+      >
+        <ArrowLeft size={20} />
+        انتقل للتاريخ المختار
+      </button>
     </div>
   );
 }
