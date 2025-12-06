@@ -54,13 +54,15 @@ export default async function DailyGradesAsync({ courseId, date }: Props) {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-6 space-y-4">
+        {/* الحلقة في صف مستقل */}
         <CourseSelector 
           courses={courses}
           selectedCourseId={selectedCourseId}
           currentDate={date}
           pageType="daily"
         />
+        {/* التاريخ في صف مستقل أسفل الحلقة */}
         <DateSelector 
           selectedDate={date}
           courseId={selectedCourseId}

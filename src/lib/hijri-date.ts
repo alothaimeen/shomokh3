@@ -1,10 +1,10 @@
 /**
  * مكتبة تحويل التاريخ الهجري (أم القرى)
- * تستخدام hijri-date للتحويل الدقيق
+ * تستخدم moment-hijri للتحويل الدقيق
  */
 
 // @ts-ignore
-import HijriDate from 'hijri-date';
+import moment from 'moment-hijri';
 
 /**
  * أسماء الأشهر الهجرية
@@ -61,16 +61,11 @@ export const GREGORIAN_MONTHS = [
  * @returns كائن التاريخ الهجري {year, month, day}
  */
 export function convertToHijri(date: Date): { year: number; month: number; day: number } {
-  const hijriDate = new HijriDate(
-    date.getFullYear(),
-    date.getMonth() + 1, // JavaScript months are 0-indexed
-    date.getDate()
-  );
-  
+  const m = moment(date);
   return {
-    year: hijriDate.getFullYear(),
-    month: hijriDate.getMonth() + 1,
-    day: hijriDate.getDate()
+    year: m.iYear(),
+    month: m.iMonth() + 1, // moment-hijri uses 0-indexed months
+    day: m.iDate()
   };
 }
 
@@ -146,8 +141,9 @@ export function getCurrentFullDate(): string {
  * @returns كائن Date ميلادي
  */
 export function convertHijriToGregorian(year: number, month: number, day: number): Date {
-  const hijriDate = new HijriDate(year, month, day);
-  return hijriDate.toGregorian();
+  // moment-hijri uses 0-indexed months
+  const m = moment(`${year}/${month}/${day}`, 'iYYYY/iM/iD');
+  return m.toDate();
 }
 
 /**
@@ -157,8 +153,9 @@ export function convertHijriToGregorian(year: number, month: number, day: number
  * @returns عدد الأيام
  */
 export function getHijriMonthDays(year: number, month: number): number {
-  const oddMonths = [1, 3, 5, 7, 9, 11];
-  return oddMonths.includes(month) ? 30 : 29;
+  // استخدام moment-hijri للحصول على عدد أيام الشهر الهجري
+  const m = moment(`${year}/${month}/1`, 'iYYYY/iM/iD');
+  return m.iDaysInMonth();
 }
 
 /**

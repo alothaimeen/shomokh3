@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar, ArrowLeft } from 'lucide-react';
 import { 
   convertToHijri, 
   convertHijriToGregorian,
   HIJRI_MONTHS,
   GREGORIAN_MONTHS,
+  WEEKDAYS,
   getHijriMonthDays,
   getGregorianMonthDays
 } from '@/lib/hijri-date';
@@ -16,17 +17,22 @@ interface DualDatePickerProps {
   onDateChange: (date: string) => void;
   maxDate?: string;
   className?: string;
+  /** إذا كان true، يظهر التقويمين فوق بعض بدل جنب بعض */
+  stackVertically?: boolean;
 }
 
 export default function DualDatePicker({
   selectedDate,
   onDateChange,
   maxDate,
-  className = ''
+  className = '',
+  stackVertically = false
 }: DualDatePickerProps) {
-  // تاريخ اليوم بالتوقيت المحلي
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  // تاريخ اليوم بالتوقيت المحلي - ثابت لا يتغير
+  const today = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }, []);
   
   // حساب القيم الابتدائية
   const initialGregorian = () => {
@@ -140,23 +146,40 @@ export default function DualDatePicker({
 
   const hijriYears = [1445, 1446, 1447, 1448, 1449, 1450];
   const gregorianYears = [2023, 2024, 2025, 2026, 2027, 2028];
-  const isToday = selectedDate === today;
+  
+  // اسم يوم الأسبوع للتاريخ المحدد
+  const selectedDayName = useMemo(() => {
+    const dateStr = pendingDate || selectedDate || today;
+    const d = new Date(dateStr + 'T00:00:00');
+    return WEEKDAYS[d.getDay()];
+  }, [pendingDate, selectedDate, today]);
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* زر الذهاب لتاريخ اليوم */}
-      {!isToday && (
-        <button
-          type="button"
-          onClick={handleGoToToday}
-          className="w-full py-2 px-4 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg border border-amber-300 font-medium transition-colors flex items-center justify-center gap-2"
-        >
-          <Calendar size={18} />
-          الذهاب لتاريخ اليوم ({today})
-        </button>
-      )}
+      {/* زر الذهاب لتاريخ اليوم - يظهر دائماً */}
+      <button
+        type="button"
+        onClick={handleGoToToday}
+        className="w-full py-2 px-4 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg border border-amber-300 font-medium transition-colors flex items-center justify-center gap-2"
+      >
+        <Calendar size={18} />
+        الذهاب لتاريخ اليوم
+      </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* عرض التاريخ المنسق */}
+      <div className="text-center py-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border">
+        <div className="flex items-center justify-center gap-2 text-lg font-bold">
+          <span className="text-green-700">
+            {hijriState.day} {selectedDayName} | {HIJRI_MONTHS[hijriState.month - 1]} | {hijriState.year} هـ
+          </span>
+          <span className="text-gray-400">-</span>
+          <span className="text-blue-700">
+            {gregorianState.day} {selectedDayName} | {GREGORIAN_MONTHS[gregorianState.month - 1]} | {gregorianState.year} م
+          </span>
+        </div>
+      </div>
+
+      <div className={`grid gap-4 ${stackVertically ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
         {/* التاريخ الهجري */}
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <div className="flex items-center gap-2 mb-3">
